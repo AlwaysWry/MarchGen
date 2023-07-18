@@ -41,7 +41,7 @@ class FP:
     def dbg_Get_vFault(self):
         return self.__dict__['vFault']
 
-    def dbg_Get_rvFlag(self):
+    def dbg_Get_rdFlag(self):
         return self.__dict__['rdFlag']
 
 
@@ -55,6 +55,7 @@ DETECTED = 10
 UNDETECTED = 100
 PROFOUND = 1
 FAST = 0
+
 
 def init_cell_state(March):
     if len(March[0].split(',')) == 2:
@@ -93,21 +94,31 @@ def generate_operation_sequence(SenOpNum, op_num, ops):
 
 def update_fault_state(fp, cell_state, cell_history, visiting_cell, op_seq, op):
     if visiting_cell != 'v':
+        # for dynamic faults, the init state of a-cell/v-cell should be kept in cell_history, or it will be
+        # covered by new state. The init state also cannot be destroyed by fault state of other fault in the
+        # middle of sensitization, like <0w1/0/->*<0w1w0/1/->, the FP2 can be sensitized by "O0, w1, w0",
+        # because processing the fault means that it can be sensitized under correct conditions, i.e. "dynamic
+        # faulty behavior can take place in the absence of static faults."
+        # [Dynamic Faults in Random-Access-Memories: Concept, Fault Models and Tests, S.Hamdioui et al., 2002],
+        # so we use the state in cell_history "cell_history[-fp.SenOpsNum][fp.aCell]" directly to check
+        # the sensitization conditions.
         if (fp.CFdsFlag == 1) and (cell_state[fp.vCell] == fp.vInit) and (op_seq == fp.Sen) and (
                 cell_history[-fp.SenOpsNum][fp.aCell] == fp.aInit) and (visiting_cell == fp.aCell):
             cell_state[fp.vCell] = fp.vFault
             return UPDATED
     else:
         if 'w' in op:
-            if (fp.CFdsFlag == 0) and (cell_state[fp.aCell] == fp.aInit) and (op_seq == fp.Sen) and (
+            if (fp.CFdsFlag == 0) and ((cell_state[fp.aCell] == fp.aInit) or (fp.aInit == '-')) and (
+                    op_seq == fp.Sen) and (
                     cell_history[-fp.SenOpsNum][fp.vCell] == fp.vInit):
                 cell_state[fp.vCell] = fp.vFault
                 return UPDATED
         elif 'r' in op:
-            if (fp.CFdsFlag == 0) and (fp.aInit == cell_state[fp.aCell]) and (op_seq == fp.Sen) and (
+            if (fp.CFdsFlag == 0) and ((cell_state[fp.aCell] == fp.aInit) or (fp.aInit == '-')) and (
+                    op_seq == fp.Sen) and (
                     cell_history[-fp.SenOpsNum][fp.vCell] == fp.vInit):
                 # check rdflag, if it is read-destruction fault, it is detected immediately
-                if fp.rdFlag == 1:
+                if (fp.rdFlag == 1) or (fp.rdFlag == 2):
                     return DETECTED
                 else:
                     cell_state[fp.vCell] = fp.vFault
@@ -118,8 +129,20 @@ def update_fault_state(fp, cell_state, cell_history, visiting_cell, op_seq, op):
     return UPDATE_ERROR
 
 
-def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
+def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
+    # cell_history is a list contains multiple dictionaries.
+    # it is used for saving the history states of the cells after each operation in several operation steps.
+    # the length of cell_history depends on the longest sensitization sequence of current faults.
+    # updating cell_history is by popping out the first dict and append the newest dict.
     cell_history = []
+
+    def set_op_seq_history(fp, seq):
+        nonlocal op_seq_history
+        if fp is FP1:
+            op_seq_history[0] = seq
+        if fp is FP2:
+            op_seq_history[1] = seq
+        return
 
     def set_cell_history():
         nonlocal cell_history
@@ -137,6 +160,9 @@ def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
         # operations of each element, index starts from 1
         ops = OPS[1:]
         update_flag = ['', '']
+        # clear op_seq_history at the beginning of a March element apply
+        op_seq_history = ['', '']
+
         for op_num, op in enumerate(ops, 1):
             # print("Operation: %s" % op)
             # a-cell case
@@ -147,6 +173,7 @@ def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
                     if op_num >= FP1.SenOpsNum:
                         op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
                         update_fault_state(FP1, cell_state, cell_history, visiting_cell, op_seq, op)
+                        set_op_seq_history(FP1, op_seq)
                     #    if update_state == DETECTED:
                     #        return DETECTED
 
@@ -154,6 +181,7 @@ def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
                         if op_num >= FP2.SenOpsNum:
                             op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
                             update_fault_state(FP2, cell_state, cell_history, visiting_cell, op_seq, op)
+                            set_op_seq_history(FP2, op_seq)
                         #    if update_state == DETECTED:
                         #        return DETECTED
 
@@ -170,14 +198,18 @@ def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
                     else:
                         if op_num >= FP1.SenOpsNum:
                             op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
-                            update_flag[0] = update_fault_state(FP1, cell_state, cell_history, visiting_cell, op_seq, op)
+                            update_flag[0] = update_fault_state(FP1, cell_state, cell_history,
+                                                                visiting_cell, op_seq, op)
+                            set_op_seq_history(FP1, op_seq)
                             if update_flag[0] == DETECTED:
                                 return DETECTED
 
                         if FP2 is not FP1:
                             if op_num >= FP2.SenOpsNum:
                                 op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
-                                update_flag[1] = update_fault_state(FP2, cell_state, cell_history, visiting_cell, op_seq, op)
+                                update_flag[1] = update_fault_state(FP2, cell_state, cell_history,
+                                                                    visiting_cell, op_seq, op)
+                                set_op_seq_history(FP2, op_seq)
                                 if update_flag[1] == DETECTED:
                                     return DETECTED
 
@@ -190,7 +222,9 @@ def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
                     # Sensitization operation
                     if op_num >= FP1.SenOpsNum:
                         op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
-                        update_flag[0] = update_fault_state(FP1, cell_state, cell_history, visiting_cell, op_seq, op)
+                        update_flag[0] = update_fault_state(FP1, cell_state, cell_history,
+                                                            visiting_cell, op_seq, op)
+                        set_op_seq_history(FP1, op_seq)
                     #    if update_state == DETECTED:
                     #        return DETECTED
                     else:
@@ -199,7 +233,9 @@ def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
                     if FP2 is not FP1:
                         if op_num >= FP2.SenOpsNum:
                             op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
-                            update_flag[1] = update_fault_state(FP2, cell_state, cell_history, visiting_cell, op_seq, op)
+                            update_flag[1] = update_fault_state(FP2, cell_state, cell_history,
+                                                                visiting_cell, op_seq, op)
+                            set_op_seq_history(FP2, op_seq)
                         #    if update_state == DETECTED:
                         #        return DETECTED
                     else:
@@ -217,16 +253,34 @@ def apply_March_sequence(cell_state, traverse_cell_order, OPS, FP1, FP2):
                     # Sensitization operation
                     if op_num >= FP1.SenOpsNum:
                         op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
-                        if update_fault_state(FP1, cell_state, cell_history, visiting_cell, op_seq, op) == DETECTED:
+                        update_flag[0] = update_fault_state(FP1, cell_state, cell_history,
+                                                            visiting_cell, op_seq, op)
+
+                        if update_flag[0] == DETECTED:
                             return DETECTED
+                        # special case for drd
+                        elif (FP1.rdFlag == -1) and (update_flag[0] == UPDATED) and (op_seq_history[0] == FP1.Sen) \
+                                and (cell_state[visiting_cell] != op[1]):
+                            return DETECTED
+
+                        set_op_seq_history(FP1, op_seq)
                     elif cell_state[visiting_cell] != op[1]:
                         return DETECTED
 
                     if FP2 is not FP1:
                         if op_num >= FP2.SenOpsNum:
                             op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
-                            if update_fault_state(FP2, cell_state, cell_history, visiting_cell, op_seq, op) == DETECTED:
+                            update_flag[1] = update_fault_state(FP2, cell_state, cell_history,
+                                                                visiting_cell, op_seq, op)
+
+                            if update_flag[1] == DETECTED:
                                 return DETECTED
+                            # special case for drd
+                            elif (FP1.rdFlag == -1) and (update_flag[1] == UPDATED) and (op_seq_history[1] == FP2.Sen) \
+                                    and (cell_state[visiting_cell] != op[1]):
+                                return DETECTED
+
+                            set_op_seq_history(FP2, op_seq)
                         elif cell_state[visiting_cell] != op[1]:
                             return DETECTED
 
@@ -251,7 +305,7 @@ def eval_2comp(FP1, FP2, March, mode):
 
             print("  evaluating element \"%s\" under %s" % (element, str(traverse_cell_order)))
             ops = element.split(',')
-            if apply_March_sequence(cell_state, traverse_cell_order, ops, FP1, FP2) == DETECTED:
+            if apply_March_element(cell_state, traverse_cell_order, ops, FP1, FP2) == DETECTED:
                 eval_flag.append('success')
                 print("    current fault is detected.")
                 break
