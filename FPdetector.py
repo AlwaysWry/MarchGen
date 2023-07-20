@@ -78,7 +78,7 @@ march = ["any,w0",
          "any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1",
          "any,r1"]
 
-fault_list_file = 'linked_fault'
+fault_list_file = 'fault_lists/' + 'complete_fault_list'
 
 
 def get_fault_properties(fault_comps):
@@ -213,13 +213,13 @@ def main(filename):
         FP1 = fobj[1]
         FP2 = fobj[2]
 
-        print("\nDetecting fault %s" % lf)
+        print("\n*****\nDetecting fault %s:\n" % lf)
         if ev.eval_2comp(FP1, FP2, march, ev.PROFOUND) == ev.UNDETECTED:
-            print("!!! %s is NOT detected !!!" % lf)
+            print("!!! %s is NOT detected !!!\n" % lf)
             Undetected_fault.append(lf)
         else:
             pass
-            print("%s is detected." % lf)
+            print("\n%s is detected." % lf)
 
     if len(Undetected_fault) > 0:
         print("%d linked faults cannot be detected by this March sequence: " % (len(Undetected_fault)))

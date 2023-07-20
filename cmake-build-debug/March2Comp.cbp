@@ -74,7 +74,7 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="D:/FORENIGHT/CLionProj/March2Comp/main.c">
+		<Unit filename="D:/FORENIGHT/CLionProj/March2Comp/src/main.c">
 			<Option target="March2Comp"/>
 		</Unit>
 		<Unit filename="D:/FORENIGHT/CLionProj/March2Comp/CMakeLists.txt">

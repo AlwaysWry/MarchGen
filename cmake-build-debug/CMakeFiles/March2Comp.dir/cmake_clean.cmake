@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/March2Comp.dir/main.c.obj"
-  "CMakeFiles/March2Comp.dir/main.c.obj.d"
+  "CMakeFiles/March2Comp.dir/src/main.c.obj"
+  "CMakeFiles/March2Comp.dir/src/main.c.obj.d"
   "March2Comp.exe"
   "March2Comp.exe.manifest"
   "March2Comp.pdb"

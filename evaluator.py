@@ -311,6 +311,7 @@ def eval_2comp(FP1, FP2, March, mode):
                 break
             else:
                 print("    current fault is NOT detected.")
+                pass
 
     if eval_flag.count('success') == len(cell_order):
         return DETECTED

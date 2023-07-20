@@ -68,28 +68,28 @@ include CMakeFiles/March2Comp.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/March2Comp.dir/flags.make
 
-CMakeFiles/March2Comp.dir/main.c.obj: CMakeFiles/March2Comp.dir/flags.make
-CMakeFiles/March2Comp.dir/main.c.obj: D:/FORENIGHT/CLionProj/March2Comp/main.c
-CMakeFiles/March2Comp.dir/main.c.obj: CMakeFiles/March2Comp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=D:\FORENIGHT\CLionProj\March2Comp\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/March2Comp.dir/main.c.obj"
-	E:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/March2Comp.dir/main.c.obj -MF CMakeFiles\March2Comp.dir\main.c.obj.d -o CMakeFiles\March2Comp.dir\main.c.obj -c D:\FORENIGHT\CLionProj\March2Comp\main.c
+CMakeFiles/March2Comp.dir/src/main.c.obj: CMakeFiles/March2Comp.dir/flags.make
+CMakeFiles/March2Comp.dir/src/main.c.obj: D:/FORENIGHT/CLionProj/March2Comp/src/main.c
+CMakeFiles/March2Comp.dir/src/main.c.obj: CMakeFiles/March2Comp.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=D:\FORENIGHT\CLionProj\March2Comp\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/March2Comp.dir/src/main.c.obj"
+	E:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/March2Comp.dir/src/main.c.obj -MF CMakeFiles\March2Comp.dir\src\main.c.obj.d -o CMakeFiles\March2Comp.dir\src\main.c.obj -c D:\FORENIGHT\CLionProj\March2Comp\src\main.c
 
-CMakeFiles/March2Comp.dir/main.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/March2Comp.dir/main.c.i"
-	E:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E D:\FORENIGHT\CLionProj\March2Comp\main.c > CMakeFiles\March2Comp.dir\main.c.i
+CMakeFiles/March2Comp.dir/src/main.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/March2Comp.dir/src/main.c.i"
+	E:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E D:\FORENIGHT\CLionProj\March2Comp\src\main.c > CMakeFiles\March2Comp.dir\src\main.c.i
 
-CMakeFiles/March2Comp.dir/main.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/March2Comp.dir/main.c.s"
-	E:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S D:\FORENIGHT\CLionProj\March2Comp\main.c -o CMakeFiles\March2Comp.dir\main.c.s
+CMakeFiles/March2Comp.dir/src/main.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/March2Comp.dir/src/main.c.s"
+	E:\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S D:\FORENIGHT\CLionProj\March2Comp\src\main.c -o CMakeFiles\March2Comp.dir\src\main.c.s
 
 # Object files for target March2Comp
 March2Comp_OBJECTS = \
-"CMakeFiles/March2Comp.dir/main.c.obj"
+"CMakeFiles/March2Comp.dir/src/main.c.obj"
 
 # External object files for target March2Comp
 March2Comp_EXTERNAL_OBJECTS =
 
-March2Comp.exe: CMakeFiles/March2Comp.dir/main.c.obj
+March2Comp.exe: CMakeFiles/March2Comp.dir/src/main.c.obj
 March2Comp.exe: CMakeFiles/March2Comp.dir/build.make
 March2Comp.exe: CMakeFiles/March2Comp.dir/linkLibs.rsp
 March2Comp.exe: CMakeFiles/March2Comp.dir/objects1

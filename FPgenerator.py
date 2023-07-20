@@ -1,5 +1,5 @@
 # A script for generating all realistic 2-composite faults
-# (includes up to 2-operation dynamic faults
+# (includes up to 2-operation dynamic faults)
 
 import FPdetector as fd
 import itertools as it
@@ -7,7 +7,7 @@ import itertools as it
 s_dyn = fd.get_fault_primitive("./fault_lists/simple_dynamic")
 ss_dyn = fd.get_fault_primitive("./fault_lists/ss_dynamic")
 s_stat = fd.get_fault_primitive("./fault_lists/simple_static")
-# ss_stat = fd.get_fault_primitive("./fault_lists/ss_static")
+ss_stat = fd.get_fault_primitive("./fault_lists/ss_static")
 
 test = fd.get_fault_primitive("test_fault_list")
 
@@ -35,12 +35,13 @@ def remove_unrealistic_tuples(full_combs):
             print("Illegal fault %s Found!\n" % fobj_tup_item[0])
             break
         else:
+            seq_section = 2 * min(fobj_tup_item[0][1].SenOpsNum, fobj_tup_item[1][1].SenOpsNum)
             # no CFds contained. proof see paper
             if (fobj_tup_item[0][1].CFdsFlag == 1) or (fobj_tup_item[1][1].CFdsFlag == 1):
                 continue
             elif (fobj_tup_item[0][1].Sen[-2] != 'r') or (fobj_tup_item[1][1].Sen[-2] != 'r'):
                 continue
-            elif (fobj_tup_item[0][1].Sen != fobj_tup_item[1][1].Sen) \
+            elif (fobj_tup_item[0][1].Sen[-seq_section:] != fobj_tup_item[1][1].Sen[-seq_section:]) \
                     or (fobj_tup_item[0][1].vInit != fobj_tup_item[1][1].vInit):
                 continue
             elif (fobj_tup_item[0][1].vFault == fobj_tup_item[1][1].vFault) and \
@@ -48,8 +49,9 @@ def remove_unrealistic_tuples(full_combs):
                 continue
 
             unrealistic_faults.append((fobj_tup_item[0], fobj_tup_item[1]))
+            print("%s" % str((fobj_tup_item[0][0], fobj_tup_item[1][0])))
 
-    print("Removed %d unrealistic faults." % len(unrealistic_faults))
+    print("\nRemoved %d unrealistic faults." % len(unrealistic_faults))
 
     for fobj_tup in unrealistic_faults:
         remove_result.remove(fobj_tup)
@@ -58,10 +60,10 @@ def remove_unrealistic_tuples(full_combs):
 
 
 if __name__ == '__main__':
-    fp_combs_obj_list = generate_combinations(s_dyn, ss_dyn)
+    fp_combs_obj_list = generate_combinations(s_stat, s_dyn)
     realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
 
-    file = open("fault_lists/dyn_dyn_fault_list", 'w')
+    file = open("fault_lists/stat_dyn_fault_list", 'w')
     for tup in realistic_faults:
         lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
         file.write(lf)
