@@ -6,10 +6,9 @@ import re
 # ------------
 
 # march = ["up,w0",
-#         "up,r0,r0,w0,r0,w1,w0,r0,w1,w1,r1",
-#         "up,r1,r1,w1,r1,w0,w1,r1,w0,w0,r0",
-#         "up,r0"
-#        ]
+#          "up,r0,r0,w1,w1,r1,w0,w0,r0,w1,r1",
+#          "up,r1,r1,w0,w0,r0,w1,w1,r1,w0,r0",
+#          "up,r0"]
 
 # march = ["up,w0",
 #         "up,r0,w0,r0,w1,w1",
@@ -39,6 +38,7 @@ import re
 #         "up,r1,w0,w1,w0,r0"
 #        ]
 
+# March AB [TC'08]
 # march = ["up,w1",
 #         "down,r1,w0,r0,w0,r0",
 #         "down,r0,w1,r1,w1,r1",
@@ -47,10 +47,10 @@ import re
 #         "up,r1"]
 
 # march = ["up,w0",
-#         "up,r0,w0,r0,w1,w1,r1,w0,r0",
-#         "up,r0,w1",
-#         "up,r1,w1,r1,w0,w0,r0,w1,r1",#non-CFds对结构还是有影响，去掉之后不能检测a-cell为1的CFwd
-#         "up,r1"]
+#          "up,r0,w0,r0,w1,w1,r1,r1,w0,r0",
+#          "up,r0,w1",
+#          "up,r1,w1,r1,w0,w0,r0,r0,w1,r1",#non-CFds对结构还是有影响，去掉之后不能检测a-cell为1的CFwd
+#          "up,r1"]
 
 # March BDN
 # march = ["up,w0",
@@ -61,24 +61,61 @@ import re
 #          "up,r0"]
 
 # march = ["up,w0",
-#          "up,r0,w0,w1,w1,r1,w0,r0",
+#          #"up,r0,r0,w1,w1,r1,r1,w0,w0,r0",
+#          "up,r0,r0,w0,r0",
+#          "up,r0,w1,w1,r1,r1,w0",
+#          #"up,r0,w1",
 #          "up,r0,w1",
-#          "up,r1,w1,w0,w0,r0,w1,r1",
-#          "up,r1"]
+#          #"up,r1,r1,w0,w0,r0,r0,w1,w1,r1",
+#          "up,r1,r1,w1,r1",
+#          "up,r1,w0,w0,r0,r0,w1",
+#          #"up,r1"
+#          "up,r1"
+#          ]
 
 # march = ["up,w0",
-#          "up,r0,w0,r0,w1,w0,r0,r0,w1,w1,r1",
-#          "up,r1,w1,r1,w0,w1,r1,r1,w0,w0,r0",
+#          "up,r0,w1,w1,r1,r1,w0",
+#          "up,r0,w0",
+#          # "up,r0",
+#          "up,r0,w1",
+#          "up,r1,w0,w0,r0,r0,w1",
+#          "up,r1,w1",
+#          # "up,r1",
+#          "down,r1,w0"]
+
+# March MSL [Minimal..., 06]
+# march = ["any,w0",
+#          "up,r0,w1,w1,r1,r1,w0",
+#          "up,r0,w0",
+#          "up,r0",
+#          "up,r0,w1",
+#          "up,r1,w0,w0,r0,r0,w1",
+#          "up,r1,w1",
+#          "up,r1",
+#          "down,r1,w0"]
+
+# March LSD [tcad'12]
+march = ["any,w0",
+         "up,r0,w1,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1",
+         "up,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1,r1,w0",
+         "up,r0",
+         "down,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0,r0,w1",
+         "down,r1,w0,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0",
+         "down,r0"]
+
+# march = ["up,w0",
+#          "up,r0,r0,w0,r0,w1,w0,r0,w1,w1,r1",
+#          "up,r1,r1,w1,r1,w0,w1,r1,w0,w0,r0",
 #          "up,r0"]
 
-march = ["any,w0",
-         "any,r0,w0,r0,r0,r0,w1,r1,w1,r1,r1,w0,r0,r0,w0,w1,w0,w1,r1,w1,w0,w1,w0,r0,w1,w1,w1,w1,r1,r1,r1,w0,w0,w0,w0,r0",
-         "any,r0",
-         "any,w1",
-         "any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1",
-         "any,r1"]
+# march = ["any,w0",
+#          "any,r0,w0,r0,r0,r0,w1,r1,w1,r1,r1,w0,r0,r0,w0,w1,w0,w1,r1,w1,w0,w1,w0,r0,w1,w1,w1,w1,r1,r1,r1,w0,w0,w0,w0,r0",
+#          "any,r0",
+#          "any,w1",
+#          "any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1",
+#          "any,r1"]
 
-fault_list_file = 'fault_lists/' + 'complete_fault_list'
+fault_list_file = 'fault_lists/' + 'dyn2comp_fault_list'
 
 
 def get_fault_properties(fault_comps):
@@ -96,7 +133,7 @@ def get_fault_properties(fault_comps):
             if fp_index == 1:
                 aCell = 'a1'
             elif fp_index == 2:
-                aCell = 'a2'
+                aCell = 'a1'
             else:
                 aCell = ''
                 print("Illegal fault %s Found!\n" % fp)
@@ -202,31 +239,39 @@ def get_fault_primitive(filename):
 
 
 def main(filename):
+    logfile = open("testlog", 'w')
+
     fobj_list = get_fault_primitive(filename)
     if len(fobj_list) == 0:
+        print("Empty or illegal fault list!\n")
         return ev.ERROR
 
-    Undetected_fault = []
+    print("Fault list is successfully loaded.\n")
+    print("Applying March test...\n")
 
+    Undetected_fault = []
     for fobj in fobj_list:
         lf = fobj[0]
         FP1 = fobj[1]
         FP2 = fobj[2]
 
-        print("\n*****\nDetecting fault %s:\n" % lf)
-        if ev.eval_2comp(FP1, FP2, march, ev.PROFOUND) == ev.UNDETECTED:
-            print("!!! %s is NOT detected !!!\n" % lf)
+        logfile.write("\n********\nDetecting fault %s:\n" % lf)
+        if ev.eval_2comp(FP1, FP2, march, ev.PROFOUND, logfile) == ev.UNDETECTED:
+            logfile.write("!!! %s is NOT detected !!!\n" % lf)
             Undetected_fault.append(lf)
         else:
             pass
-            print("\n%s is detected." % lf)
+            logfile.write("%s is detected.\n" % lf)
 
     if len(Undetected_fault) > 0:
         print("%d linked faults cannot be detected by this March sequence: " % (len(Undetected_fault)))
         [print(fault) for fault in Undetected_fault]
     else:
-        print("\nCongratulations! All linked faults can be detected by this March sequence: ")
+        print("Congratulations! All linked faults can be detected by this March sequence: \n")
         [print(element) for element in march]
+
+    logfile.close()
+    print("\nSee elaborate test logs in file \"testlog\".")
 
 
 if __name__ == '__main__':

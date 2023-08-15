@@ -9,7 +9,7 @@ ss_dyn = fd.get_fault_primitive("./fault_lists/ss_dynamic")
 s_stat = fd.get_fault_primitive("./fault_lists/simple_static")
 ss_stat = fd.get_fault_primitive("./fault_lists/ss_static")
 
-test = fd.get_fault_primitive("test_fault_list")
+# test = fd.get_fault_primitive("test_fault_list")
 
 
 def get_fp_string(fp_obj):
@@ -60,10 +60,10 @@ def remove_unrealistic_tuples(full_combs):
 
 
 if __name__ == '__main__':
-    fp_combs_obj_list = generate_combinations(s_stat, s_dyn)
+    fp_combs_obj_list = generate_combinations(s_stat, ss_stat)
     realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
 
-    file = open("fault_lists/stat_dyn_fault_list", 'w')
+    file = open("fault_lists/stat_stat_fault_list", 'w')
     for tup in realistic_faults:
         lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
         file.write(lf)
