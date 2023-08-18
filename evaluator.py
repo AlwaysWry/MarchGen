@@ -132,6 +132,7 @@ def update_fault_state(fp, cell_state, cell_state_temp, cell_history, visiting_c
 
 
 def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
+
     # cell_history is a list contains multiple dictionaries.
     # it is used for saving the history states of the cells after each operation in several operation steps.
     # the length of cell_history depends on the longest sensitization sequence of current faults.
@@ -166,8 +167,8 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
         op_seq_history = ['', '']
 
         for op_num, op in enumerate(ops, 1):
-            # cell_state_temp is a copy of cell_state, it accepts the value updates during operations, and update the
-            # final result to cell_state after an operation is applied.
+            # cell_state_temp is a copy of cell_state, it accepts the value updates during operations,
+            # and update the final result to cell_state after an operation is applied.
             cell_state_temp = copy.deepcopy(cell_state)
 
             # a-cell case

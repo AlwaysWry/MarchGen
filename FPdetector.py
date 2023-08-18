@@ -1,3 +1,5 @@
+import sys
+
 import evaluator as ev
 import re
 
@@ -95,12 +97,26 @@ import re
 #          "down,r1,w0"]
 
 # March LSD [tcad'12]
+# march = ["any,w0",
+#          "up,r0,w1,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1",
+#          "up,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1,r1,w0",
+#          "up,r0",
+#          "down,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0,r0,w1",
+#          "down,r1,w0,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0",
+#          "down,r0"]
+
 march = ["any,w0",
-         "up,r0,w1,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1",
-         "up,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1,r1,w0",
+         # "up,r0,w1,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1",
+         # (0r0w1),(0w1r1),1r1w1(d),1w1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w1(3),1w1w0(ld),0w1w0(d),1w0r0(ld),0r0w0,0w0r0(d),0r0r0,0r0w1(2),0w1w1(d),1w1r1(d3),(1r1r1(d))
+         "up,r0,w1,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1",
+         # (0r0w1),(0w1r1),1r1w1(d),1w1r1(d),1r1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w0,1w0w1,0w1w1(d),1w1r1(3),1r1w1(3),1w1w0(ld),1w0w1(2),0w1w0(d),1w0r0(d),0r0r0
+         # "up,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0",
+         "up,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1,r1,w0",
          "up,r0",
-         "down,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0,r0,w1",
-         "down,r1,w0,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0",
+         # "down,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1",
+         "down,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0,r0,w1",
+         # "down,r1,w0,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0",
+         "down,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0",
          "down,r0"]
 
 # march = ["up,w0",
@@ -115,7 +131,7 @@ march = ["any,w0",
 #          "any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1",
 #          "any,r1"]
 
-fault_list_file = 'fault_lists/' + 'dyn2comp_fault_list'
+fault_list_file = 'fault_lists/' + 'test'
 
 
 def get_fault_properties(fault_comps):
@@ -240,6 +256,7 @@ def get_fault_primitive(filename):
 
 def main(filename):
     logfile = open("testlog", 'w')
+    # logfile = sys.stdout
 
     fobj_list = get_fault_primitive(filename)
     if len(fobj_list) == 0:
