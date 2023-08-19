@@ -1,4 +1,3 @@
-# a March test evaluation tool #
 import copy
 
 
