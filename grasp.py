@@ -34,7 +34,7 @@ def get_fault_properties(fault_comps, model):
 				aCell = model[2]
 			else:
 				aCell = ''
-				print("Illegal fault %s Found!\n" % fp)
+				print("Illegal fault %s found!\n" % fp)
 				return fault_props
 
 			fault_prop = fp.partition(';')

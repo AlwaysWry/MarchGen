@@ -33,7 +33,10 @@ def main():
         FP2 = fobj[2]
 
         logfile.write("\n********\nDetecting fault %s:\n" % lf)
-        if ev.eval_2comp(FP1, FP2, march, ev.PROFOUND, logfile) == ev.UNDETECTED:
+        eval_result = ev.eval_2comp(FP1, FP2, march, ev.PROFOUND, logfile)
+        if eval_result == ev.ERROR:
+            return ev.ERROR
+        elif eval_result == ev.UNDETECTED:
             logfile.write("!!! %s is NOT detected !!!\n" % lf)
             Undetected_fault.append(lf)
         else:

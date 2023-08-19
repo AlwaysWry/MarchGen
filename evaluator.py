@@ -218,6 +218,11 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                         cell_state.update(cell_state_temp)
                         set_cell_history()
 
+                else:
+                    print("Illegal March operation found, program is terminated.\n")
+                    print("Please check the March test file.\n")
+                    return ERROR
+
             # v-cell case
             else:
                 # write operation case
@@ -291,6 +296,11 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                     cell_state.update(cell_state_temp)
                     set_cell_history()
 
+                else:
+                    print("Illegal March operation found, program is terminated.\n")
+                    print("Please check the March test file.\n")
+                    return ERROR
+
     return APPLIED
 
 
@@ -300,6 +310,10 @@ def eval_2comp(FP1, FP2, March, mode, logfile):
 
     for order_index in range(len(cell_order)):
         cell_state = init_cell_state(March)
+        if cell_state == INIT_ERROR:
+            print("Illegal March test!\n")
+            return ERROR
+
         # traverse march elements
         for m, element in enumerate(March[1:]):
             # set cell traverse order
@@ -310,7 +324,11 @@ def eval_2comp(FP1, FP2, March, mode, logfile):
 
             logfile.write("  evaluating element \"%s\" under %s\n" % (element, str(traverse_cell_order)))
             ops = element.split(',')
-            if apply_March_element(cell_state, traverse_cell_order, ops, FP1, FP2) == DETECTED:
+
+            apply_result = apply_March_element(cell_state, traverse_cell_order, ops, FP1, FP2)
+            if apply_result == ERROR:
+                return ERROR
+            elif apply_result == DETECTED:
                 eval_flag.append('success')
                 logfile.write("    current fault is detected.\n")
                 break
