@@ -1,15 +1,15 @@
 # A script for generating all realistic 2-composite faults
 # (includes up to 2-operation dynamic faults)
 
-import FPdetector as fd
+import main as main
 import itertools as it
 
-s_dyn = fd.get_fault_primitive("./fault_lists/simple_dynamic")
-ss_dyn = fd.get_fault_primitive("./fault_lists/ss_dynamic")
-s_stat = fd.get_fault_primitive("./fault_lists/simple_static")
-ss_stat = fd.get_fault_primitive("./fault_lists/ss_static")
+s_dyn = main.get_fault_primitive("resources/fault_lists/simple_dynamic")
+ss_dyn = main.get_fault_primitive("resources/fault_lists/ss_dynamic")
+s_stat = main.get_fault_primitive("resources/fault_lists/simple_static")
+ss_stat = main.get_fault_primitive("resources/fault_lists/ss_static")
 
-# test = fd.get_fault_primitive("test_fault_list")
+# test = main.get_fault_primitive("test_fault_list")
 
 
 def get_fp_string(fp_obj):
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     fp_combs_obj_list = generate_combinations(s_stat, ss_stat)
     realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
 
-    file = open("fault_lists/stat_stat_fault_list", 'w')
+    file = open("resources/fault_lists/stat_stat_fault_list", 'w')
     for tup in realistic_faults:
         lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
         file.write(lf)

@@ -7,131 +7,23 @@ import re
 #
 # ------------
 
-# march = ["up,w0",
-#          "up,r0,r0,w1,w1,r1,w0,w0,r0,w1,r1",
-#          "up,r1,r1,w0,w0,r0,w1,w1,r1,w0,r0",
-#          "up,r0"]
+fault_list_file = 'resources\\fault_lists\\' + 'dyn2comp_fault_list'
+march_test_file = 'resources\\march_tests'
+test_logs_file = 'testlog'
 
-# march = ["up,w0",
-#         "up,r0,w0,r0,w1,w1",
-#         "up,r1,w1,r1,w0,w0,r0",
-#         "up,r0,w1,r1,r1,w0",
-#         "up,r1,w0,r0,r0,w1,r1"
-#        ]
 
-# march = ["up,w0",
-#         "up,r0,w0,r0,w1,w1,r1",
-#         "up,r1,w0,r0,r0,w1",
-#         "up,r1,w1,r1,w0,w0,r0",
-#         "up,r0,w1,r1,r1,w0"
-#        ]
+def get_March_algorithm(filename):
+    file = open(filename, 'r')
+    march = []
+    for ME in file.readlines():
+        if ME.strip().startswith('#'):
+            continue
+        elif ME.strip():
+            march.append(ME.strip())
 
-# march = ["up,w0",
-#         "up,r0,w1,r1,r1,w0,r0",
-#         "up,r0,w0,r0,w1,w1",
-#         "up,r1,w0,r0,r0,w1,r1",
-#         "up,r1,w1,r1,w0,w0"
-#        ]
-
-# march = ["up,w0",
-#         "up,r0,w0,r0,w1,w1",
-#         "up,r1,w1,r1,w0,w0",
-#         "up,r0,w1,w0,w1,r1",
-#         "up,r1,w0,w1,w0,r0"
-#        ]
-
-# March AB [TC'08]
-# march = ["up,w1",
-#         "down,r1,w0,r0,w0,r0",
-#         "down,r0,w1,r1,w1,r1",
-#         "up,r1,w0,r0,w0,r0",
-#         "up,r0,w1,r1,w1,r1",
-#         "up,r1"]
-
-# march = ["up,w0",
-#          "up,r0,w0,r0,w1,w1,r1,r1,w0,r0",
-#          "up,r0,w1",
-#          "up,r1,w1,r1,w0,w0,r0,r0,w1,r1",#non-CFds对结构还是有影响，去掉之后不能检测a-cell为1的CFwd
-#          "up,r1"]
-
-# March BDN
-# march = ["up,w0",
-#          "down,r0,w1,r1,w1,r1",
-#          "down,r1,w0,r0,w0,r0",
-#          "up,r0,w1,r1,w1,r1",
-#          "up,r1,w0,r0,w0,r0",
-#          "up,r0"]
-
-# march = ["up,w0",
-#          #"up,r0,r0,w1,w1,r1,r1,w0,w0,r0",
-#          "up,r0,r0,w0,r0",
-#          "up,r0,w1,w1,r1,r1,w0",
-#          #"up,r0,w1",
-#          "up,r0,w1",
-#          #"up,r1,r1,w0,w0,r0,r0,w1,w1,r1",
-#          "up,r1,r1,w1,r1",
-#          "up,r1,w0,w0,r0,r0,w1",
-#          #"up,r1"
-#          "up,r1"
-#          ]
-
-# march = ["up,w0",
-#          "up,r0,w1,w1,r1,r1,w0",
-#          "up,r0,w0",
-#          # "up,r0",
-#          "up,r0,w1",
-#          "up,r1,w0,w0,r0,r0,w1",
-#          "up,r1,w1",
-#          # "up,r1",
-#          "down,r1,w0"]
-
-# March MSL [Minimal..., 06]
-# march = ["any,w0",
-#          "up,r0,w1,w1,r1,r1,w0",
-#          "up,r0,w0",
-#          "up,r0",
-#          "up,r0,w1",
-#          "up,r1,w0,w0,r0,r0,w1",
-#          "up,r1,w1",
-#          "up,r1",
-#          "down,r1,w0"]
-
-# March LSD [tcad'12]
-# march = ["any,w0",
-#          "up,r0,w1,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1",
-#          "up,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1,r1,w0",
-#          "up,r0",
-#          "down,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0,r0,w1",
-#          "down,r1,w0,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0",
-#          "down,r0"]
-
-march = ["any,w0",
-         # "up,r0,w1,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1",
-         # (0r0w1),(0w1r1),1r1w1(d),1w1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w1(3),1w1w0(ld),0w1w0(d),1w0r0(ld),0r0w0,0w0r0(d),0r0r0,0r0w1(2),0w1w1(d),1w1r1(d3),(1r1r1(d))
-         "up,r0,w1,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1",
-         # (0r0w1),(0w1r1),1r1w1(d),1w1r1(d),1r1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w0,1w0w1,0w1w1(d),1w1r1(3),1r1w1(3),1w1w0(ld),1w0w1(2),0w1w0(d),1w0r0(d),0r0r0
-         # "up,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0",
-         "up,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1,r1,w0",
-         "up,r0",
-         # "down,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1",
-         "down,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0,r0,w1",
-         # "down,r1,w0,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0",
-         "down,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0",
-         "down,r0"]
-
-# march = ["up,w0",
-#          "up,r0,r0,w0,r0,w1,w0,r0,w1,w1,r1",
-#          "up,r1,r1,w1,r1,w0,w1,r1,w0,w0,r0",
-#          "up,r0"]
-
-# march = ["any,w0",
-#          "any,r0,w0,r0,r0,r0,w1,r1,w1,r1,r1,w0,r0,r0,w0,w1,w0,w1,r1,w1,w0,w1,w0,r0,w1,w1,w1,w1,r1,r1,r1,w0,w0,w0,w0,r0",
-#          "any,r0",
-#          "any,w1",
-#          "any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1",
-#          "any,r1"]
-
-fault_list_file = 'fault_lists/' + 'test'
+    file.close()
+    print("March test is loaded successfully.\n")
+    return march
 
 
 def get_fault_properties(fault_comps):
@@ -254,16 +146,17 @@ def get_fault_primitive(filename):
     return fobj_list
 
 
-def main(filename):
-    logfile = open("testlog", 'w')
+def main(filename_fault_list, filename_march_test, filename_test_logs):
+    logfile = open(filename_test_logs, 'w')
     # logfile = sys.stdout
+    march = get_March_algorithm(filename_march_test)
 
-    fobj_list = get_fault_primitive(filename)
+    fobj_list = get_fault_primitive(filename_fault_list)
     if len(fobj_list) == 0:
         print("Empty or illegal fault list!\n")
         return ev.ERROR
 
-    print("Fault list is successfully loaded.\n")
+    print("Fault list is loaded successfully.\n")
     print("Applying March test...\n")
 
     Undetected_fault = []
@@ -292,4 +185,4 @@ def main(filename):
 
 
 if __name__ == '__main__':
-    main(fault_list_file)
+    main(fault_list_file, march_test_file, test_logs_file)
