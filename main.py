@@ -9,7 +9,7 @@ import evaluator as ev
 fault_list_file = 'resources\\fault_lists\\' + 'dyn2comp'
 march_test_file = 'resources\\march_tests'
 test_logs_file = 'testlog'
-fault_model_name = '2cF_2aa'
+fault_model_name = '2cF_3'
 
 
 def main():
@@ -47,7 +47,7 @@ def main():
         print("%d linked faults cannot be detected by this March sequence: " % (len(Undetected_fault)))
         [print(fault) for fault in Undetected_fault]
     else:
-        print("Congratulations! All linked faults can be detected by this March sequence: \n")
+        print("Congratulations! All listed faults can be detected by this March sequence: \n")
         [print(element) for element in march]
 
     logfile.close()
