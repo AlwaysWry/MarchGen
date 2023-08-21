@@ -48,6 +48,7 @@ class FP:
 
 # return state definitions
 INIT_ERROR = 0
+INIT_OK = 1
 ERROR = 0
 UPDATED = 1
 UPDATE_ERROR = 0
@@ -56,21 +57,6 @@ DETECTED = 10
 UNDETECTED = 100
 PROFOUND = 1
 FAST = 0
-
-
-def init_cell_state(March):
-    if len(March[0].split(',')) == 2:
-        # cell_state is a dictionary, which contains current states of a1, a2, v respectively
-        if '0' in March[0]:
-            cell_state = {'a1': '0', 'a2': '0', 'v': '0'}
-        elif '1' in March[0]:
-            cell_state = {'a1': '1', 'a2': '1', 'v': '1'}
-        else:
-            return INIT_ERROR
-        # print(cell_state)
-        return cell_state
-    else:
-        return INIT_ERROR
 
 
 def init_cell_order(mode):
@@ -86,10 +72,70 @@ def init_cell_order(mode):
     return cell_order
 
 
-def generate_operation_sequence(SenOpNum, op_num, ops):
+def init_cell_state(March, cell_state):
+    cell_state.clear()
+
+    if len(March[0].split(',')) == 2:
+        # cell_state is a dictionary, which contains current states of a1, a2, v respectively
+        if '0' in March[0]:
+            cell_state['a1'] = '0'
+            cell_state['a2'] = '0'
+            cell_state['v'] = '0'
+        elif '1' in March[0]:
+            cell_state['a1'] = '1'
+            cell_state['a2'] = '1'
+            cell_state['v'] = '1'
+        else:
+            return INIT_ERROR
+        # print(cell_state)
+        return INIT_OK
+    else:
+        return INIT_ERROR
+
+
+def init_cell_snapshot(cell_snapshot):
+    # cell_history is a list contains multiple dictionaries.
+    # it is used for saving the history states of the cells after each operation in several operation steps.
+    # the length of cell_history depends on the longest sensitization sequence of current faults.
+    # updating cell_history is by popping out the first dict and append the newest dict.
+    cell_snapshot.clear()
+
+
+def update_cell_snapshot(cell_snapshot, cell_state, FP1, FP2):
+    if len(cell_snapshot) == 0:
+        for state in range(max(FP1.SenOpsNum, FP2.SenOpsNum)):
+            # use shallow copy here, since there are no objects referenced in cell_state
+            cell_snapshot.append(cell_state.copy())
+    else:
+        del cell_snapshot[0]
+        cell_snapshot.append(cell_state.copy())
+    return
+
+
+def init_op_snapshot(op_snapshot):
+    op_snapshot.clear()
+    op_snapshot['a1'] = {'op_counter': 0, 'op_history': []}
+    op_snapshot['a2'] = {'op_counter': 0, 'op_history': []}
+    op_snapshot['v'] = {'op_counter': 0, 'op_history': []}
+
+    return
+
+
+def update_op_snapshot(snapshot, visiting_cell, op, FP1, FP2):
+    snapshot[visiting_cell]['op_history'].append(op)
+    snapshot[visiting_cell]['op_counter'] = snapshot[visiting_cell]['op_counter'] + 1
+    if snapshot[visiting_cell]['op_counter'] > max(FP1.SenOpsNum, FP2.SenOpsNum):
+        del snapshot[visiting_cell]['op_history'][0]
+
+    return
+
+
+def get_relevant_seq(SenOpNum, snapshot, visiting_cell):
     op_seq = ''
+    op_num = len(snapshot[visiting_cell]['op_history'])
     for i in range(SenOpNum - 1, -1, -1):
-        op_seq = op_seq + ops[op_num - i - 1]
+        op_seq = op_seq + snapshot[visiting_cell]['op_history'][op_num - i - 1]
+
     return op_seq
 
 
@@ -130,13 +176,7 @@ def update_fault_state(fp, cell_state, cell_state_temp, cell_history, visiting_c
     return UPDATE_ERROR
 
 
-def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
-
-    # cell_history is a list contains multiple dictionaries.
-    # it is used for saving the history states of the cells after each operation in several operation steps.
-    # the length of cell_history depends on the longest sensitization sequence of current faults.
-    # updating cell_history is by popping out the first dict and append the newest dict.
-    cell_history = []
+def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_order, OPS, FP1, FP2):
 
     def set_op_seq_history(fp, seq):
         nonlocal op_seq_history
@@ -146,17 +186,7 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
             op_seq_history[1] = seq
         return
 
-    def set_cell_history():
-        nonlocal cell_history
-        if len(cell_history) == 0:
-            for state in range(max(FP1.SenOpsNum, FP2.SenOpsNum)):
-                cell_history.append(cell_state.copy())
-        else:
-            del cell_history[0]
-            cell_history.append(cell_state.copy())
-        return
-
-    set_cell_history()
+    update_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
 
     for visiting_cell in traverse_cell_order:
         # operations of each element, index starts from 1
@@ -165,25 +195,30 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
         # clear op_seq_history at the beginning of a March element apply
         op_seq_history = ['', '']
 
-        for op_num, op in enumerate(ops, 1):
+        for op in ops:
             # cell_state_temp is a copy of cell_state, it accepts the value updates during operations,
             # and update the final result to cell_state after an operation is applied.
             cell_state_temp = copy.deepcopy(cell_state)
+            # cell_state_temp = cell_state.copy()
+
+            # update operation snapshot when a new operation is applied
+            update_op_snapshot(op_snapshot, visiting_cell, op, FP1, FP2)
 
             # a-cell case
             if visiting_cell != 'v':
                 # write operation case
                 if 'w' in op:
                     # Sensitization operation
-                    if op_num >= FP1.SenOpsNum:
-                        op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
-                        update_fault_state(FP1, cell_state, cell_state_temp, cell_history, visiting_cell, op_seq, op)
+                    if op_snapshot[visiting_cell]['op_counter'] >= FP1.SenOpsNum:
+                        op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
+                        update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot, visiting_cell, op_seq, op)
                         set_op_seq_history(FP1, op_seq)
 
                     if FP2 is not FP1:
-                        if op_num >= FP2.SenOpsNum:
-                            op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
-                            update_fault_state(FP2, cell_state, cell_state_temp, cell_history, visiting_cell, op_seq, op)
+                        if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
+                            op_seq = get_relevant_seq(FP2.SenOpsNum, op_snapshot, visiting_cell)
+                            update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
+                                               visiting_cell, op_seq, op)
                             set_op_seq_history(FP2, op_seq)
 
                     # for write operation on a-cells, a-cell state will be changed
@@ -191,32 +226,32 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                     cell_state_temp[visiting_cell] = op[1]
                     # update the values in cell_state at the end of the operation
                     cell_state.update(cell_state_temp)
-                    set_cell_history()
+                    update_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
 
                 # read operation case
                 elif 'r' in op:
                     if cell_state[visiting_cell] != op[1]:
                         return DETECTED
                     else:
-                        if op_num >= FP1.SenOpsNum:
-                            op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
-                            update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_history,
+                        if op_snapshot[visiting_cell]['op_counter'] >= FP1.SenOpsNum:
+                            op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
+                            update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                                 visiting_cell, op_seq, op)
                             set_op_seq_history(FP1, op_seq)
                             if update_flag[0] == DETECTED:
                                 return DETECTED
 
                         if FP2 is not FP1:
-                            if op_num >= FP2.SenOpsNum:
-                                op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
-                                update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_history,
+                            if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
+                                op_seq = get_relevant_seq(FP2.SenOpsNum, op_snapshot, visiting_cell)
+                                update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
                                                                     visiting_cell, op_seq, op)
                                 set_op_seq_history(FP2, op_seq)
                                 if update_flag[1] == DETECTED:
                                     return DETECTED
 
                         cell_state.update(cell_state_temp)
-                        set_cell_history()
+                        update_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
 
                 else:
                     print("Illegal March operation found, program is terminated.\n")
@@ -228,9 +263,9 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                 # write operation case
                 if 'w' in op:
                     # Sensitization operation
-                    if op_num >= FP1.SenOpsNum:
-                        op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
-                        update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_history,
+                    if op_snapshot[visiting_cell]['op_counter'] >= FP1.SenOpsNum:
+                        op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
+                        update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                             visiting_cell, op_seq, op)
                         set_op_seq_history(FP1, op_seq)
                     #    if update_state == DETECTED:
@@ -239,9 +274,9 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                         update_flag[0] = UPDATE_ERROR
 
                     if FP2 is not FP1:
-                        if op_num >= FP2.SenOpsNum:
-                            op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
-                            update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_history,
+                        if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
+                            op_seq = get_relevant_seq(FP2.SenOpsNum, op_snapshot, visiting_cell)
+                            update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
                                                                 visiting_cell, op_seq, op)
                             set_op_seq_history(FP2, op_seq)
                         #    if update_state == DETECTED:
@@ -255,14 +290,14 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                         cell_state_temp[visiting_cell] = op[1]
 
                     cell_state.update(cell_state_temp)
-                    set_cell_history()
+                    update_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
 
                 # read operation case
                 elif 'r' in op:
                     # Sensitization operation
-                    if op_num >= FP1.SenOpsNum:
-                        op_seq = generate_operation_sequence(FP1.SenOpsNum, op_num, ops)
-                        update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_history,
+                    if op_snapshot[visiting_cell]['op_counter'] >= FP1.SenOpsNum:
+                        op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
+                        update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                             visiting_cell, op_seq, op)
 
                         if update_flag[0] == DETECTED:
@@ -277,9 +312,9 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                         return DETECTED
 
                     if FP2 is not FP1:
-                        if op_num >= FP2.SenOpsNum:
-                            op_seq = generate_operation_sequence(FP2.SenOpsNum, op_num, ops)
-                            update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_history,
+                        if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
+                            op_seq = get_relevant_seq(FP2.SenOpsNum, op_snapshot, visiting_cell)
+                            update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
                                                                 visiting_cell, op_seq, op)
 
                             if update_flag[1] == DETECTED:
@@ -294,7 +329,7 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
                             return DETECTED
 
                     cell_state.update(cell_state_temp)
-                    set_cell_history()
+                    update_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
 
                 else:
                     print("Illegal March operation found, program is terminated.\n")
@@ -304,18 +339,24 @@ def apply_March_element(cell_state, traverse_cell_order, OPS, FP1, FP2):
     return APPLIED
 
 
-def eval_2comp(FP1, FP2, March, mode, logfile):
+def eval_2comp(FP1, FP2, march, mode, logfile):
     eval_flag = []
     cell_order = init_cell_order(mode)
+    cell_state = {}
+    cell_snapshot = []
+    op_snapshot = {}
 
     for order_index in range(len(cell_order)):
-        cell_state = init_cell_state(March)
+        init_cell_state(march, cell_state)
+        init_cell_snapshot(cell_snapshot)
+        init_op_snapshot(op_snapshot)
+
         if cell_state == INIT_ERROR:
             print("Illegal March test!\n")
             return ERROR
 
         # traverse march elements
-        for m, element in enumerate(March[1:]):
+        for m, element in enumerate(march[1:]):
             # set cell traverse order
             if 'down' in element:
                 traverse_cell_order = cell_order[order_index]['down']
@@ -325,7 +366,8 @@ def eval_2comp(FP1, FP2, March, mode, logfile):
             logfile.write("  evaluating element \"%s\" under %s\n" % (element, str(traverse_cell_order)))
             ops = element.split(',')
 
-            apply_result = apply_March_element(cell_state, traverse_cell_order, ops, FP1, FP2)
+            apply_result = apply_March_element(cell_state, cell_snapshot, op_snapshot,
+                                               traverse_cell_order, ops, FP1, FP2)
             if apply_result == ERROR:
                 return ERROR
             elif apply_result == DETECTED:
