@@ -135,11 +135,11 @@ def init_operation_snapshot(op_snapshot):
     return
 
 
-def update_operation_snapshot(snapshot, visiting_cell, op, FP1, FP2):
-    snapshot[visiting_cell]['op_history'].append(op)
-    snapshot[visiting_cell]['op_counter'] = snapshot[visiting_cell]['op_counter'] + 1
-    if snapshot[visiting_cell]['op_counter'] > max(FP1.SenOpsNum, FP2.SenOpsNum):
-        del snapshot[visiting_cell]['op_history'][0]
+def update_operation_snapshot(op_snapshot, visiting_cell, op, FP1, FP2):
+    op_snapshot[visiting_cell]['op_history'].append(op)
+    op_snapshot[visiting_cell]['op_counter'] = op_snapshot[visiting_cell]['op_counter'] + 1
+    if op_snapshot[visiting_cell]['op_counter'] > max(FP1.SenOpsNum, FP2.SenOpsNum):
+        del op_snapshot[visiting_cell]['op_history'][0]
 
     return
 
