@@ -75,6 +75,9 @@ def init_cell_order(mode):
 def init_cell_state(march, cell_state):
     cell_state.clear()
 
+    if len(march) == 0:
+        return INIT_ERROR
+
     if len(march[0].split(',')) == 2:
         # cell_state is a dictionary, which contains current states of a1, a2, v respectively
         if '0' in march[0]:
@@ -360,13 +363,13 @@ def eval_2comp(FP1, FP2, march, mode, logfile):
     op_snapshot = {}
 
     for order_index in range(len(cell_order)):
-        init_cell_state(march, cell_state)
-        init_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
-        init_operation_snapshot(op_snapshot)
 
-        if cell_state == INIT_ERROR:
+        if init_cell_state(march, cell_state) == INIT_ERROR:
             print("Illegal March test!\n")
             return ERROR
+
+        init_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
+        init_operation_snapshot(op_snapshot)
 
         # traverse march elements
         for m, element in enumerate(march[1:]):
