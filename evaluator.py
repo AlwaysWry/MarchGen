@@ -138,6 +138,16 @@ def init_operation_snapshot(op_snapshot):
     return
 
 
+def update_operation_history(op_snapshot, visiting_cell, FP1, FP2, op_seq_history):
+    for fp_index, fp_item in enumerate([FP1, FP2]):
+        op_seq = ''
+        for op in op_snapshot[visiting_cell]['op_history'][-fp_item.SenOpsNum:]:
+            op_seq = op_seq + op
+        op_seq_history[fp_index] = op_seq
+
+    return
+
+
 def update_operation_snapshot(op_snapshot, visiting_cell, op, FP1, FP2):
     op_snapshot[visiting_cell]['op_history'].append(op)
     op_snapshot[visiting_cell]['op_counter'] = op_snapshot[visiting_cell]['op_counter'] + 1
@@ -195,14 +205,6 @@ def update_fault_state(fp, cell_state, cell_state_temp, cell_snapshot, visiting_
 
 def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_order, OPS, FP1, FP2):
 
-    def set_op_seq_history(fp, seq):
-        nonlocal op_seq_history
-        if fp is FP1:
-            op_seq_history[0] = seq
-        if fp is FP2:
-            op_seq_history[1] = seq
-        return
-
     for visiting_cell in traverse_cell_order:
         # operations of each element, index starts from 1
         ops = OPS[1:]
@@ -216,7 +218,8 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
             cell_state_temp = copy.deepcopy(cell_state)
             # cell_state_temp = cell_state.copy()
 
-            # update operation snapshot when a new operation is applied
+            # update operation history and snapshot when a new operation is applied
+            update_operation_history(op_snapshot, visiting_cell, FP1, FP2, op_seq_history)
             update_operation_snapshot(op_snapshot, visiting_cell, op, FP1, FP2)
 
             # a-cell case
@@ -228,14 +231,12 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                         op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
                         update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                             visiting_cell, op_seq, op)
-                        set_op_seq_history(FP1, op_seq)
 
                     if FP2 is not FP1:
                         if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
                             op_seq = get_relevant_seq(FP2.SenOpsNum, op_snapshot, visiting_cell)
                             update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp,
                                                                 cell_snapshot, visiting_cell, op_seq, op)
-                            set_op_seq_history(FP2, op_seq)
 
                     # for write operation on a-cells, a-cell state will be changed
                     # no matter whether the fault is sensitized on v-cell
@@ -253,7 +254,6 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                             op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
                             update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                                 visiting_cell, op_seq, op)
-                            set_op_seq_history(FP1, op_seq)
                             if update_flag[0] == DETECTED:
                                 return DETECTED
 
@@ -262,7 +262,6 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                                 op_seq = get_relevant_seq(FP2.SenOpsNum, op_snapshot, visiting_cell)
                                 update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
                                                                     visiting_cell, op_seq, op)
-                                set_op_seq_history(FP2, op_seq)
                                 if update_flag[1] == DETECTED:
                                     return DETECTED
 
@@ -283,9 +282,6 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                         op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
                         update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                             visiting_cell, op_seq, op)
-                        set_op_seq_history(FP1, op_seq)
-                    #    if update_state == DETECTED:
-                    #        return DETECTED
                     else:
                         update_flag[0] = UPDATE_ERROR
 
@@ -294,9 +290,6 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                             op_seq = get_relevant_seq(FP2.SenOpsNum, op_snapshot, visiting_cell)
                             update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
                                                                 visiting_cell, op_seq, op)
-                            set_op_seq_history(FP2, op_seq)
-                        #    if update_state == DETECTED:
-                        #        return DETECTED
                     else:
                         update_flag[1] = UPDATE_ERROR
 
@@ -323,7 +316,6 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                                 and (cell_state_temp[visiting_cell] != op[1]):
                             return DETECTED
 
-                        set_op_seq_history(FP1, op_seq)
                     elif cell_state_temp[visiting_cell] != op[1]:
                         return DETECTED
 
@@ -340,7 +332,6 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                                     and (cell_state_temp[visiting_cell] != op[1]):
                                 return DETECTED
 
-                            set_op_seq_history(FP2, op_seq)
                         elif cell_state_temp[visiting_cell] != op[1]:
                             return DETECTED
 
