@@ -1,5 +1,5 @@
 import re
-import evaluator as ev
+from sim import evaluator as ev
 
 
 def get_March_algorithm(filename):

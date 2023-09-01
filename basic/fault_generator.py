@@ -4,10 +4,10 @@
 import grasp as gr
 import itertools as it
 
-s_dyn = gr.get_fault_primitive("resources/fault_lists/simple_dynamic")
-ss_dyn = gr.get_fault_primitive("resources/fault_lists/ss_dynamic")
-s_stat = gr.get_fault_primitive("resources/fault_lists/simple_static")
-ss_stat = gr.get_fault_primitive("resources/fault_lists/ss_static")
+s_dyn = gr.get_fault_primitive("../resources/fault_lists/simple_dynamic")
+ss_dyn = gr.get_fault_primitive("../resources/fault_lists/ss_dynamic")
+s_stat = gr.get_fault_primitive("../resources/fault_lists/simple_static")
+ss_stat = gr.get_fault_primitive("../resources/fault_lists/ss_static")
 
 # test = gr.get_fault_primitive("test_fault_list")
 
