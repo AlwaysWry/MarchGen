@@ -12,7 +12,7 @@ def get_March_algorithm(filename):
 			march.append(ME.strip())
 
 	file.close()
-	print("March test is loaded successfully.\n")
+	print("March test is successfully loaded .\n")
 	return march
 
 
