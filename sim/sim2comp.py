@@ -6,8 +6,8 @@ import sys
 from basic import grasp as gr
 import evaluator as ev
 
-fault_list_file = 'resources/fault_lists/' + 'stat2comp'
-march_test_file = 'resources/march_tests'
+fault_list_file = '../resources/fault_lists/' + 'complete'
+march_test_file = '../resources/march_tests'
 test_logs_file = '../testlog'
 fault_model_name = '2cF_3'
 
@@ -23,7 +23,7 @@ def main():
         print("Empty or illegal fault list!\n")
         return ev.ERROR
 
-    print("Fault list is successfully loaded .\n")
+    print("Fault list is successfully loaded.\n")
     print("Applying March test...\n")
 
     Undetected_fault = []

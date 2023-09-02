@@ -1,51 +1,5 @@
 import copy
 
-
-# define fault primitive class
-class FP:
-    """fault primitive (FP) is a standard format of describing a functional memory
-    fault. It contains involved cells, sensitize operations, fault value, etc."""
-
-    props = {'aCell': '', 'aInit': '',
-             'vCell': '', 'vInit': '',
-             'SenOpsNum': '', 'Sen': '',
-             'vFault': '',
-             'CFdsFlag': '', 'rdFlag': ''}
-
-    def __init__(self):
-        """
-        aCell: aggressor cell index
-        aInit: sensitize initial state of a-cell
-        vCell: victim cell index
-        vInit: sensitize initial state of v-cell
-        SenOpsNum: number of sensitize operations
-        Sen: sensitize sequence
-        vFault: fault state
-        CFdsFlag: CFds flag
-        rdFlag: read-verify operation
-        """
-
-        self.__dict__.update(self.props)
-
-    def dbg_Get_aInit(self):
-        return self.__dict__['aInit']
-
-    def dbg_Get_vInit(self):
-        return self.__dict__['vInit']
-
-    def dbg_Get_SenOpsNum(self):
-        return self.__dict__['SenOpsNum']
-
-    def dbg_Get_Sen(self):
-        return self.__dict__['Sen']
-
-    def dbg_Get_vFault(self):
-        return self.__dict__['vFault']
-
-    def dbg_Get_rdFlag(self):
-        return self.__dict__['rdFlag']
-
-
 # return state definitions
 INIT_ERROR = 0
 INIT_OK = 1

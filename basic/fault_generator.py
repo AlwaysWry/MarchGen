@@ -4,10 +4,12 @@
 import grasp as gr
 import itertools as it
 
-s_dyn = gr.get_fault_primitive("../resources/fault_lists/simple_dynamic")
-ss_dyn = gr.get_fault_primitive("../resources/fault_lists/ss_dynamic")
-s_stat = gr.get_fault_primitive("../resources/fault_lists/simple_static")
-ss_stat = gr.get_fault_primitive("../resources/fault_lists/ss_static")
+model_name = '2cF_3'
+
+s_dyn = gr.get_fault_primitive("../resources/fault_lists/simple_dynamic", model_name)
+ss_dyn = gr.get_fault_primitive("../resources/fault_lists/ss_dynamic", model_name)
+s_stat = gr.get_fault_primitive("../resources/fault_lists/simple_static", model_name)
+ss_stat = gr.get_fault_primitive("../resources/fault_lists/ss_static", model_name)
 
 # test = gr.get_fault_primitive("test_fault_list")
 
@@ -63,7 +65,7 @@ if __name__ == '__main__':
     fp_combs_obj_list = generate_combinations(s_stat, ss_stat)
     realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
 
-    file = open("resources/fault_lists/stat_stat_fault_list", 'w')
+    file = open("../resources/fault_lists/stat_stat", 'w')
     for tup in realistic_faults:
         lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
         file.write(lf)
