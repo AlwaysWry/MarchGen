@@ -2,15 +2,16 @@ import re
 
 
 # define fault primitive class
-class FP:
-    """fault primitive (FP) is a standard format of describing a functional memory
+class SimpleFault:
+    """simple fault primitive (SimpleFault) is a standard format of describing a functional memory
     fault. It contains involved cells, sensitize operations, fault value, etc."""
 
     props = {'aCell': '', 'aInit': '',
              'vCell': '', 'vInit': '',
              'SenOpsNum': '', 'Sen': '',
              'vFault': '',
-             'CFdsFlag': '', 'rdFlag': ''}
+             'CFdsFlag': '', 'rdFlag': '',
+             'nestSenFlag': ''}
 
     def __init__(self):
         """
@@ -45,17 +46,20 @@ class FP:
     def dbg_Get_rdFlag(self):
         return self.__dict__['rdFlag']
 
+    def dbg_Get_nestSenFlag(self):
+        return self.__dict__['nestSenFlag']
+
 
 def get_March_algorithm(filename):
-    file = open(filename, 'r')
     march = []
-    for ME in file.readlines():
-        if ME.strip().startswith('#'):
-            continue
-        elif ME.strip():
-            march.append(ME.strip())
 
-    file.close()
+    with open(filename, 'r') as file:
+        for ME in file:
+            if ME.strip().startswith('#'):
+                continue
+            elif ME.strip():
+                march.append(ME.strip())
+
     print("March test is successfully loaded.\n")
     return march
 
@@ -67,10 +71,11 @@ def get_fault_properties(fault_comps, model):
                       'vCell': '', 'vInit': '',
                       'SenOpsNum': '', 'Sen': '',
                       'vFault': '',
-                      'CFdsFlag': '', 'rdFlag': ''}
+                      'CFdsFlag': '', 'rdFlag': '',
+                      'nestSenFlag': ''}
 
         vCell = model[0]
-        # check if FP is CF
+        # check if SimpleFault is CF
         if ';' in fp:
             if fp_index == 1:
                 aCell = model[1]
@@ -88,7 +93,7 @@ def get_fault_properties(fault_comps, model):
             vInit = v_prop[0][0]
             vFault = v_prop[1]
 
-            # check if FP is CFds
+            # check if SimpleFault is CFds
             if len(a_prop) > 1:
                 CFdsFlag = 1
                 Sen = a_prop[1:]
@@ -138,7 +143,17 @@ def get_fault_properties(fault_comps, model):
 
         SenOpsNum = Sen.count('r') + Sen.count('w')
 
-        props_list = [aCell, aInit, vCell, vInit, SenOpsNum, Sen, vFault, CFdsFlag, rdFlag]
+        # for non-CFds, check the nest sensitization conditions
+        if ((CFdsFlag == 0) and (Sen.startswith('w'))
+                and ((Sen.count('r') == SenOpsNum) or (Sen.count('w') == SenOpsNum))):
+            if vInit != Sen[-1]:
+                nestSenFlag = 'donor'
+            else:
+                nestSenFlag = 'receiver'
+        else:
+            nestSenFlag = 'Invalid'
+
+        props_list = [aCell, aInit, vCell, vInit, SenOpsNum, Sen, vFault, CFdsFlag, rdFlag, nestSenFlag]
         fault_props_dict = dict(zip(empty_dict.keys(), props_list))
         fault_props.append(fault_props_dict)
 
@@ -168,11 +183,11 @@ def get_fault_primitive(filename, modelname):
         if len(fault_props) == 0:
             return fobj_list
 
-        # Put FP1 and FP2 into object FP
-        FP1 = FP()
+        # Put FP1 and FP2 into object SimpleFault
+        FP1 = SimpleFault()
         FP1.__dict__.update(fault_props[0])
         if len(fault_props) > 1:
-            FP2 = FP()
+            FP2 = SimpleFault()
             FP2.__dict__.update(fault_props[1])
         else:
             # if it is a simple fault, make FP1 and FP2 the same object
