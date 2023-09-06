@@ -1,0 +1,176 @@
+# A parse and classify script of input simple faults and 2cFs
+
+from basic import grasp as gr
+import copy
+
+fault_list_file = '../resources/fault_lists/' + 'complete'
+fault_model_name = '2cF_3'
+
+# MACRO definitions
+CLASSIFY_ERROR = -1
+IS_SF = True
+NOT_SF = False
+IS_SF_CFDS = True
+NOT_SF_CFDS = False
+IS_NONCFDS_INCLUDED = True
+NOT_NONCFDS_INCLUDED = False
+
+
+class TwoComposite:
+	"""a 2-composite fault contains two simple faults"""
+	link_flag = ''
+	fault_primitive = ''
+
+	def __init__(self):
+		self.comps = {}
+
+	def get_FP_text(self, text):
+		self.fault_primitive = text
+
+	def get_Comp_objects(self, obj1, obj2):
+		self.comps.update({'comp1': obj1, 'comp2': obj2})
+
+	def get_Link_conditions(self):
+		# condition M'
+		if self.comps['comp1'].vFault == self.comps['comp2'].vFault:
+			self.link_flag = 0
+		# any of fault composites cannot be rd or ir fault, or it doesn't satisfy condition D
+		elif (self.comps['comp1'].rdFlag == 1) or (self.comps['comp2'].rdFlag == 1):
+			self.link_flag = 0
+		elif (self.comps['comp1'].rdFlag == 2) or (self.comps['comp2'].rdFlag == 2):
+			self.link_flag = 0
+
+		# for nonCFds included 2cF, the condition C' needs to be met Note that the compatibility for a-cell is
+		# useless. Since the state of a-cell can always be updated correctly, which means that if a tester attempts to
+		# use a March sequence to sensitize the two composites, the actual behaviour shown by a-cells is consistent
+		# with the tester's expectation. On the other hand, the behaviour of v-cell can be influenced by the fault
+		# values, the real state of v-cell and the tester-expected state can be different. Remember that decide
+		# whether a 2cF is an LF, the original method is using the March test that designed according to a tester's
+		# expectation who DOES NOT KNOW the existence of linked faults. Masking only happens when the final v-cell state of
+		# the first-sensitized fault is the same as the initial v-cell state of the second-sensitized fault, because that
+		# is the situation of reality in March test.
+
+		elif self.comps['comp1'].CFdsFlag & self.comps['comp2'].CFdsFlag:
+			self.link_flag = 1
+		else:
+			if (self.comps['comp1'].vFault != self.comps['comp2'].vInit) and \
+					(self.comps['comp1'].vFault != self.comps['comp2'].vInit):
+				self.link_flag = 0
+			else:
+				self.link_flag = 1
+
+
+# End of class definition
+
+
+def parse_fault_list(fault_list, fault_model):
+	fault_obj_list = gr.get_fault_primitive(fault_list, fault_model)
+	parsed_list = []
+	fault_comps = TwoComposite()
+	for obj in fault_obj_list:
+		fault_comps.get_FP_text(obj[0])
+		fault_comps.get_Comp_objects(obj[1], obj[2])
+		fault_comps.get_Link_conditions()
+		parsed_list.append(copy.deepcopy(fault_comps))
+	return parsed_list
+
+
+def arbit_SF(comp_obj):
+	if comp_obj.comps['comp1'] is comp_obj.comps['comp2']:
+		return IS_SF
+	else:
+		return NOT_SF
+
+
+def arbit_SF_CFds(comp_obj):
+	if comp_obj.comps['comp1'].CFdsFlag:
+		return IS_SF_CFDS
+	else:
+		return NOT_SF_CFDS
+
+
+def arbit_2cF_nonCFds_included(comp_obj):
+	if comp_obj.comps['comp1'].CFdsFlag & comp_obj.comps['comp2'].CFdsFlag:
+		return NOT_NONCFDS_INCLUDED
+	else:
+		return IS_NONCFDS_INCLUDED
+
+
+def arbit_linked_2cF_CFds(comp_obj):
+	return comp_obj.link_flag
+
+
+def classify_based_on_Init(comp_obj):
+	ENCODE_0 = 0
+	ENCODE_1 = 1
+	ENCODE__ = -1
+
+	aInit_dict = {'0': ENCODE_0, '1': ENCODE_1, '-': ENCODE__}
+	vInit_dict = {'0': ENCODE_0, '1': ENCODE_1}
+
+	if arbit_SF(comp_obj):
+		# for SF, comp1 and comp2 are the same object, use comp1
+		if arbit_SF_CFds(comp_obj):
+			return vInit_dict.get(comp_obj.comps['comp1'].vInit, CLASSIFY_ERROR)
+		else:
+			return aInit_dict.get(comp_obj.comps['comp1'].aInit, CLASSIFY_ERROR)
+	elif arbit_2cF_nonCFds_included(comp_obj):
+		# 2cF-nonCFds are unnecessary to be classified, it will be degenerated as SCF
+		pass
+	else:
+		# The 2 fault composites in a 2cF-CFds need to be classified individually, return a tuple to store the
+		# classify results
+		return (vInit_dict.get(comp_obj.comps['comp1'].vInit, CLASSIFY_ERROR), vInit_dict.get(
+			comp_obj.comps['comp2'].vInit, CLASSIFY_ERROR))
+
+
+def classify_SF_based_on_SenOpsNum(sf_dict, comp_obj):
+	if sf_dict.get('#O_' + str(comp_obj.comps['comp1'].SenOpsNum)) is None:
+		sf_dict['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)] = [[], [], []]
+
+	sf_dict['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)][classify_based_on_Init(comp_obj) + 1].append(comp_obj)
+	return
+
+
+def classify_SF(sf_dict, comp_obj):
+	classify_SF_based_on_SenOpsNum(sf_dict, comp_obj)
+	pass
+	return
+
+
+def classify_2cF_nonCFds_included(_2cf_nonCFds_list, comp_obj):
+	classify_based_on_Init(comp_obj)
+	_2cf_nonCFds_list.append(comp_obj)
+	pass
+	return
+
+
+def classify_2cF_CFds(_2cf_CFds_dict, comp_obj):
+	if arbit_linked_2cF_CFds(comp_obj):
+		init_flag = classify_based_on_Init(comp_obj)
+		for init in init_flag:
+			_2cf_CFds_dict[str(init)].append(comp_obj)
+	else:
+		_2cf_CFds_dict['unlinked'].append(comp_obj)
+
+	return
+
+
+def classify(unclassified_list):
+	sf_dict = {}
+	_2cf_nonCFds_list = []
+	_2cf_CFds_dict = {'0': [], '1': [], 'unlinked': []}
+	for comp_obj in unclassified_list:
+		if arbit_SF(comp_obj):
+			classify_SF(sf_dict, comp_obj)
+		elif arbit_2cF_nonCFds_included(comp_obj):
+			classify_2cF_nonCFds_included(_2cf_nonCFds_list, comp_obj)
+		else:
+			classify_2cF_CFds(_2cf_CFds_dict, comp_obj)
+
+	return [sf_dict, _2cf_nonCFds_list, _2cf_CFds_dict]
+
+
+if __name__ == '__main__':
+	classify(parse_fault_list(fault_list_file, fault_model_name))
+
