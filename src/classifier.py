@@ -1,10 +1,8 @@
 # A parse and classify script of input simple faults and 2cFs
 
-from basic import grasp as gr
+# from basic import fault_parser as ps
 import copy
-
-fault_list_file = '../resources/fault_lists/' + 'complete'
-fault_model_name = '2cF_3'
+from basic import fault_parser as ps
 
 # MACRO definitions
 CLASSIFY_ERROR = -1
@@ -34,11 +32,6 @@ class TwoComposite:
 		# condition M'
 		if self.comps['comp1'].vFault == self.comps['comp2'].vFault:
 			self.link_flag = 0
-		# any of fault composites cannot be rd or ir fault, or it doesn't satisfy condition D
-		elif (self.comps['comp1'].rdFlag == 1) or (self.comps['comp2'].rdFlag == 1):
-			self.link_flag = 0
-		elif (self.comps['comp1'].rdFlag == 2) or (self.comps['comp2'].rdFlag == 2):
-			self.link_flag = 0
 
 		# for nonCFds included 2cF, the condition C' needs to be met Note that the compatibility for a-cell is
 		# useless. Since the state of a-cell can always be updated correctly, which means that if a tester attempts to
@@ -53,18 +46,24 @@ class TwoComposite:
 		elif self.comps['comp1'].CFdsFlag & self.comps['comp2'].CFdsFlag:
 			self.link_flag = 1
 		else:
-			if (self.comps['comp1'].vFault != self.comps['comp2'].vInit) and \
+			# for nonCFds, any of fault composites cannot be rd or ir fault, or it doesn't satisfy condition D
+			if (self.comps['comp1'].rdFlag == 1) or (self.comps['comp2'].rdFlag == 1):
+				self.link_flag = 0
+			elif (self.comps['comp1'].rdFlag == 2) or (self.comps['comp2'].rdFlag == 2):
+				self.link_flag = 0
+			elif (self.comps['comp1'].vFault != self.comps['comp2'].vInit) and \
 					(self.comps['comp1'].vFault != self.comps['comp2'].vInit):
 				self.link_flag = 0
 			else:
 				self.link_flag = 1
+		return
 
 
 # End of class definition
 
 
 def parse_fault_list(fault_list, fault_model):
-	fault_obj_list = gr.get_fault_primitive(fault_list, fault_model)
+	fault_obj_list = ps.get_fault_primitive(fault_list, fault_model)
 	parsed_list = []
 	fault_comps = TwoComposite()
 	for obj in fault_obj_list:
@@ -125,10 +124,11 @@ def classify_based_on_Init(comp_obj):
 
 
 def classify_SF_based_on_SenOpsNum(sf_dict, comp_obj):
-	if sf_dict.get('#O_' + str(comp_obj.comps['comp1'].SenOpsNum)) is None:
-		sf_dict['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)] = [[], [], []]
+	init_encode = classify_based_on_Init(comp_obj)
+	if sf_dict['Init_' + str(init_encode)].get('#O_' + str(comp_obj.comps['comp1'].SenOpsNum)) is None:
+		sf_dict['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)] = []
 
-	sf_dict['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)][classify_based_on_Init(comp_obj) + 1].append(comp_obj)
+	sf_dict['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)].append(comp_obj)
 	return
 
 
@@ -138,39 +138,38 @@ def classify_SF(sf_dict, comp_obj):
 	return
 
 
-def classify_2cF_nonCFds_included(_2cf_nonCFds_list, comp_obj):
+def classify_2cF_nonCFds_included(_2cF_nonCFds_list, comp_obj):
 	classify_based_on_Init(comp_obj)
-	_2cf_nonCFds_list.append(comp_obj)
+	_2cF_nonCFds_list.append(comp_obj)
 	pass
 	return
 
 
-def classify_2cF_CFds(_2cf_CFds_dict, comp_obj):
+def classify_2cF_CFds(_2cF_CFds_dict, comp_obj):
 	if arbit_linked_2cF_CFds(comp_obj):
 		init_flag = classify_based_on_Init(comp_obj)
 		for init in init_flag:
-			_2cf_CFds_dict[str(init)].append(comp_obj)
+			_2cF_CFds_dict[str(init)].append(comp_obj)
 	else:
-		_2cf_CFds_dict['unlinked'].append(comp_obj)
+		_2cF_CFds_dict['unlinked'].append(comp_obj)
 
 	return
 
 
-def classify(unclassified_list):
-	sf_dict = {}
-	_2cf_nonCFds_list = []
-	_2cf_CFds_dict = {'0': [], '1': [], 'unlinked': []}
-	for comp_obj in unclassified_list:
+def classify(unclassified_fault_list):
+	sf_dict = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
+	_2cF_nonCFds_list = []
+	_2cF_CFds_dict = {'0': [], '1': [], 'unlinked': []}
+	for comp_obj in unclassified_fault_list:
 		if arbit_SF(comp_obj):
 			classify_SF(sf_dict, comp_obj)
 		elif arbit_2cF_nonCFds_included(comp_obj):
-			classify_2cF_nonCFds_included(_2cf_nonCFds_list, comp_obj)
+			classify_2cF_nonCFds_included(_2cF_nonCFds_list, comp_obj)
 		else:
-			classify_2cF_CFds(_2cf_CFds_dict, comp_obj)
+			classify_2cF_CFds(_2cF_CFds_dict, comp_obj)
 
-	return [sf_dict, _2cf_nonCFds_list, _2cf_CFds_dict]
+	return {'SF': sf_dict, '2cF_nonCFds_included': _2cF_nonCFds_list, '2cF_CFds': _2cF_CFds_dict}
 
 
 if __name__ == '__main__':
-	classify(parse_fault_list(fault_list_file, fault_model_name))
-
+	classify_result = classify(parse_fault_list(ps.fault_list_file, ps.fault_model_name))

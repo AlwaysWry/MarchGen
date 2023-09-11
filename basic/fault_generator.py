@@ -1,17 +1,17 @@
 # A script for generating all realistic 2-composite faults
 # (includes up to 2-operation dynamic faults)
 
-import grasp as gr
+import fault_parser as ps
 import itertools as it
 
 model_name = '2cF_3'
 
-s_dyn = gr.get_fault_primitive("../resources/fault_lists/simple_dynamic", model_name)
-ss_dyn = gr.get_fault_primitive("../resources/fault_lists/ss_dynamic", model_name)
-s_stat = gr.get_fault_primitive("../resources/fault_lists/simple_static", model_name)
-ss_stat = gr.get_fault_primitive("../resources/fault_lists/ss_static", model_name)
+s_dyn = ps.get_fault_primitive("../resources/fault_lists/simple_dynamic", model_name)
+ss_dyn = ps.get_fault_primitive("../resources/fault_lists/ss_dynamic", model_name)
+s_stat = ps.get_fault_primitive("../resources/fault_lists/simple_static", model_name)
+ss_stat = ps.get_fault_primitive("../resources/fault_lists/ss_static", model_name)
 
-# test = gr.get_fault_primitive("test_fault_list")
+# test = ps.get_fault_primitive("test_fault_list")
 
 
 def get_fp_string(fp_obj):
