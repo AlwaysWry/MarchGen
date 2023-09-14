@@ -11,7 +11,7 @@ import evaluator as ev
 # fault_list_file = '../resources/fault_lists/' + 'complete'
 # fault_model_name = '2cF_3'
 march_test_file = '../resources/march_tests'
-test_logs_file = '../testlog'
+test_logs_file = '../results/testlog'
 
 
 def main():

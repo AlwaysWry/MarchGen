@@ -1,4 +1,4 @@
-# A parse and classify script of input simple faults and 2cFs
+# A parse and classify module of input simple faults and 2cFs
 
 # from basic import fault_parser as ps
 import copy
@@ -62,16 +62,16 @@ class TwoComposite:
 # End of class definition
 
 
-def parse_fault_list(fault_list, fault_model):
-	fault_obj_list = ps.get_fault_primitive(fault_list, fault_model)
-	parsed_list = []
+def parse_fault_pool(fault_pool, fault_model):
+	fault_obj_list = ps.get_fault_primitive(fault_pool, fault_model)
+	parsed_pool = []
 	fault_comps = TwoComposite()
 	for obj in fault_obj_list:
 		fault_comps.get_FP_text(obj[0])
 		fault_comps.get_Comp_objects(obj[1], obj[2])
 		fault_comps.get_Link_conditions()
-		parsed_list.append(copy.deepcopy(fault_comps))
-	return parsed_list
+		parsed_pool.append(copy.deepcopy(fault_comps))
+	return parsed_pool
 
 
 def arbit_SF(comp_obj):
@@ -123,53 +123,49 @@ def classify_based_on_Init(comp_obj):
 			comp_obj.comps['comp2'].vInit, CLASSIFY_ERROR))
 
 
-def classify_SF_based_on_SenOpsNum(sf_dict, comp_obj):
+def classify_SF_based_on_SenOpsNum(sf_pool, comp_obj):
 	init_encode = classify_based_on_Init(comp_obj)
-	if sf_dict['Init_' + str(init_encode)].get('#O_' + str(comp_obj.comps['comp1'].SenOpsNum)) is None:
-		sf_dict['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)] = []
+	if sf_pool['Init_' + str(init_encode)].get('#O_' + str(comp_obj.comps['comp1'].SenOpsNum)) is None:
+		sf_pool['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)] = set()
 
-	sf_dict['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)].append(comp_obj)
+	sf_pool['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)].add(comp_obj)
 	return
 
 
-def classify_SF(sf_dict, comp_obj):
-	classify_SF_based_on_SenOpsNum(sf_dict, comp_obj)
+def classify_SF(sf_pool, comp_obj):
+	classify_SF_based_on_SenOpsNum(sf_pool, comp_obj)
 	pass
 	return
 
 
-def classify_2cF_nonCFds_included(_2cF_nonCFds_list, comp_obj):
-	classify_based_on_Init(comp_obj)
-	_2cF_nonCFds_list.append(comp_obj)
-	pass
+def classify_2cF_nonCFds_included(_2cF_nonCFds_pool, comp_obj):
+	_2cF_nonCFds_pool.add(comp_obj)
 	return
 
 
-def classify_2cF_CFds(_2cF_CFds_dict, comp_obj):
+def classify_2cF_CFds(_2cF_CFds_pool, comp_obj):
 	if arbit_linked_2cF_CFds(comp_obj):
-		init_flag = classify_based_on_Init(comp_obj)
-		for init in init_flag:
-			_2cF_CFds_dict[str(init)].append(comp_obj)
+		_2cF_CFds_pool['linked'].add(comp_obj)
 	else:
-		_2cF_CFds_dict['unlinked'].append(comp_obj)
+		_2cF_CFds_pool['unlinked'].add(comp_obj)
 
 	return
 
 
-def classify(unclassified_fault_list):
-	sf_dict = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
-	_2cF_nonCFds_list = []
-	_2cF_CFds_dict = {'0': [], '1': [], 'unlinked': []}
-	for comp_obj in unclassified_fault_list:
+def classify(unclassified_fault_pool):
+	sf_pool = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
+	_2cF_nonCFds_pool = set()
+	_2cF_CFds_pool = {'linked': set(), 'unlinked': set()}
+	for comp_obj in unclassified_fault_pool:
 		if arbit_SF(comp_obj):
-			classify_SF(sf_dict, comp_obj)
+			classify_SF(sf_pool, comp_obj)
 		elif arbit_2cF_nonCFds_included(comp_obj):
-			classify_2cF_nonCFds_included(_2cF_nonCFds_list, comp_obj)
+			classify_2cF_nonCFds_included(_2cF_nonCFds_pool, comp_obj)
 		else:
-			classify_2cF_CFds(_2cF_CFds_dict, comp_obj)
+			classify_2cF_CFds(_2cF_CFds_pool, comp_obj)
 
-	return {'SF': sf_dict, '2cF_nonCFds_included': _2cF_nonCFds_list, '2cF_CFds': _2cF_CFds_dict}
+	return {'SF': sf_pool, '2cF_nonCFds_included': _2cF_nonCFds_pool, '2cF_CFds': _2cF_CFds_pool}
 
 
 if __name__ == '__main__':
-	classify_result = classify(parse_fault_list(ps.fault_list_file, ps.fault_model_name))
+	classify_result = classify(parse_fault_pool(ps.fault_list_file, ps.fault_model_name))

@@ -1,5 +1,5 @@
-# filter.py is a script to remove the redundant faults for March generation.
-# for SF list, the principle of removal is op_num principle and containing principle
+# sf_filter.py is a module to remove the redundant simple faults for March generation.
+# for SF list, the principle of removal is op_num principle and inclusion principle
 # for 2cF-nonCFds and unlinked 2cF-CFds list, use minimum weight vertices cover method to simplify the fault list
 
 from basic import fault_parser as ps
@@ -10,8 +10,8 @@ import re
 REDUNDANT = True
 NOT_REDUNDANT = False
 
-parsed_list = cf.parse_fault_list(ps.fault_list_file, ps.fault_model_name)
-classify_result = cf.classify(parsed_list)
+parsed_pool = cf.parse_fault_pool(ps.fault_list_file, ps.fault_model_name)
+classify_result = cf.classify(parsed_pool)
 
 
 def find_all_occurrences(seq):
@@ -45,23 +45,23 @@ def generate_CFds_search_candidates(seq):
 	return candidate_list
 
 
-def generate_fault_search_set(classified_fault_list):
+def generate_fault_search_set(classified_fault_pool):
 	# 'CFds' key and 'nonCFds' key is for checking the redundancy of CFds and nonCFds respectively, since they have
 	# different redundancy checking methods.
 	set_dict = {'CFds': {}, 'nonCFds': {}}
 
-	for init_key in classified_fault_list.keys():
+	for init_key in classified_fault_pool.keys():
 
 		for type_key in set_dict.keys():
 			if set_dict[type_key].get(init_key) is None:
 				set_dict[type_key][init_key] = {}
 
-		for op_num_key in classified_fault_list[init_key].keys():
+		for op_num_key in classified_fault_pool[init_key].keys():
 			candidate_CFds_set = set()
 			candidate_nonCFds_set = set()
 
 			if op_num_key > '#O_1':
-				for comp_obj in classified_fault_list[init_key][op_num_key]:
+				for comp_obj in classified_fault_pool[init_key][op_num_key]:
 					if cf.arbit_SF_CFds(comp_obj):
 						search_seq = comp_obj.comps['comp1'].aInit + comp_obj.comps['comp1'].Sen
 						# The candidate set for CFds can also be generated from existing nonCFds faults, since the
@@ -118,7 +118,7 @@ def check_CFds_redundancy(fault, candidate_dict, init):
 	# for CFds, besides the sets that op_num larger than the SenOpsNum, the set whose op_num is 1 less than SenOpsNum
 	# also needs to be checked. Since the additional 1 detect operation of nonCFds in that class may cover some CFds here
 	search_range = op_num_keys[max(0, fault_op_num - 2):]
-	search_range.remove(op_num_keys[fault_op_num - 1])
+	search_range.remove('#O_' + str(fault_op_num))
 
 	match_seq = fault.comps['comp1'].aInit + fault.comps['comp1'].Sen
 
@@ -130,30 +130,32 @@ def check_CFds_redundancy(fault, candidate_dict, init):
 	return NOT_REDUNDANT
 
 
-def filter_redundant_SF(classified_fault_list):
+def filter_redundant_SF(classified_fault_pool):
 	# the filter search of SF can only happen in the same init_sub_list, since a CF can be covered by another CF
 	# only if they have the same sensitization initial conditions, while nonCFs not have such limitations
-	candidate_set_dict = generate_fault_search_set(classified_fault_list)
-	redundant_fault_list = copy.deepcopy(classified_fault_list)
+	filtered_fault_pool = copy.deepcopy(classified_fault_pool)
+	candidate_set_dict = generate_fault_search_set(filtered_fault_pool)
+	redundant_fault_pool = {}
 
-	for init in classified_fault_list.keys():
-		for op_num in classified_fault_list[init].keys():
-			redundant_fault_list[init][op_num].clear()
-			for comp_obj in classified_fault_list[init][op_num]:
+	for init in filtered_fault_pool.keys():
+		redundant_fault_pool[init] = {}
+		for op_num in filtered_fault_pool[init].keys():
+			redundant_fault_pool[init][op_num] = set()
+			for comp_obj in filtered_fault_pool[init][op_num]:
 				if cf.arbit_SF_CFds(comp_obj):
 					if check_CFds_redundancy(comp_obj, candidate_set_dict['CFds'], init):
-						redundant_fault_list[init][op_num].append(comp_obj)
+						redundant_fault_pool[init][op_num].add(comp_obj)
 				else:
 					if check_nonCFds_redundancy(comp_obj, candidate_set_dict['nonCFds'], init):
-						redundant_fault_list[init][op_num].append(comp_obj)
+						redundant_fault_pool[init][op_num].add(comp_obj)
 
-	for init in classified_fault_list.keys():
-		for op_num in classified_fault_list[init].keys():
-			for comp_obj in redundant_fault_list[init][op_num]:
-				if comp_obj in classified_fault_list[init][op_num]:
-					classified_fault_list[init][op_num].remove(comp_obj)
+	for init in filtered_fault_pool.keys():
+		for op_num in filtered_fault_pool[init].keys():
+			filtered_fault_pool[init][op_num] = filtered_fault_pool[init][op_num] - redundant_fault_pool[init][op_num]
 
-	return
+	return filtered_fault_pool
 
 
-filter_redundant_SF(copy.deepcopy(classify_result['SF']))
+if __name__ == '__main__':
+	sf_pool = copy.deepcopy(classify_result['SF'])
+	filter_redundant_SF(sf_pool)
