@@ -3,6 +3,7 @@
 from basic import fault_parser as ps
 import classifier as cf
 import sf_filter as sff
+import sys
 
 DIFFERENT = -1
 REDUNDANT = True
@@ -76,7 +77,7 @@ def get_fault_operation_num(fault_obj):
 	return weight
 
 
-def output_graph_file(vertices, edges):
+def output_graph_file_QUICK_VC(vertices, edges):
 	with open('../resources/unlinked_2cF.m2c', 'w') as graph:
 		graph.write(str(len(edges)) + ' ' + str(len(vertices)) + '\n')
 		for vertex in vertices[:-1]:
@@ -90,6 +91,23 @@ def output_graph_file(vertices, edges):
 			terminal_2 = edge[1] + 1
 			graph.write(str(terminal_1) + ' ' + str(terminal_2) + '\n')
 		graph.write(str(edges[-1][0] + 1) + ' ' + str(edges[-1][1] + 1))
+
+	return
+
+
+def output_graph_file_DYNWVC2(vertices, edges):
+	with open('../resources/unlinked_2cF.m2c', 'w') as graph:
+		graph.write('p edge ' + str(len(vertices)) + ' ' + str(len(edges)) + '\n')
+		for vertex in vertices:
+			index = list(vertex.keys())
+			weight = list(vertex.values())
+			graph.write('v ' + str(index[0]) + ' ' + str(weight[0]) + '\n')
+
+		for edge in edges[:-1]:
+			terminal_1 = edge[0] + 1
+			terminal_2 = edge[1] + 1
+			graph.write('e ' + str(terminal_1) + ' ' + str(terminal_2) + '\n')
+		graph.write('e ' + str(edges[-1][0] + 1) + ' ' + str(edges[-1][1] + 1))
 
 	return
 
@@ -118,7 +136,10 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool):
 		edges.append(edge_info)
 		edges.sort()
 
-	output_graph_file(vertices, edges)
+	if sys.platform.startswith('linux'):
+		output_graph_file_QUICK_VC(vertices, edges)
+	else:
+		output_graph_file_DYNWVC2(vertices, edges)
 
 	return
 
