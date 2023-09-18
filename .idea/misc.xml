@@ -3,6 +3,7 @@
   <component name="Black">
     <option name="executionMode" value="BINARY" />
     <option name="pathToExecutable" value="E:\Anaconda\Scripts\black.exe" />
+    <option name="sdkName" value="March2Comp (2)" />
   </component>
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
 </project>

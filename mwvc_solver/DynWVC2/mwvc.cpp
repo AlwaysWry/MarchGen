@@ -9,13 +9,13 @@ extern "C" __declspec(dllexport) int DynWVC2(int arg_num, char file[], char seed
 
     if (arg_num == 1) {
         cout << "Minimum Weighted Vertex Cover Problem solver." << endl;
-        cout << "Usage: ./mwvc [Graph file] [Seed] [Cutoff time] [CC mode]" << endl;
+        cout << "Usage: ./mwvc_solver [Graph file] [Seed] [Cutoff time] [CC mode]" << endl;
         return 1;
     }
 
     if (arg_num < 4) {
         cerr << "Missing argument(s)." << endl;
-        cout << "Usage: ./mwvc [Graph file] [Seed] [Cutoff time] [CC mode]" << endl;
+        cout << "Usage: ./mwvc_solver [Graph file] [Seed] [Cutoff time] [CC mode]" << endl;
         return 1;
     }
 
