@@ -264,7 +264,7 @@ OpenMP_pthread_LIBRARY:FILEPATH=/lib64/libpthread.so
 PYBIND11_PYTHON_VERSION:STRING=
 
 //Path to a library.
-PYTHON_LIBRARY:FILEPATH=/home/zsr/.conda/envs/MWVC/lib/libpython3.10.so
+PYTHON_LIBRARY:FILEPATH=/home/zsr/.conda/envs/March2Comp/lib/libpython3.8.so
 
 //Path to a program.
 ProcessorCount_cmd_nproc:FILEPATH=/bin/nproc
@@ -431,9 +431,9 @@ FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_C:INTERNAL=[-fopenmp][/opt/rh/devtoolset-9/r
 //Details about finding OpenMP_CXX
 FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-fopenmp][/opt/rh/devtoolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9/libgomp.so][/lib64/libpthread.so][v4.5()]
 //Details about finding PYTHON
-FIND_PACKAGE_MESSAGE_DETAILS_PYTHON:INTERNAL=/home/zsr/.conda/envs/MWVC/bin/python3.10.4
+FIND_PACKAGE_MESSAGE_DETAILS_PYTHON:INTERNAL=/home/zsr/.conda/envs/March2Comp/bin/python3.8.18
 //Details about finding PythonInterp
-FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/home/zsr/.conda/envs/MWVC/bin/python][v3.10.4()]
+FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/home/zsr/.conda/envs/March2Comp/bin/python][v3.8.18()]
 //Test HAS_FLTO
 HAS_FLTO:INTERNAL=1
 //Result of TRY_COMPILE
@@ -460,16 +460,16 @@ OpenMP_SPECTEST_C_:INTERNAL=TRUE
 OpenMP_gomp_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: OpenMP_pthread_LIBRARY
 OpenMP_pthread_LIBRARY-ADVANCED:INTERNAL=1
-PYTHON_INCLUDE_DIRS:INTERNAL=/home/zsr/.conda/envs/MWVC/include/python3.10
+PYTHON_INCLUDE_DIRS:INTERNAL=/home/zsr/.conda/envs/March2Comp/include/python3.8
 PYTHON_IS_DEBUG:INTERNAL=0
-PYTHON_LIBRARIES:INTERNAL=/home/zsr/.conda/envs/MWVC/lib/libpython3.10.so
+PYTHON_LIBRARIES:INTERNAL=/home/zsr/.conda/envs/March2Comp/lib/libpython3.8.so
 //ADVANCED property for variable: PYTHON_LIBRARY
 PYTHON_LIBRARY-ADVANCED:INTERNAL=1
-PYTHON_MODULE_EXTENSION:INTERNAL=.cpython-310-x86_64-linux-gnu.so
+PYTHON_MODULE_EXTENSION:INTERNAL=.cpython-38-x86_64-linux-gnu.so
 PYTHON_MODULE_PREFIX:INTERNAL=
-PYTHON_VERSION:INTERNAL=3.10.4
+PYTHON_VERSION:INTERNAL=3.8.18
 PYTHON_VERSION_MAJOR:INTERNAL=3
-PYTHON_VERSION_MINOR:INTERNAL=10
+PYTHON_VERSION_MINOR:INTERNAL=8
 //ADVANCED property for variable: ProcessorCount_cmd_nproc
 ProcessorCount_cmd_nproc-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: ProcessorCount_cmd_sysctl
@@ -479,5 +479,5 @@ Python_ADDITIONAL_VERSIONS:INTERNAL=3.11;3.10;3.9;3.8;3.7;3.6;3.5;3.4
 _CMAKE_LINKER_PUSHPOP_STATE_SUPPORTED:INTERNAL=TRUE
 _Python:INTERNAL=PYTHON
 //Directories where pybind11 and possibly Python headers are located
-pybind11_INCLUDE_DIRS:INTERNAL=/home/zsr/.conda/pkgs/pybind11-2.9.1-py310h2571103_0/include;/home/zsr/.conda/envs/MWVC/include/python3.10
+pybind11_INCLUDE_DIRS:INTERNAL=/home/zsr/.conda/pkgs/pybind11-2.9.1-py310h2571103_0/include;/home/zsr/.conda/envs/March2Comp/include/python3.8
 

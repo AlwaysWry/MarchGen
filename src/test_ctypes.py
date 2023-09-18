@@ -1,5 +1,6 @@
 from ctypes import *
 import sys
+sys.path.append('../mwvc_solver/QUICK_VC')
 import QUICK_VC_Py
 
 #lib = cdll.LoadLibrary("./DynWVC2.dll")
