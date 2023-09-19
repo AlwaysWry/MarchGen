@@ -1,1 +1,5 @@
 cmake-build-debug/
+*.m2c
+*.dll
+*.a
+*.so

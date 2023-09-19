@@ -91,14 +91,19 @@ def get_fault_properties(fault_comps, model):
             else:
                 aCell = ''
                 print("Illegal fault %s found!\n" % fp)
-                return fault_props
+                return
 
             fault_prop = fp.partition(';')
             a_prop = fault_prop[0]
             v_prop = fault_prop[2].split('/')
-            aInit = a_prop[0]
-            vInit = v_prop[0][0]
-            vFault = v_prop[1]
+
+            try:
+                aInit = a_prop[0]
+                vInit = v_prop[0][0]
+                vFault = v_prop[1]
+            except IndexError:
+                print("Illegal fault primitive. Check the fault list.\n")
+                return
 
             # check if SimpleFault is CFds
             if len(a_prop) > 1:
@@ -169,8 +174,14 @@ def get_fault_properties(fault_comps, model):
 
 def get_fault_primitive(filename, modelname):
     # all_lines = ['<1;0r0/1/0>*<1;1w1/0/->']
-    with open(filename, 'r') as fobj:
-        all_lines = fobj.readlines()
+    try:
+        fobj = open(filename, 'r')
+    except OSError:
+        print("Open fault list file failed. Make sure the file path and name is correct.\n")
+        return
+
+    all_lines = fobj.readlines()
+    fobj.close()
 
     fobj_list = []
 

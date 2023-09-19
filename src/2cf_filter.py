@@ -5,6 +5,11 @@ import classifier as cf
 import sf_filter as sff
 import sys
 
+if sys.platform.startswith('linux'):
+	import quickVC_solver
+else:
+	import dynWVC2_solver
+
 DIFFERENT = -1
 REDUNDANT = True
 NOT_REDUNDANT = False
@@ -50,6 +55,15 @@ def check_2cF_redundancy_by_SF(sf_pool, fault_obj, init):
 def remove_2cF_based_on_SF(sf_pool, _2cF_unlinked_pool):
 	redundancy = []
 	redundant_2cF_pool = set()
+	# if the simple fault pool is empty, return the original 2cF unlinked pool directly
+	for init_index, init_key in enumerate(sf_pool.keys(), 1):
+		if any(sf_pool[init_key]):
+			break
+		elif init_index < len(sf_pool.keys()):
+			continue
+		else:
+			return _2cF_unlinked_pool
+
 	for _2cF_obj in _2cF_unlinked_pool:
 		for comp in _2cF_obj.comps.values():
 			if comp.CFdsFlag:
@@ -78,7 +92,8 @@ def get_fault_operation_num(fault_obj):
 
 
 def output_graph_file_QUICK_VC(vertices, edges):
-	with open('../resources/unlinked_2cF.m2c', 'w') as graph:
+	filename = '../resources/unlinked_2cF.m2c'
+	with open(filename, 'w') as graph:
 		graph.write(str(len(edges)) + ' ' + str(len(vertices)) + '\n')
 		for vertex in vertices[:-1]:
 			weight = list(vertex.values())
@@ -92,11 +107,12 @@ def output_graph_file_QUICK_VC(vertices, edges):
 			graph.write(str(terminal_1) + ' ' + str(terminal_2) + '\n')
 		graph.write(str(edges[-1][0] + 1) + ' ' + str(edges[-1][1] + 1))
 
-	return
+	return filename
 
 
 def output_graph_file_DYNWVC2(vertices, edges):
-	with open('../resources/unlinked_2cF.m2c', 'w') as graph:
+	filename = '../resources/unlinked_2cF.m2c'
+	with open(filename, 'w') as graph:
 		graph.write('p edge ' + str(len(vertices)) + ' ' + str(len(edges)) + '\n')
 		for vertex in vertices:
 			index = list(vertex.keys())
@@ -109,7 +125,7 @@ def output_graph_file_DYNWVC2(vertices, edges):
 			graph.write('e ' + str(terminal_1) + ' ' + str(terminal_2) + '\n')
 		graph.write('e ' + str(edges[-1][0] + 1) + ' ' + str(edges[-1][1] + 1))
 
-	return
+	return filename
 
 
 def build_unlinked_2cF_graph(_2cF_unlinked_pool):
@@ -137,25 +153,39 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool):
 		edges.sort()
 
 	if sys.platform.startswith('linux'):
-		output_graph_file_QUICK_VC(vertices, edges)
+		graph_file = output_graph_file_QUICK_VC(vertices, edges)
 	else:
-		output_graph_file_DYNWVC2(vertices, edges)
+		graph_file = output_graph_file_DYNWVC2(vertices, edges)
+
+	return graph_file
+
+
+def remove_2cF_based_on_MWVC(graph_file):
+	if sys.platform.startswith('linux'):
+		quickVC_solver.quickVC_solver(graph_file)
+	else:
+		dynWVC2_solver.dynWVC2_solver(graph_file)
 
 	return
 
 
-def remove_2cF_based_on_MWVC():
+def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
+	print("Filtering redundant 2-composite faults...\n")
 
+	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool['unlinked']
+	simplified_unlinked_2cF_pool = remove_2cF_based_on_SF(sf_pool, unlinked_2cF_pool)
+	if len(simplified_unlinked_2cF_pool) > 0:
+		print("Invoking MWVC solver...\n")
+		graph_file = build_unlinked_2cF_graph(simplified_unlinked_2cF_pool)
+		remove_2cF_based_on_MWVC(graph_file)
 	pass
 
 
-def filter_redundant_2cF(_2cF_nonCFds_pool, _2cF_CFds_pool):
-	pass
-
-
-parsed_pool = cf.parse_fault_pool(ps.fault_list_file, ps.fault_model_name)
-classified_pool = cf.classify(parsed_pool)
-filtered_SF_pool = sff.filter_redundant_SF(classified_pool['SF'])
-# simplified_2cF_nonCFds_pool = remove_2cF_based_on_SF(classified_pool['SF'], classified_pool['2cF_nonCFds_included'] |
-# 													 classified_pool['2cF_CFds']['unlinked'])
-build_unlinked_2cF_graph(classified_pool['2cF_nonCFds_included'] | classified_pool['2cF_CFds']['unlinked'])
+if __name__ == '__main__':
+	try:
+		parsed_pool = cf.parse_fault_pool(ps.fault_list_file, ps.fault_model_name)
+		classified_pool = cf.classify(parsed_pool)
+		filtered_SF_pool = sff.filter_redundant_SF(classified_pool['SF'])
+		filter_redundant_2cF(classified_pool['SF'], classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds'])
+	except TypeError:
+		pass

@@ -1,9 +1,10 @@
 import sys
+
 sys.path.append('../mwvc_solver/QUICK_VC')
 
 import QUICK_VC_Py
 
-def quickVC_solver(graph_file):
 
+def quickVC_solver(graph_file):
 	arg_list = [graph_file, '../results/mwvc.log', '10', '0', '0']
 	QUICK_VC_Py.MWVC(arg_list)

@@ -10,9 +10,6 @@ import re
 REDUNDANT = True
 NOT_REDUNDANT = False
 
-parsed_pool = cf.parse_fault_pool(ps.fault_list_file, ps.fault_model_name)
-classify_result = cf.classify(parsed_pool)
-
 
 def find_all_occurrences(seq):
 	feature = re.compile('r', re.IGNORECASE)
@@ -133,6 +130,8 @@ def check_CFds_redundancy(fault, candidate_dict, init):
 def filter_redundant_SF(classified_fault_pool):
 	# the filter search of SF can only happen in the same init_sub_list, since a CF can be covered by another CF
 	# only if they have the same sensitization initial conditions, while nonCFs not have such limitations
+	print("Filtering redundant simple faults...\n")
+
 	filtered_fault_pool = copy.deepcopy(classified_fault_pool)
 	candidate_set_dict = generate_fault_search_set(filtered_fault_pool)
 	redundant_fault_pool = {}
@@ -157,5 +156,7 @@ def filter_redundant_SF(classified_fault_pool):
 
 
 if __name__ == '__main__':
+	parsed_pool = cf.parse_fault_pool(ps.fault_list_file, ps.fault_model_name)
+	classify_result = cf.classify(parsed_pool)
 	sf_pool = copy.deepcopy(classify_result['SF'])
 	filter_redundant_SF(sf_pool)

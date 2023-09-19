@@ -2,7 +2,7 @@ from ctypes import *
 
 
 def dynWVC2_solver(graph_file):
-	DynWVC2 = cdll.LoadLibrary("../mwvc_solver/DynWVC2/libDynWVC2.dll")
+	DynWVC2 = CDLL("../mwvc_solver/DynWVC2/libDynWVC2.dll", winmode=0)
 
 	graph = c_char_p(graph_file.encode())
 	result = c_char_p(b'../results/mwvc.log')
@@ -11,6 +11,7 @@ def dynWVC2_solver(graph_file):
 	mode = c_char_p(b'0')
 
 	DynWVC2.MWVC(graph, result, seed, cutoff_time, mode)
+	return
 
 
 if __name__ == '__main__':
