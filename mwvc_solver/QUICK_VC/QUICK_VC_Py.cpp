@@ -176,6 +176,8 @@ int MWVC(int narg, char **arg) {
         return 0;
     }
 
+    cout << "Parsing graph file " << graph_path << "..." << endl;
+
     auto t = parse_graph(graph_path);
     if (t.N == 0) {
         return 0;
@@ -207,10 +209,10 @@ int MWVC(int narg, char **arg) {
     if (t.g.size() == 0) {
         unfold_graph(t.g, res, gs, 0);
         // fill(begin(quality_at_time) + i, end(quality_at_time), res.cost);
-        if (verbose)
-            cout << "Vertex cover cost: " << res.cost << ", found in " << time_gnn << "s, " << time_gnn << " total time" << endl;
-        else
-            cout << t.name << "," << t.N << "," << t.E << "," << after_initial_reductions << "," << cost_gnn << "," << time_gnn << "," << res.cost << "," << time_gnn << endl;
+        //if (verbose)
+        //    cout << "Vertex cover cost: " << res.cost << ", found in " << time_gnn << "s, " << time_gnn << " total time" << endl;
+        //else
+        //    cout << t.name << "," << t.N << "," << t.E << "," << after_initial_reductions << "," << cost_gnn << "," << time_gnn << "," << res.cost << "," << time_gnn << endl;
 
         // cout << t.name << "," << t.N << "," << t.E << ",";
         // for (auto &&c : quality_at_time) {
@@ -218,9 +220,21 @@ int MWVC(int narg, char **arg) {
         // }
         // cout << endl;
 
+        cout << "Solve finished." << endl;
+        int best_size = 0;
+
         for (Tn u = 0; u < t.N; ++u) {
-            os << (*res.S[u] ? 1 : 0) << endl;
+            if (*res.S[u]){
+                os << u + 1 << endl;
+                best_size++;
+            }
         }
+
+        cout << "best size: " << best_size << "," << endl;
+        cout << "best weight: " << res.cost << "," << endl;
+        int original_weight = accumulate(t.weights.begin(), t.weights.end(), 0);
+        cout << "reduction: " << original_weight - res.cost << endl;
+
         return 0;
     }
 
@@ -260,10 +274,11 @@ int MWVC(int narg, char **arg) {
         return 0;
     }
 
-    if (verbose)
-        cout << "Vertex cover cost: " << res.cost << ", found in " << chrono::duration<double>(t3 - t2).count() + time_gnn << "s, " << chrono::duration<double>(t4 - t2).count() + time_gnn << " total time" << endl;
-    else
-        cout << t.name << "," << t.N << "," << t.E << "," << after_initial_reductions << "," << cost_gnn << "," << time_gnn << "," << res.cost << "," << chrono::duration<double>(t3 - t2).count() + time_gnn << endl;
+    //if (verbose)
+    //    cout << "Vertex cover cost: " << res.cost << ", found in " << chrono::duration<double>(t3 - t2).count() + time_gnn << "s, " << chrono::duration<double>(t4 - t2).count() + time_gnn << " total time" << endl;
+    //else
+    //    cout << t.name << "," << t.N << "," << t.E << "," << after_initial_reductions << "," << cost_gnn << "," << time_gnn << "," << res.cost << "," << chrono::duration<double>(t3 - t2).count() + time_gnn << endl;
+    cout << "Solve finished." << endl;
 
     // cout << t.name << "," << t.N << "," << t.E << ",";
     // for (auto &&c : quality_at_time) {
@@ -271,9 +286,19 @@ int MWVC(int narg, char **arg) {
     // }
     // cout << endl;
 
+    int best_size = 0;
+
     for (Tn u = 0; u < t.N; ++u) {
-        os << (*res.S[u] ? 1 : 0) << endl;
+        if (*res.S[u]){
+            os << u + 1 << endl;
+            best_size++;
+        }
     }
+
+    cout << "best size: " << best_size << "," << endl;
+    cout << "best weight: " << res.cost << "," << endl;
+    int original_weight = accumulate(t.weights.begin(), t.weights.end(), 0);
+    cout << "reduction: " << original_weight - res.cost << endl;
 
     return 0;
 }
