@@ -1,4 +1,4 @@
-project(MWVC_solver)
+project(March2Comp)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 

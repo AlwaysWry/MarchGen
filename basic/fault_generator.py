@@ -62,10 +62,10 @@ def remove_unrealistic_tuples(full_combs):
 
 
 if __name__ == '__main__':
-    fp_combs_obj_list = generate_combinations(s_stat, ss_stat)
+    fp_combs_obj_list = generate_combinations(s_dyn, s_dyn)
     realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
 
-    file = open("../resources/fault_lists/stat_stat", 'w')
+    file = open("../resources/fault_lists/dyn2comp", 'w')
     for tup in realistic_faults:
         lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
         file.write(lf)
