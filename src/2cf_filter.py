@@ -128,8 +128,7 @@ def output_graph_file_DYNWVC2(vertices, edges):
 	return filename
 
 
-def build_unlinked_2cF_graph(_2cF_unlinked_pool):
-	vertices_map = []
+def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map):
 	vertices = []
 	edges = []
 	for _2cF_obj in _2cF_unlinked_pool:
@@ -174,11 +173,19 @@ def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
 
 	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool['unlinked']
 	simplified_unlinked_2cF_pool = remove_2cF_based_on_SF(sf_pool, unlinked_2cF_pool)
+	_2cF_cover = set()
 	if len(simplified_unlinked_2cF_pool) > 0:
+		vertices_map = []
 		print("Invoking MWVC solver...\n")
-		graph_file = build_unlinked_2cF_graph(simplified_unlinked_2cF_pool)
+		graph_file = build_unlinked_2cF_graph(simplified_unlinked_2cF_pool, vertices_map)
 		remove_2cF_based_on_MWVC(graph_file)
-	pass
+
+		with open("../results/mwvc.log", "r") as result:
+			for vertex in result.readlines():
+				vertex.strip()
+				_2cF_cover.add(vertices_map[int(vertex) - 1])
+
+	return _2cF_cover
 
 
 if __name__ == '__main__':
@@ -186,6 +193,7 @@ if __name__ == '__main__':
 		parsed_pool = cf.parse_fault_pool(ps.fault_list_file, ps.fault_model_name)
 		classified_pool = cf.classify(parsed_pool)
 		filtered_SF_pool = sff.filter_redundant_SF(classified_pool['SF'])
-		filter_redundant_2cF(classified_pool['SF'], classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds'])
+		for fault in filter_redundant_2cF(classified_pool['SF'], classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']):
+			print(fault.text)
 	except TypeError:
 		pass
