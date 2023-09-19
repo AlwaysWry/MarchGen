@@ -1,21 +1,13 @@
 #include "mwvc.h"
 #include <sstream>
-extern "C" __declspec(dllexport) int DynWVC2(int arg_num, char file[], char seed_num[], char cutoff_time_num[], char mode_num[]);
+
+extern "C" __declspec(dllexport) int MWVC(char graph[], char result_file[], char seed_num[], char cutoff_time_num[], char mode_num[]);
 
 
+extern "C" __declspec(dllexport) int MWVC(char graph[], char result_file[], char seed_num[], char cutoff_time_num[], char mode_num[]) {
 
-extern "C" __declspec(dllexport) int DynWVC2(int arg_num, char file[], char seed_num[], char cutoff_time_num[], char mode_num[]) {
-    uint seed;
-
-    if (arg_num == 1) {
-        cout << "Minimum Weighted Vertex Cover Problem solver." << endl;
-        cout << "Usage: ./mwvc_solver [Graph file] [Seed] [Cutoff time] [CC mode]" << endl;
-        return 1;
-    }
-
-    if (arg_num < 4) {
-        cerr << "Missing argument(s)." << endl;
-        cout << "Usage: ./mwvc_solver [Graph file] [Seed] [Cutoff time] [CC mode]" << endl;
+    if (BuildInstance(graph)) {
+        cerr << "Open instance graph failed." << endl;
         return 1;
     }
 
@@ -30,17 +22,14 @@ extern "C" __declspec(dllexport) int DynWVC2(int arg_num, char file[], char seed
     ss >> mode;
     ss.clear();
 
-    if (BuildInstance(file) != 0) {
-        cerr << "Open instance file failed." << endl;
-        return 1;
-    }
-
+    //default seed
     if (seed < 0U || seed > ~0U) {
         seed = 10;
     }
 
+    //default cutoff_time
     if (cutoff_time < 0 || cutoff_time > (int) (~0U >> 1)) {
-        cutoff_time = 1000;
+        cutoff_time = 10;
     }
 
     if (mode < 0 || mode > 3) {
@@ -49,7 +38,7 @@ extern "C" __declspec(dllexport) int DynWVC2(int arg_num, char file[], char seed
 
     srand(seed);
 
-    cout << file;
+    cout << "Parsing graph file " << graph << "..." << endl;
 
     start = chrono::steady_clock::now();
 
@@ -57,7 +46,7 @@ extern "C" __declspec(dllexport) int DynWVC2(int arg_num, char file[], char seed
     LocalSearch();
 
     if (CheckSolution() == 1) {
-        cout << "best_w:" << best_weight << " best_time: " << best_comp_time << endl;
+        cout << "Solve finished." << endl;
     } else {
         cout << ", the solution is wrong." << endl;
     }
@@ -65,16 +54,29 @@ extern "C" __declspec(dllexport) int DynWVC2(int arg_num, char file[], char seed
     int weight_sum = 0;
     int original_weight = 0;
 
+    //write results to mwvc_log.txt
+    ofstream result(result_file);
+
+    if (!result){
+        cerr << "Open output file failed." << endl;
+        return 1;
+    }
+
     for (int i = 1; i <= v_num; i++) {
         if (best_v_in_c[i] == 1) {
-            cout << i << ',' << v_weight[i] << endl;
+            //cout << i << ',' << v_weight[i] << endl;
+            result << i << endl;
             weight_sum += v_weight[i];
         }
 
         original_weight += v_weight[i];
     }
 
-    cout << best_c_size << "," << weight_sum << "," << original_weight << endl;
+    result.close();
+
+    cout << "best size: " << best_c_size << ", " << endl;
+    cout << "best weight: " << weight_sum << ", " << endl;
+    cout << "reduction: "<< original_weight - weight_sum << endl;
 
     FreeMemory();
 

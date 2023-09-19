@@ -10,9 +10,9 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     find_package(OpenMP)
 
-    include_directories(mwvc_solver/QUICK_VC/include/gnn/)
-    include_directories(mwvc_solver/QUICK_VC/include/mwvc/)
-    include_directories(mwvc_solver/QUICK_VC/include/mtx/)
+    include_directories(mwvc_solver/QUICK_VC/include/gnn)
+    include_directories(mwvc_solver/QUICK_VC/include/mwvc)
+    include_directories(mwvc_solver/QUICK_VC/include/mtx)
 
     #settings for pybind11
     set(PYTHON_EXECUTABLE /home/zsr/.conda/envs/March2Comp/bin/python)
