@@ -113,7 +113,7 @@ def get_fault_properties(fault_comps, model):
                 CFdsFlag = 0
                 Sen = v_prop[0][1:]
 
-            # check rd/ir fault
+            # check rd/ir feature
             if (Sen[-2] == 'r') and (Sen[-1] != v_prop[-1]):
                 if vFault == Sen[-1]:
                     # ir
@@ -121,7 +121,7 @@ def get_fault_properties(fault_comps, model):
                 else:
                     # rd
                     rdFlag = 1
-            # check drd fault
+            # check drd feature
             elif (Sen[-2] == 'r') and (Sen[-1] == v_prop[-1]):
                 rdFlag = -1
             else:
@@ -139,7 +139,7 @@ def get_fault_properties(fault_comps, model):
             CFdsFlag = 0
             Sen = a_prop[1:]
 
-            # check rd/ir fault
+            # check rd/ir feature
             if (Sen[-2] == 'r') and (Sen[-1] != fault_prop[-1]):
                 if vFault == Sen[-1]:
                     # ir
@@ -147,7 +147,7 @@ def get_fault_properties(fault_comps, model):
                 else:
                     # rd
                     rdFlag = 1
-            # check drd fault
+            # check drd feature
             elif (Sen[-2] == 'r') and (Sen[-1] == fault_prop[-1]):
                 rdFlag = -1
             else:

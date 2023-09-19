@@ -128,12 +128,19 @@ def output_graph_file_DYNWVC2(vertices, edges):
 	return filename
 
 
-def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map):
+def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
 	vertices = []
 	edges = []
 	for _2cF_obj in _2cF_unlinked_pool:
 		edge_info = []
+		CFdr_flag = 0
 		for comp in _2cF_obj.comps.values():
+			# if a composite is a CFdr, it must be detected, so the 2cF can't be involved
+			if (comp.rdFlag == -1) and (comp.CFdsFlag == 0):
+				CFdr_map.append(comp)
+				CFdr_flag = 1
+				break
+
 			if comp.aInit == '-':
 				ignore_keys = {'aInit', 'aCell'}
 			else:
@@ -147,6 +154,9 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map):
 			else:
 				edge_info.append(vertices_map.index(find_result))
 
+		# if a composite is a CFdr, it must be detected, so the 2cF can't be involved
+		if CFdr_flag:
+			continue
 		edge_info.sort()
 		edges.append(edge_info)
 		edges.sort()
@@ -174,16 +184,26 @@ def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
 	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool['unlinked']
 	simplified_unlinked_2cF_pool = remove_2cF_based_on_SF(sf_pool, unlinked_2cF_pool)
 	_2cF_cover = set()
+
 	if len(simplified_unlinked_2cF_pool) > 0:
 		vertices_map = []
+		CFdr_map = []
 		print("Invoking MWVC solver...\n")
-		graph_file = build_unlinked_2cF_graph(simplified_unlinked_2cF_pool, vertices_map)
+		graph_file = build_unlinked_2cF_graph(simplified_unlinked_2cF_pool, vertices_map, CFdr_map)
 		remove_2cF_based_on_MWVC(graph_file)
 
 		with open("../results/mwvc.log", "r") as result:
 			for vertex in result.readlines():
 				vertex.strip()
 				_2cF_cover.add(vertices_map[int(vertex) - 1])
+
+		for CFdr in CFdr_map:
+			if CFdr.aInit == '-':
+				ignore_keys = {'aInit', 'aCell'}
+			else:
+				ignore_keys = {'aCell'}
+			if find_identical_comps(CFdr, _2cF_cover, ignore_keys) == DIFFERENT:
+				_2cF_cover.add(CFdr)
 
 	return _2cF_cover
 
