@@ -8,3 +8,7 @@ import QUICK_VC_Py
 def quickVC_solver(graph_file):
 	arg_list = [graph_file, '../results/mwvc.log', '10', '0', '0']
 	QUICK_VC_Py.MWVC(arg_list)
+
+
+if __name__ == '__main__':
+	quickVC_solver('../results/unlinked_2cF.m2c')
