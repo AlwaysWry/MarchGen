@@ -1,6 +1,4 @@
 # a module of March test constructor based on the filtered fault pools
-import copy
-
 from _2cF_filter import *
 
 
