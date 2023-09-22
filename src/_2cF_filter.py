@@ -1,8 +1,8 @@
-# 2cf_filter.py is a module of filter the redundant 2-composite nonCFds included and the unlinked CFds*CFds faults.
+# _2cF_filter.py is a module of filter the redundant 2-composite nonCFds included and the unlinked CFds*CFds faults.
 # The filter strategies include the sf-based method and the minimum weight vertices coverage method.
-from basic import fault_parser as ps
-import classifier as cf
-import sf_filter as sff
+import traceback
+
+from sf_filter import *
 import sys
 
 if sys.platform.startswith('linux'):
@@ -11,75 +11,81 @@ else:
 	import dynWVC2_solver
 
 DIFFERENT = -1
-REDUNDANT = True
-NOT_REDUNDANT = False
 
 
-def find_identical_comps(fault_obj, candidate_pool, ignored_keys):
+def find_identical_objs(obj, candidate_pool, ignored_keys):
 	record = []
 	for comp_obj in candidate_pool:
 		# check the type of the input fault, for the function can be used in different situations
-		if type(comp_obj).__name__ == 'SimpleFault':
-			candidate = comp_obj
+		if type(comp_obj).__name__ == 'TwoComposite':
+			# if the candidate is TwoComposite type, use its comp one by one
+			candidate = comp_obj.comps.values()
 		else:
-			candidate = comp_obj.comps['comp1']
+			# if the candidate is other type, use its properties directly
+			candidate = [comp_obj]
 
-		for key, value in fault_obj.__dict__.items():
-			if key not in ignored_keys and candidate.__dict__[key] != value:
-				record.append(False)
-				break
-			else:
-				record.append(True)
+		for sub_candidate in candidate:
+			for key, value in obj.__dict__.items():
+				if (key not in ignored_keys) and (sub_candidate.__dict__[key] != value):
+					record.append(False)
+					break
+				else:
+					record.append(True)
 
-		if False not in record:
-			return comp_obj
-		record.clear()
+			if False not in record:
+				return comp_obj
+			record.clear()
 
 	return DIFFERENT
 
 
-def check_2cF_redundancy_by_SF(sf_pool, fault_obj, init):
+def check_unlinked_2cF_redundancy_by_SF(sf_candidate_pool, sf_candidate_dict, fault_obj, init):
+	# use the method similar to filter SFs. generate the candidate sequence dict
 	op_num_key = '#O_' + str(fault_obj.SenOpsNum)
-	if init == '-':
-		for init_key in sf_pool.keys():
-			if find_identical_comps(fault_obj, sf_pool[init_key][op_num_key], {'aInit', 'aCell'}) != DIFFERENT:
+
+	# check if the faults with target sequence exist in current sf_candidate_pool
+	if init == -1:
+		for init_key in sf_candidate_pool.keys():
+			if find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aInit', 'aCell'}) != DIFFERENT:
 				return REDUNDANT
 	else:
-		init_key = 'Init_' + init
-		if find_identical_comps(fault_obj, sf_pool[init_key][op_num_key], {'aCell'}) != DIFFERENT:
+		init_key = 'Init_' + str(init)
+		if find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aCell'}) != DIFFERENT:
 			return REDUNDANT
+
+	# if there's no faults with identical sequence in sf_candidate_pool, check the inclusive condition as in sf_filter
+	if fault_obj.CFdsFlag:
+		if check_CFds_redundancy(fault_obj, sf_candidate_dict['CFds'], 'Init_' + str(init)):
+			return REDUNDANT
+	elif check_nonCFds_redundancy(fault_obj, sf_candidate_dict['nonCFds'], 'Init_' + str(init)):
+		return REDUNDANT
 
 	return NOT_REDUNDANT
 
 
-def remove_2cF_based_on_SF(sf_pool, _2cF_unlinked_pool):
-	redundancy = []
+def remove_unlinked_2cF_by_SF(sf_candidate_pool, _2cF_unlinked_pool):
+	sf_candidate_dict = generate_fault_search_set(sf_candidate_pool)
 	redundant_2cF_pool = set()
 	# if the simple fault pool is empty, return the original 2cF unlinked pool directly
-	for init_index, init_key in enumerate(sf_pool.keys(), 1):
-		if any(sf_pool[init_key]):
+	for init_index, init_key in enumerate(sf_candidate_pool.keys(), 1):
+		if any(sf_candidate_pool[init_key]):
 			break
-		elif init_index < len(sf_pool.keys()):
+		elif init_index < len(sf_candidate_pool.keys()):
 			continue
 		else:
 			return _2cF_unlinked_pool
 
 	for _2cF_obj in _2cF_unlinked_pool:
-		for comp in _2cF_obj.comps.values():
-			if comp.CFdsFlag:
-				init = comp.vInit
-			else:
-				init = comp.aInit
-			redundancy.append(check_2cF_redundancy_by_SF(sf_pool, comp, init))
-
-		if REDUNDANT in redundancy:
-			redundant_2cF_pool.add(_2cF_obj)
-		redundancy.clear()
+		_2cF_init = classify_based_on_Init(_2cF_obj)
+		for comp, init in zip(_2cF_obj.comps.values(), _2cF_init):
+			if check_unlinked_2cF_redundancy_by_SF(sf_candidate_pool, sf_candidate_dict, comp, init):
+				redundant_2cF_pool.add(_2cF_obj)
+				break
 
 	return _2cF_unlinked_pool - redundant_2cF_pool
 
 
-def get_fault_operation_num(fault_obj):
+def get_vertex_weight(fault_obj):
 	if fault_obj.CFdsFlag:
 		weight = fault_obj.SenOpsNum
 	elif fault_obj.nestSenFlag == 'donor':
@@ -146,10 +152,10 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
 			else:
 				ignore_keys = {'aCell'}
 
-			find_result = find_identical_comps(comp, vertices_map, ignore_keys)
+			find_result = find_identical_objs(comp, vertices_map, ignore_keys)
 			if find_result == DIFFERENT:
 				vertices_map.append(comp)
-				vertices.append({len(vertices_map) - 1: get_fault_operation_num(comp)})
+				vertices.append({len(vertices_map) - 1: get_vertex_weight(comp)})
 				edge_info.append(vertices_map.index(comp))
 			else:
 				edge_info.append(vertices_map.index(find_result))
@@ -169,7 +175,7 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
 	return graph_file
 
 
-def remove_2cF_based_on_MWVC(graph_file):
+def remove_unlinked_2cF_by_MWVC(graph_file):
 	if sys.platform.startswith('linux'):
 		quickVC_solver.quickVC_solver(graph_file)
 	else:
@@ -178,42 +184,53 @@ def remove_2cF_based_on_MWVC(graph_file):
 	return
 
 
+def remove_unlinked_2cF_by_linked_2cF_CFds(simplified_unlinked_2cF_cover, linked_2cF_CFds_pool):
+	redundant_comp = set()
+	for comp in simplified_unlinked_2cF_cover:
+		if find_identical_objs(comp, linked_2cF_CFds_pool, {'aCell'}) != DIFFERENT:
+			redundant_comp.add(comp)
+
+	return simplified_unlinked_2cF_cover - redundant_comp
+
+
 def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
 	print("Filtering redundant 2-composite faults...\n")
 
 	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool['unlinked']
-	simplified_unlinked_2cF_pool = remove_2cF_based_on_SF(sf_pool, unlinked_2cF_pool)
-	_2cF_cover = set()
+	simplified_unlinked_2cF_pool = remove_unlinked_2cF_by_SF(sf_pool, unlinked_2cF_pool)
+	unlinked_2cF_cover = set()
 
 	if len(simplified_unlinked_2cF_pool) > 0:
 		vertices_map = []
 		CFdr_map = []
-		print("Invoking MWVC solver...\n")
+		print("Building unlinked 2cF graph...\n")
 		graph_file = build_unlinked_2cF_graph(simplified_unlinked_2cF_pool, vertices_map, CFdr_map)
-		remove_2cF_based_on_MWVC(graph_file)
+		print("Invoking MWVC solver...\n")
+		remove_unlinked_2cF_by_MWVC(graph_file)
 
 		with open("../results/mwvc.log", "r") as result:
 			for vertex in result.readlines():
 				vertex.strip()
-				_2cF_cover.add(vertices_map[int(vertex) - 1])
+				unlinked_2cF_cover.add(vertices_map[int(vertex) - 1])
 
 		for CFdr in CFdr_map:
 			if CFdr.aInit == '-':
 				ignore_keys = {'aInit', 'aCell'}
 			else:
 				ignore_keys = {'aCell'}
-			if find_identical_comps(CFdr, _2cF_cover, ignore_keys) == DIFFERENT:
-				_2cF_cover.add(CFdr)
+			if find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys) == DIFFERENT:
+				unlinked_2cF_cover.add(CFdr)
 
-	return _2cF_cover
+	# filtered_fault_pool = remove_unlinked_2cF_by_linked_2cF_CFds(unlinked_2cF_cover, _2cF_CFds_pool['linked'])
+	return unlinked_2cF_cover
 
 
 if __name__ == '__main__':
 	try:
-		parsed_pool = cf.parse_fault_pool(ps.fault_list_file, ps.fault_model_name)
-		classified_pool = cf.classify(parsed_pool)
-		filtered_SF_pool = sff.filter_redundant_SF(classified_pool['SF'])
-		for fault in filter_redundant_2cF(classified_pool['SF'], classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']):
-			print(fault.text)
+		parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
+		classified_pool = classify(parsed_pool)
+		filtered_SF_pool = filter_redundant_SF(classified_pool['SF'])
+		filtered_unlinked_pool = filter_redundant_2cF(filtered_SF_pool, classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds'])
 	except TypeError:
-		pass
+		print("fail")
+		traceback.print_exc()

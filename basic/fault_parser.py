@@ -1,7 +1,8 @@
+# basic module of parsing the input fault list
 import re
 
 # unparsed fault list definitions
-fault_list_file = '../resources/fault_lists/' + 'dyn2comp'
+fault_list_file = '../resources/fault_lists/' + 'complete'
 fault_model_name = '2cF_3'
 
 
@@ -17,7 +18,7 @@ class SimpleFault:
              'CFdsFlag': '', 'rdFlag': '',
              'nestSenFlag': ''}
 
-    text = ''
+    fp_text = ''
 
     def __init__(self):
         """
@@ -204,11 +205,11 @@ def get_fault_primitive(filename, modelname):
         # Put FP1 and FP2 into object SimpleFault
         FP1 = SimpleFault()
         FP1.__dict__.update(fault_props[0])
-        FP1.text = '<' + fault_comps[0] + '>'
+        FP1.fp_text = '<' + fault_comps[0] + '>'
         if len(fault_props) > 1:
             FP2 = SimpleFault()
             FP2.__dict__.update(fault_props[1])
-            FP2.text = '<' + fault_comps[1] + '>'
+            FP2.fp_text = '<' + fault_comps[1] + '>'
         else:
             # if it is a simple fault, make FP1 and FP2 the same object
             FP2 = FP1

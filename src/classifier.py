@@ -1,8 +1,6 @@
 # A parse and classify module of input simple faults and 2cFs
-
-# from basic import fault_parser as ps
 import copy
-from basic import fault_parser as ps
+from basic.fault_parser import *
 
 # MACRO definitions
 CLASSIFY_ERROR = -1
@@ -17,13 +15,13 @@ NOT_NONCFDS_INCLUDED = False
 class TwoComposite:
 	"""a 2-composite fault contains two simple faults"""
 	link_flag = ''
-	fault_primitive = ''
+	fp_text = ''
 
 	def __init__(self):
 		self.comps = {}
 
 	def get_FP_text(self, text):
-		self.fault_primitive = text
+		self.fp_text = text
 
 	def get_Comp_objects(self, obj1, obj2):
 		self.comps.update({'comp1': obj1, 'comp2': obj2})
@@ -52,7 +50,7 @@ class TwoComposite:
 			elif (self.comps['comp1'].rdFlag == 2) or (self.comps['comp2'].rdFlag == 2):
 				self.link_flag = 0
 			elif (self.comps['comp1'].vFault != self.comps['comp2'].vInit) and \
-					(self.comps['comp1'].vFault != self.comps['comp2'].vInit):
+					(self.comps['comp2'].vFault != self.comps['comp1'].vInit):
 				self.link_flag = 0
 			else:
 				self.link_flag = 1
@@ -63,7 +61,7 @@ class TwoComposite:
 
 
 def parse_fault_pool(fault_pool, fault_model):
-	fault_obj_list = ps.get_fault_primitive(fault_pool, fault_model)
+	fault_obj_list = get_fault_primitive(fault_pool, fault_model)
 	parsed_pool = []
 	fault_comps = TwoComposite()
 	for obj in fault_obj_list:
@@ -114,8 +112,14 @@ def classify_based_on_Init(comp_obj):
 		else:
 			return aInit_dict.get(comp_obj.comps['comp1'].aInit, CLASSIFY_ERROR)
 	elif arbit_2cF_nonCFds_included(comp_obj):
-		# 2cF-nonCFds are unnecessary to be classified, it will be degenerated as SCF
-		pass
+		# classify method for filter 2cF by SF
+		init_result = tuple()
+		for comp_key in comp_obj.comps.keys():
+			if comp_obj.comps[comp_key].CFdsFlag:
+				init_result += (vInit_dict.get(comp_obj.comps[comp_key].vInit, CLASSIFY_ERROR),)
+			else:
+				init_result += (aInit_dict.get(comp_obj.comps[comp_key].aInit, CLASSIFY_ERROR),)
+		return init_result
 	else:
 		# The 2 fault composites in a 2cF-CFds need to be classified individually, return a tuple to store the
 		# classify results
@@ -168,4 +172,4 @@ def classify(unclassified_fault_pool):
 
 
 if __name__ == '__main__':
-	classify_result = classify(parse_fault_pool(ps.fault_list_file, ps.fault_model_name))
+	classify_result = classify(parse_fault_pool(fault_list_file, fault_model_name))
