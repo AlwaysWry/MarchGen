@@ -82,6 +82,7 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 			if find_identical_objs(fault_sequence, linked_seq_pool[init_key], {}) == DIFFERENT:
 				linked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
+	# TODO: unlinked CFds should not be decided to change the detect_tag
 	for unlinked_fault in unlinked_pool:
 		fault_sequence = Sequence(get_sequence_properties(unlinked_fault))
 		init_key = 'Init_' + fault_sequence.ass_init
