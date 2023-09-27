@@ -71,6 +71,7 @@ def filter_redundant_linked_sequences(linked_seq_pool):
 
 def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 	linked_seq_pool = {'Init_0': set(), 'Init_1': set()}
+	# the 'Init_-1' class is for the not redundant nonCFs, it can be transformed into either of main MEs
 	unlinked_seq_pool = {'Init_0': set(), 'Init_1': set(), 'Init_-1': set()}
 
 	unlinked_pool = sf_pool.union(unlinked_2cF_pool)
@@ -82,11 +83,11 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 			if find_identical_objs(fault_sequence, linked_seq_pool[init_key], {}) == DIFFERENT:
 				linked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
-	# TODO: unlinked CFds should not be decided to change the detect_tag
 	for unlinked_fault in unlinked_pool:
 		fault_sequence = Sequence(get_sequence_properties(unlinked_fault))
 		init_key = 'Init_' + fault_sequence.ass_init
 
+		# if the nonCF still exists after former filter phases, keep it into the sequence pool directly
 		if init_key == 'Init_-1':
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 			continue
@@ -95,7 +96,8 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 		find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag'})
 		if find_result == DIFFERENT:
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
-		else:
+		# only nonCFds with same sequence needs to validate the detect_tag
+		elif not unlinked_fault.CFdsFlag:
 			find_result.detect_tag |= fault_sequence.detect_tag
 
 	filter_redundant_linked_sequences(linked_seq_pool)
