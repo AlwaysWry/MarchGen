@@ -46,11 +46,11 @@ def check_unlinked_2cF_redundancy_by_SF(sf_candidate_pool, sf_candidate_dict, fa
 	# check if the faults with target sequence exist in current sf_candidate_pool
 	if init == -1:
 		for init_key in sf_candidate_pool.keys():
-			if find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aInit', 'aCell'}) != DIFFERENT:
+			if not isinstance(find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aInit', 'aCell'}), int):
 				return REDUNDANT
 	else:
 		init_key = 'Init_' + str(init)
-		if find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aCell'}) != DIFFERENT:
+		if not isinstance(find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aInit', 'aCell'}), int):
 			return REDUNDANT
 
 	# if there's no faults with identical sequence in sf_candidate_pool, check the inclusive condition as in sf_filter
@@ -187,7 +187,7 @@ def remove_unlinked_2cF_by_MWVC(graph_file):
 def remove_unlinked_2cF_by_linked_2cF_CFds(simplified_unlinked_2cF_cover, linked_2cF_CFds_pool):
 	redundant_comp = set()
 	for comp in simplified_unlinked_2cF_cover:
-		if find_identical_objs(comp, linked_2cF_CFds_pool, {'aCell'}) != DIFFERENT:
+		if isinstance(find_identical_objs(comp, linked_2cF_CFds_pool, {'aCell'}), int):
 			redundant_comp.add(comp)
 
 	return simplified_unlinked_2cF_cover - redundant_comp
@@ -218,7 +218,7 @@ def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
 				ignore_keys = {'aInit', 'aCell'}
 			else:
 				ignore_keys = {'aCell'}
-			if find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys) == DIFFERENT:
+			if isinstance(find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys), int):
 				unlinked_2cF_cover.add(CFdr)
 
 	# filtered_fault_pool = remove_unlinked_2cF_by_linked_2cF_CFds(unlinked_2cF_cover, _2cF_CFds_pool['linked'])

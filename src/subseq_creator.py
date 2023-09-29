@@ -80,7 +80,7 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 		for comp_obj in linked_CFds.comps.values():
 			fault_sequence = Sequence(get_sequence_properties(comp_obj))
 			init_key = 'Init_' + fault_sequence.ass_init
-			if find_identical_objs(fault_sequence, linked_seq_pool[init_key], {}) == DIFFERENT:
+			if isinstance(find_identical_objs(fault_sequence, linked_seq_pool[init_key], {}), int):
 				linked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
 	for unlinked_fault in unlinked_pool:
