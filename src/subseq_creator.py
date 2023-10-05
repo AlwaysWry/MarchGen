@@ -10,11 +10,14 @@ class Sequence:
 		:param props_dict:
 		seq_text: main content of a sequence object, use it to generate March test
 		ass_init: the initial condition of the associate cell. For CFds, it is vInit, for nonCFds, it is aInit
-		CFdsFlag: tag for CFds
+		detect_tag: tag for detect operation of nonCFds
+		nest_tag: tag for checking whether the sequence is available for nest sensitization
+
 		"""
 		self.seq_text = ''
 		self.ass_init = ''
 		self.detect_tag = ''
+		self.nest_tag = ''
 		self.__dict__.update(props_dict)
 
 # End of class definitions
@@ -30,6 +33,7 @@ def get_sequence_properties(fault_obj):
 		props_dict['ass_init'] = fault_obj.aInit
 
 	props_dict['detect_tag'] = not bool(fault_obj.CFdsFlag)
+	props_dict['nest_tag'] = fault_obj.nestSenFlag
 
 	return props_dict
 
@@ -92,13 +96,14 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 			continue
 
-		# compare with the CFds pool. if the same sequence exists, merge into CFds pool, but change the detect_tag to valid
-		find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag'})
+		# compare with the CFds pool. if the same sequence exists, merge into CFds pool by merging the detect_tag and nest_tag
+		find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag', 'nest_tag'})
 		if find_result == DIFFERENT:
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
-		# only nonCFds with same sequence needs to validate the detect_tag
+		# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
 		elif not unlinked_fault.CFdsFlag:
 			find_result.detect_tag |= fault_sequence.detect_tag
+			find_result.nest_tag = fault_sequence.nest_tag
 
 	filter_redundant_linked_sequences(linked_seq_pool)
 
@@ -116,5 +121,5 @@ if __name__ == '__main__':
 									 filtered_unlinked_pool, classified_pool['2cF_CFds']['linked']):
 		for sub_pool in pool.values():
 			for sequence in sub_pool:
-				print(sequence.seq_text)
+				print([sequence.nest_tag, sequence.seq_text])
 			print("\n")

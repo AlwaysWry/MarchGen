@@ -94,6 +94,15 @@ def generate_fault_search_set(classified_fault_pool):
 def check_nonCFds_redundancy(fault, candidate_dict, init):
 	fault_op_num = fault.SenOpsNum
 	match_seq = fault.vInit + fault.Sen
+	# for nonCFds, still need to consider nest sensitization
+	nest_match_seq = ''
+	if fault.nestSenFlag != 'invalid':
+		if fault.nestSenFlag == 'donor':
+			nest_match_seq = match_seq + fault.Sen
+		elif fault.vInit == '1':
+			nest_match_seq = '0' + 2 * fault.Sen
+		else:
+			nest_match_seq = '1' + 2 * fault.Sen
 
 	if init == 'Init_-1':
 		# 1) if the nonCFds is a nonCF, its sensitization sequence can be matched by the candidate sets
@@ -106,21 +115,21 @@ def check_nonCFds_redundancy(fault, candidate_dict, init):
 				op_num_keys = op_num_keys[fault_op_num - 1:]
 				del op_num_keys[0]
 				for op_num_key in op_num_keys:
-					if match_seq in candidate_dict[init_key][op_num_key]:
+					if (match_seq in candidate_dict[init_key][op_num_key]) or (nest_match_seq in candidate_dict[init_key][op_num_key]):
 						return REDUNDANT
 			# or be covered by other CFs that contain the same sensitization sequence
 			else:
 				for op_num_key in op_num_keys[fault_op_num - 1:]:
-					if match_seq in candidate_dict[init_key][op_num_key]:
+					if (match_seq in candidate_dict[init_key][op_num_key]) or (nest_match_seq in candidate_dict[init_key][op_num_key]):
 						return REDUNDANT
 	else:
 		# 2) if the nonCFds is a CF, check whether the faults with target sequence
-		# 	 exist in >fault_op_num classes of candidate_dict
+		# 	 exist in >fault_op_num subclasses of corresponding init class of candidate_dict
 		op_num_keys = sorted(candidate_dict[init].keys())
 		op_num_keys = op_num_keys[fault_op_num - 1:]
 		del op_num_keys[0]
 		for op_num_key in op_num_keys:
-			if match_seq in candidate_dict[init][op_num_key]:
+			if (match_seq in candidate_dict[init][op_num_key]) or (nest_match_seq in candidate_dict[init][op_num_key]):
 				return REDUNDANT
 
 	return NOT_REDUNDANT

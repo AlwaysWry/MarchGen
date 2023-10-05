@@ -5,6 +5,9 @@ import re
 fault_list_file = '../resources/fault_lists/' + 'complete'
 fault_model_name = '2cF_3'
 
+NEST = True
+NOT_NEST = False
+
 
 # define fault primitive class
 class SimpleFault:
@@ -70,6 +73,25 @@ def get_March_algorithm(filename):
 
     print("March test is successfully loaded.\n")
     return march
+
+
+def arbit_nest_sensitization(Sen, CFdsFlag):
+    operation_num = int(len(Sen) / 2)
+    if not ((CFdsFlag == 0) and (Sen.startswith('w'))):
+        return NOT_NEST
+    elif operation_num % 2 == 0:
+        # the number of Sen operations is even
+        if Sen[:operation_num] == Sen[operation_num:]:
+            return NOT_NEST
+        else:
+            return NEST
+    elif operation_num > 1:
+        if Sen[:operation_num + 2] == Sen[operation_num - 1:]:
+            return NOT_NEST
+        else:
+            return NEST
+    else:
+        return NEST
 
 
 def get_fault_properties(fault_comps, model):
@@ -157,14 +179,13 @@ def get_fault_properties(fault_comps, model):
         SenOpsNum = Sen.count('r') + Sen.count('w')
 
         # for non-CFds, check the nest sensitization conditions
-        if ((CFdsFlag == 0) and (Sen.startswith('w'))
-                and ((Sen.count('r') == SenOpsNum) or (Sen.count('w') == SenOpsNum))):
+        if arbit_nest_sensitization(Sen, CFdsFlag):
             if vInit != Sen[-1]:
                 nestSenFlag = 'donor'
             else:
                 nestSenFlag = 'receiver'
         else:
-            nestSenFlag = 'Invalid'
+            nestSenFlag = 'invalid'
 
         props_list = [aCell, aInit, vCell, vInit, SenOpsNum, Sen, vFault, CFdsFlag, rdFlag, nestSenFlag]
         fault_props_dict = dict(zip(empty_dict.keys(), props_list))
