@@ -118,14 +118,14 @@
 # # up,r0,w1,r1,w0,r0
 # down,r0
 
-any,w0
-up,r0,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0
-up,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0
-up,r0,w1
-up,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1
-up,r1,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1
-up,r1
-down,r1,w0
+# any,w0
+# up,r0,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0
+# up,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0
+# up,r0,w1
+# up,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1
+# up,r1,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1
+# up,r1
+# down,r1,w0
 
 # any,w0
 # up,r0,w1,w0
@@ -162,3 +162,11 @@ down,r1,w0
 # any,w1
 # any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1
 # any,r1
+
+
+any,w0
+up,r0,w0,w1,w0,r0,w1,r1,w1,w0,r0,w1
+up,r1,w0,r0,w0,w1,w0,r0,w1,r1,w1,w0,r0
+up,r0
+down,r0,w1
+down,r1

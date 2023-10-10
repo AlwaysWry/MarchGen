@@ -93,6 +93,7 @@ def generate_fault_search_set(classified_fault_pool):
 
 def check_nonCFds_redundancy(fault, candidate_dict, init):
 	fault_op_num = fault.SenOpsNum
+	fault_op_num_key = '#O_' + str(fault_op_num)
 	match_seq = fault.vInit + fault.Sen
 	# for nonCFds, still need to consider nest sensitization
 	nest_match_seq = ''
@@ -112,8 +113,7 @@ def check_nonCFds_redundancy(fault, candidate_dict, init):
 			# nonCF is impossible be covered by other nonCFs in the same #O class (otherwise the nonCF will be identical with
 			# the current fault), it can be possibly covered by other nonCFs with more operations
 			if init_key == init:
-				op_num_keys = op_num_keys[fault_op_num - 1:]
-				del op_num_keys[0]
+				op_num_keys = op_num_keys[op_num_keys.index(fault_op_num_key) + 1:]
 				for op_num_key in op_num_keys:
 					if (match_seq in candidate_dict[init_key][op_num_key]) or (nest_match_seq in candidate_dict[init_key][op_num_key]):
 						return REDUNDANT
@@ -126,8 +126,7 @@ def check_nonCFds_redundancy(fault, candidate_dict, init):
 		# 2) if the nonCFds is a CF, check whether the faults with target sequence
 		# 	 exist in >fault_op_num subclasses of corresponding init class of candidate_dict
 		op_num_keys = sorted(candidate_dict[init].keys())
-		op_num_keys = op_num_keys[fault_op_num - 1:]
-		del op_num_keys[0]
+		op_num_keys = op_num_keys[op_num_keys.index(fault_op_num_key) + 1:]
 		for op_num_key in op_num_keys:
 			if (match_seq in candidate_dict[init][op_num_key]) or (nest_match_seq in candidate_dict[init][op_num_key]):
 				return REDUNDANT
@@ -141,22 +140,25 @@ def check_CFds_redundancy(fault, candidate_dict, init):
 	# For checking the redundancy of a CFds, apply inclusive rule to every seq in candidate set to check redundancy.
 	# the following 3 terms need to be considered:
 
+	# 1) Check whether the nonCFds that has the target sequence exists in fault_op_num class of candidate_dict,
+	# 	 i.e. search the candidate includes target sequence while is longer than the target
+
+	# 2) Check whether the target sequence in the fault_op_num-1 class of candidate_dict, since the additional 1 detect
+	#    operation of nonCFds in that class may cover some CFds here. However, it requires that every nonCFds has to apply
+	#    the detect operation after sensitization sequence, and cannot emit when it at the tail of an ME.
+
+	# 3) Check whether the faults that have the target sequence exist in >fault_op_num classes of candidate_dict
+
 	search_range = op_num_keys[max(0, fault_op_num - 2):]
 	match_seq = fault.aInit + fault.Sen
 
 	for op_num_key in search_range:
-		# 1) Check whether the nonCFds that has the target sequence exists in fault_op_num class of candidate_dict,
-		# 	 i.e. search the candidate includes target sequence while is longer than the target
 		if op_num_key == '#O_' + str(fault_op_num):
 			for seq in candidate_dict[init][op_num_key]:
 				if (match_seq in seq) and (len(match_seq) < len(seq)):
 					return REDUNDANT
 			continue
 
-		# 2) Check whether the target sequence in the fault_op_num-1 class of candidate_dict,
-		# 	 since the additional 1 detect operation of nonCFds in that class may cover some CFds here
-
-		# 3) Check whether the faults that have the target sequence exist in >fault_op_num classes of candidate_dict
 		for seq in candidate_dict[init][op_num_key]:
 			if match_seq in seq:
 				return REDUNDANT
@@ -188,6 +190,7 @@ def filter_redundant_SF(classified_fault_pool):
 		for op_num in filtered_fault_pool[init].keys():
 			filtered_fault_pool[init][op_num] = filtered_fault_pool[init][op_num] - redundant_fault_pool[init][op_num]
 
+	print("Simple faults are filtered.\n")
 	return filtered_fault_pool
 
 

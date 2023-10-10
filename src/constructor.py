@@ -70,7 +70,7 @@ def get_linked_sequence_intersection(init_0_pool, init_1_pool):
 
 
 def find_terminal_seq(seq_intersection, inits):
-	# find terminal sequence in the sequence intersection set.
+	# find terminal sequence in the sequence linked_intersection set.
 	# terminal sequences will be excluded from the shortest path search.
 	# terminal sequence has to meet following conditions:
 	# 1) start with a read operation
@@ -90,6 +90,11 @@ def find_terminal_seq(seq_intersection, inits):
 				terminal_seq_pool[key].add(seq)
 
 	return terminal_seq_pool
+
+
+def nest_available_sequences(linked_seq_pool):
+	return linked_seq_pool
+	pass
 
 
 def arbit_sequence_nest_condition(seq_segment, seq_obj):
@@ -163,19 +168,20 @@ def recursive_search(vertex_pool, derived_pool, edge_pool, root, seq, sequence_p
 	for branch in seq_branch:
 		vertex = hit_vertex(branch, sequence_pool)
 		if isinstance(vertex, CoverageVertex):
+			# TODO: fix the problem that the vertex index cannot be updated correctly
 			vertex_count += 1
 			vertex.index = vertex_count
 			vertex.coverage = root.coverage + vertex.coverage
 
 			find_result = find_identical_objs(vertex, vertex_pool, {'index'})
 			edge_dict = {'weight': search_step, 'operation_map': [], 'terminal': []}
-			if isinstance(find_result, int):
+			if not isinstance(find_result, type(vertex)):
 				derived_pool.append(vertex)
 				edge_dict['terminal'].extend([str(root.index), str(vertex.index)])
 			else:
 				edge_dict['terminal'].extend([str(root.index), str(find_result.index)])
 
-			edge_dict['operation_map'].append(branch - root.get_initial_sequence(''))
+			edge_dict['operation_map'].append(branch.replace(root.get_initial_sequence(), '', 1))
 			edge = CoverageEdge(edge_dict)
 			edge_pool.append(edge)
 
@@ -184,7 +190,8 @@ def recursive_search(vertex_pool, derived_pool, edge_pool, root, seq, sequence_p
 			return NOT_HIT
 		else:
 			search_step += 1
-			search_result = recursive_search(vertex_pool, derived_pool, edge_pool, root, branch, sequence_pool, vertex_count, search_step, max_step)
+			search_result = recursive_search(vertex_pool, derived_pool, edge_pool, root, branch, sequence_pool, vertex_count,
+											 search_step, max_step)
 			if isinstance(search_result, dict):
 				continue
 
@@ -204,10 +211,12 @@ def build_coverage_graph(sequence_pool, init):
 	max_coverage = len(root_vertex.coverage)
 	recursive_search(vertex_pool, derived_vertices, edge_pool, root_vertex, root_vertex.get_initial_sequence(),
 					 sequence_pool, len(vertex_pool), 0, max_search_step)
-	# TODO: need to traverse the derived vertices recursively. note that the initial sequence for each vertex can be determined.
-	#  the last sequence of every possible path is the same, and we can use it (plus a detect operation maybe) as the initial sequence,
-	#  since normally, the coverage can be different if the last N operations of two paths are different, where N is the maximum number
-	#  of all sequences' operations. While if the length of same last sequence is smaller than N, the 
+	# TODO: need to traverse the derived vertices recursively. note that the initial sequence for each vertex can be
+	#  determined. the last sequence of every possible path is the same, and we can use it (plus a detect operation
+	#  maybe) as the initial point of new vertices. Since normally, the coverage can be different if the last N
+	#  operations of two paths are different, where N is the maximum number of all sequences' operations. While if the
+	#  length of same last sequence is smaller than N, the sequence should has been filtered according to the inclusive
+	#  principle. As a result, we can only consider the last sequence.
 	while max_coverage < len(sequence_pool):
 		for derived_vertex in derived_vertices.copy():
 			pass
@@ -217,7 +226,6 @@ def build_coverage_graph(sequence_pool, init):
 						 sequence_pool, len(vertex_pool), 0, max_search_step)
 		max_coverage = len(max(map(lambda vertex: vertex.coverage, vertex_pool), key=len))
 
-
 	pass
 
 
@@ -225,11 +233,17 @@ if __name__ == '__main__':
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'])
-	flatten_SF_pool = flatten_sf_pool(filtered_SF_pool)
+	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
 	filtered_unlinked_pool = (filter_redundant_2cF(filtered_SF_pool, classified_pool['2cF_nonCFds_included'],
 												   classified_pool['2cF_CFds']))
-	seq_pool = create_sequence_pool(flatten_SF_pool, filtered_unlinked_pool, classified_pool['2cF_CFds']['linked'])
-	intersection = get_linked_sequence_intersection(seq_pool[0]['Init_0'], seq_pool[0]['Init_1'])
-	terminal_seq = find_terminal_seq(intersection, {'Init_0', 'Init_1'})
-	build_coverage_graph(intersection)
+	seq_pool = create_sequence_pool(flat_SF_pool, filtered_unlinked_pool, classified_pool['2cF_CFds']['linked'])
+	linked_intersection = get_linked_sequence_intersection(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
+
+	linked_intersection = nest_available_sequences(linked_intersection)
+	linked_remainder_0 = nest_available_sequences(seq_pool['linked']['Init_0'] - linked_intersection)
+	linked_remainder_1 = nest_available_sequences(seq_pool['linked']['Init_1'] - linked_intersection)
+
+	terminal_seq = find_terminal_seq(linked_intersection, {'Init_0', 'Init_1'})
+
+	build_coverage_graph(linked_intersection, '0')
 	print(terminal_seq)

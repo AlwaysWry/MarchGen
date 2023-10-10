@@ -5,6 +5,7 @@ import traceback
 from sf_filter import *
 import sys
 
+# apply different MWVC solver for different OS
 if sys.platform.startswith('linux'):
 	import quickVC_solver
 else:
@@ -221,7 +222,7 @@ def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
 			if isinstance(find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys), int):
 				unlinked_2cF_cover.add(CFdr)
 
-	# filtered_fault_pool = remove_unlinked_2cF_by_linked_2cF_CFds(unlinked_2cF_cover, _2cF_CFds_pool['linked'])
+	print("2-composite faults are filtered.\n")
 	return unlinked_2cF_cover
 
 

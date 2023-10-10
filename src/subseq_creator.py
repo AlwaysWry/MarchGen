@@ -84,7 +84,7 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 		for comp_obj in linked_CFds.comps.values():
 			fault_sequence = Sequence(get_sequence_properties(comp_obj))
 			init_key = 'Init_' + fault_sequence.ass_init
-			if isinstance(find_identical_objs(fault_sequence, linked_seq_pool[init_key], {}), int):
+			if isinstance(find_identical_objs(fault_sequence, linked_seq_pool[init_key], {}), type(DIFFERENT)):
 				linked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
 	for unlinked_fault in unlinked_pool:
@@ -107,7 +107,7 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 
 	filter_redundant_linked_sequences(linked_seq_pool)
 
-	return [linked_seq_pool, unlinked_seq_pool]
+	return {'linked': linked_seq_pool, 'unlinked': unlinked_seq_pool}
 
 
 if __name__ == '__main__':
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 												   classified_pool['2cF_CFds']))
 
 	for pool in create_sequence_pool(flatten_sf_pool(filtered_SF_pool),
-									 filtered_unlinked_pool, classified_pool['2cF_CFds']['linked']):
+									 filtered_unlinked_pool, classified_pool['2cF_CFds']['linked']).values():
 		for sub_pool in pool.values():
 			for sequence in sub_pool:
 				print([sequence.nest_tag, sequence.seq_text])

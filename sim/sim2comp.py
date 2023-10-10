@@ -14,9 +14,9 @@ march_test_file = '../resources/march_tests'
 test_logs_file = '../results/testlog'
 
 
-def main():
-    logfile = open(test_logs_file, 'w')
-    # logfile = sys.stdout
+def sim2Comp():
+    # logfile = open(test_logs_file, 'w')
+    logfile = sys.stdout
 
     march = ps.get_March_algorithm(march_test_file)
 
@@ -52,9 +52,10 @@ def main():
         print("Congratulations! All listed faults can be detected by this March sequence: \n")
         [print(element) for element in march]
 
-    logfile.close()
+    if type(logfile) == str:
+        logfile.close()
     print("\nSee elaborate test logs in file \"testlog\".")
 
 
 if __name__ == '__main__':
-    main()
+    sim2Comp()
