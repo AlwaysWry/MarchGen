@@ -15,8 +15,8 @@ test_logs_file = '../results/testlog'
 
 
 def sim2Comp():
-    # logfile = open(test_logs_file, 'w')
-    logfile = sys.stdout
+    logfile = open(test_logs_file, 'w')
+    # logfile = sys.stdout
 
     march = ps.get_March_algorithm(march_test_file)
 

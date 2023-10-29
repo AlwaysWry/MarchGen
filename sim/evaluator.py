@@ -282,7 +282,7 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                             if update_flag[1] == DETECTED:
                                 return DETECTED
                             # special case for drd
-                            elif (FP1.rdFlag == -1) and (update_flag[1] == UPDATED) and (op_seq_history[1] == FP2.Sen) \
+                            elif (FP2.rdFlag == -1) and (update_flag[1] == UPDATED) and (op_seq_history[1] == FP2.Sen) \
                                     and (cell_state_temp[visiting_cell] != op[1]):
                                 return DETECTED
 
