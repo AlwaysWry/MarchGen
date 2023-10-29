@@ -65,8 +65,7 @@ def generate_inclusive_search_set(classified_fault_pool):
 			candidate_nonCFds_list = []
 		else:
 			# a nonCFds with single operation can only include CFds, the only nonCFds it can include is itself
-			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen + 'r' + \
-						 c_obj.comps['comp1'].Sen[-1]
+			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen + 'r' + c_obj.comps['comp1'].Sen[-1]
 			candidate_CFds_list = generate_CFds_search_candidates(search_seq)
 			candidate_nonCFds_list = []
 
