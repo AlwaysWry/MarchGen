@@ -213,6 +213,7 @@ def filter_redundant_SF(classified_fault_pool, _2cF_pool):
 					sf_redundancy = check_nonCFds_redundancy(comp_obj.comps['comp1'], candidate_set_dict_SF['nonCFds'], init)
 					_2cF_redundancy = check_nonCFds_redundancy(comp_obj.comps['comp1'], candidate_set_dict_2cF['nonCFds'], init)
 
+				# still need to check whether the 2cF pool has the same faults
 				ignore_keys = set(comp_obj.comps['comp1'].__dict__.keys()) - {'fp_text'}
 				identical_flag = find_identical_objs(comp_obj.comps['comp1'], _2cF_pool, ignore_keys)
 
