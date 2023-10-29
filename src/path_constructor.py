@@ -1,8 +1,5 @@
 # a module of build the final March test, using the sub-sequences generated in subseq_creator.py
-import copy
-
 from subseq_creator import *
-from operator import attrgetter
 
 HIT = True
 NOT_HIT = False
@@ -280,11 +277,11 @@ def output_graph_for_hp(graph_info, graph_index):
 if __name__ == '__main__':
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'])
+	filtered_2cF_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']))
+	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_2cF_pool)
 	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
-	filtered_unlinked_pool = (filter_redundant_2cF(filtered_SF_pool, classified_pool['2cF_nonCFds_included'],
-												   classified_pool['2cF_CFds']))
-	seq_pool = create_sequence_pool(flat_SF_pool, filtered_unlinked_pool, classified_pool['2cF_CFds']['linked'])
+
+	seq_pool = create_sequence_pool(flat_SF_pool, filtered_2cF_pool, classified_pool['2cF_CFds']['linked'])
 	linked_intersection = get_linked_sequence_intersection(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
 	for vertex in define_vertices(linked_intersection):
 		print(vertex.get_initial_sequence())

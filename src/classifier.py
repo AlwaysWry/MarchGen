@@ -127,17 +127,17 @@ def classify_based_on_Init(comp_obj):
 			comp_obj.comps['comp2'].vInit, CLASSIFY_ERROR))
 
 
-def classify_SF_based_on_SenOpsNum(sf_pool, comp_obj):
+def classify_based_on_SenOpsNum(fault_pool, comp_obj):
 	init_encode = classify_based_on_Init(comp_obj)
-	if sf_pool['Init_' + str(init_encode)].get('#O_' + str(comp_obj.comps['comp1'].SenOpsNum)) is None:
-		sf_pool['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)] = set()
+	if fault_pool['Init_' + str(init_encode)].get('#O_' + str(comp_obj.comps['comp1'].SenOpsNum)) is None:
+		fault_pool['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)] = set()
 
-	sf_pool['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)].add(comp_obj)
+	fault_pool['Init_' + str(init_encode)]['#O_' + str(comp_obj.comps['comp1'].SenOpsNum)].add(comp_obj)
 	return
 
 
 def classify_SF(sf_pool, comp_obj):
-	classify_SF_based_on_SenOpsNum(sf_pool, comp_obj)
+	classify_based_on_SenOpsNum(sf_pool, comp_obj)
 	pass
 	return
 

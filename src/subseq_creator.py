@@ -1,5 +1,5 @@
 # a module of March test constructor based on the filtered fault pools
-from _2cF_filter import *
+from sf_filter import *
 
 
 class Sequence:
@@ -49,9 +49,9 @@ def flatten_sf_pool(sf_pool):
 	return flattened_sf_pool
 
 
-def find_inclusive_sequences(seq, candidate_pool):
+def find_inclusive_sequences(seq_obj, candidate_pool):
 	for candidate in candidate_pool:
-		if (seq is not candidate) and (seq.seq_text in candidate.seq_text):
+		if (seq_obj is not candidate) and (seq_obj.seq_text in candidate.seq_text):
 			return REDUNDANT
 
 	return NOT_REDUNDANT
@@ -114,9 +114,8 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 if __name__ == '__main__':
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'])
-	filtered_unlinked_pool = (filter_redundant_2cF(filtered_SF_pool, classified_pool['2cF_nonCFds_included'],
-												   classified_pool['2cF_CFds']))
+	filtered_unlinked_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']))
+	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_unlinked_pool)
 
 	for pool in create_sequence_pool(flatten_sf_pool(filtered_SF_pool),
 									 filtered_unlinked_pool, classified_pool['2cF_CFds']['linked']).values():

@@ -19,9 +19,8 @@ class SimpleFault:
              'SenOpsNum': '', 'Sen': '',
              'vFault': '',
              'CFdsFlag': '', 'rdFlag': '',
-             'nestSenFlag': ''}
-
-    fp_text = ''
+             'nestSenFlag': '',
+             'fp_text': ''}
 
     def __init__(self):
         """

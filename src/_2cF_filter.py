@@ -1,9 +1,11 @@
 # _2cF_filter.py is a module of filter the redundant 2-composite nonCFds included and the unlinked CFds*CFds faults.
 # The filter strategies include the sf-based method and the minimum weight vertices coverage method.
 import traceback
-
-from sf_filter import *
+from classifier import *
 import sys
+
+REDUNDANT = True
+NOT_REDUNDANT = False
 
 # apply different MWVC solver for different OS
 if sys.platform.startswith('linux'):
@@ -194,18 +196,18 @@ def remove_unlinked_2cF_by_linked_2cF_CFds(simplified_unlinked_2cF_cover, linked
 	return simplified_unlinked_2cF_cover - redundant_comp
 
 
-def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
+def filter_redundant_2cF(_2cF_nonCFds_pool, _2cF_CFds_pool):
 	print("Filtering redundant 2-composite faults...\n")
 
 	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool['unlinked']
-	simplified_unlinked_2cF_pool = remove_unlinked_2cF_by_SF(sf_pool, unlinked_2cF_pool)
+	# simplified_unlinked_2cF_pool = remove_unlinked_2cF_by_SF(sf_pool, unlinked_2cF_pool)
 	unlinked_2cF_cover = set()
 
-	if len(simplified_unlinked_2cF_pool) > 0:
+	if len(unlinked_2cF_pool) > 0:
 		vertices_map = []
 		CFdr_map = []
 		print("Building unlinked 2cF graph...\n")
-		graph_file = build_unlinked_2cF_graph(simplified_unlinked_2cF_pool, vertices_map, CFdr_map)
+		graph_file = build_unlinked_2cF_graph(unlinked_2cF_pool, vertices_map, CFdr_map)
 		print("Invoking MWVC solver...\n")
 		remove_unlinked_2cF_by_MWVC(graph_file)
 
@@ -222,7 +224,7 @@ def filter_redundant_2cF(sf_pool, _2cF_nonCFds_pool, _2cF_CFds_pool):
 			if isinstance(find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys), int):
 				unlinked_2cF_cover.add(CFdr)
 
-	print("2-composite faults are filtered.\n")
+	print("\n2-composite faults are filtered.\n")
 	return unlinked_2cF_cover
 
 
@@ -230,8 +232,7 @@ if __name__ == '__main__':
 	try:
 		parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 		classified_pool = classify(parsed_pool)
-		filtered_SF_pool = filter_redundant_SF(classified_pool['SF'])
-		filtered_unlinked_pool = filter_redundant_2cF(filtered_SF_pool, classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds'])
+		filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds'])
 	except TypeError:
 		print("fail")
 		traceback.print_exc()
