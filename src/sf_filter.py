@@ -65,8 +65,7 @@ def generate_inclusive_search_set(classified_fault_pool):
 			candidate_nonCFds_list = []
 		else:
 			# a nonCFds with single operation can only include CFds, the only nonCFds it can include is itself
-			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen + 'r' + \
-						 c_obj.comps['comp1'].Sen[-1]
+			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen + 'r' + c_obj.comps['comp1'].Sen[-1]
 			candidate_CFds_list = generate_CFds_search_candidates(search_seq)
 			candidate_nonCFds_list = []
 
@@ -213,9 +212,8 @@ def filter_redundant_SF(classified_fault_pool, _2cF_pool):
 					sf_redundancy = check_nonCFds_redundancy(comp_obj.comps['comp1'], candidate_set_dict_SF['nonCFds'], init)
 					_2cF_redundancy = check_nonCFds_redundancy(comp_obj.comps['comp1'], candidate_set_dict_2cF['nonCFds'], init)
 
-				# still need to check whether the 2cF pool has the same faults
-				ignore_keys = set(comp_obj.comps['comp1'].__dict__.keys()) - {'fp_text'}
-				identical_flag = find_identical_objs(comp_obj.comps['comp1'], _2cF_pool, ignore_keys)
+				# check if the same faults exist in 2cF pool
+				identical_flag = find_identical_objs(comp_obj.comps['comp1'], _2cF_pool, {'aCell'})
 
 				if sf_redundancy or _2cF_redundancy or isinstance(identical_flag, type(comp_obj.comps['comp1'])):
 					redundant_fault_pool[init][op_num].add(comp_obj)
