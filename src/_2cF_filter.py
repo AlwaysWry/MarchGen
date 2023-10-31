@@ -42,52 +42,6 @@ def find_identical_objs(obj, candidate_pool, ignored_keys):
 	return DIFFERENT
 
 
-def check_unlinked_2cF_redundancy_by_SF(sf_candidate_pool, sf_candidate_dict, fault_obj, init):
-	# use the method similar to filter SFs. generate the candidate sequence dict
-	op_num_key = '#O_' + str(fault_obj.SenOpsNum)
-
-	# check if the faults with target sequence exist in current sf_candidate_pool
-	if init == -1:
-		for init_key in sf_candidate_pool.keys():
-			if not isinstance(find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aInit', 'aCell'}), int):
-				return REDUNDANT
-	else:
-		init_key = 'Init_' + str(init)
-		if not isinstance(find_identical_objs(fault_obj, sf_candidate_pool[init_key][op_num_key], {'aInit', 'aCell'}), int):
-			return REDUNDANT
-
-	# if there's no faults with identical sequence in sf_candidate_pool, check the inclusive condition as in sf_filter
-	if fault_obj.CFdsFlag:
-		if check_CFds_redundancy(fault_obj, sf_candidate_dict['CFds'], 'Init_' + str(init)):
-			return REDUNDANT
-	elif check_nonCFds_redundancy(fault_obj, sf_candidate_dict['nonCFds'], 'Init_' + str(init)):
-		return REDUNDANT
-
-	return NOT_REDUNDANT
-
-
-def remove_unlinked_2cF_by_SF(sf_candidate_pool, _2cF_unlinked_pool):
-	sf_candidate_dict = generate_fault_search_set(sf_candidate_pool)
-	redundant_2cF_pool = set()
-	# if the simple fault pool is empty, return the original 2cF unlinked pool directly
-	for init_index, init_key in enumerate(sf_candidate_pool.keys(), 1):
-		if any(sf_candidate_pool[init_key]):
-			break
-		elif init_index < len(sf_candidate_pool.keys()):
-			continue
-		else:
-			return _2cF_unlinked_pool
-
-	for _2cF_obj in _2cF_unlinked_pool:
-		_2cF_init = classify_based_on_Init(_2cF_obj)
-		for comp, init in zip(_2cF_obj.comps.values(), _2cF_init):
-			if check_unlinked_2cF_redundancy_by_SF(sf_candidate_pool, sf_candidate_dict, comp, init):
-				redundant_2cF_pool.add(_2cF_obj)
-				break
-
-	return _2cF_unlinked_pool - redundant_2cF_pool
-
-
 def get_vertex_weight(fault_obj):
 	if fault_obj.CFdsFlag:
 		weight = fault_obj.SenOpsNum
@@ -200,7 +154,6 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, _2cF_CFds_pool):
 	print("Filtering redundant 2-composite faults...\n")
 
 	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool['unlinked']
-	# simplified_unlinked_2cF_pool = remove_unlinked_2cF_by_SF(sf_pool, unlinked_2cF_pool)
 	unlinked_2cF_cover = set()
 
 	if len(unlinked_2cF_pool) > 0:

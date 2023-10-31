@@ -16,6 +16,7 @@ class Sequence:
 		"""
 		self.seq_text = ''
 		self.ass_init = ''
+		self.dr_tag = ''
 		self.detect_tag = ''
 		self.nest_tag = ''
 		self.__dict__.update(props_dict)
@@ -33,6 +34,7 @@ def get_sequence_properties(fault_obj):
 		props_dict['seq_text'] = fault_obj.vInit + fault_obj.Sen
 		props_dict['ass_init'] = fault_obj.aInit
 
+	props_dict['dr_tag'] = (fault_obj.rd_flag == -1)
 	props_dict['detect_tag'] = not bool(fault_obj.CFdsFlag)
 	props_dict['nest_tag'] = fault_obj.nestSenFlag
 
