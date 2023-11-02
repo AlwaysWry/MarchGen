@@ -34,7 +34,7 @@ def get_sequence_properties(fault_obj):
 		props_dict['seq_text'] = fault_obj.vInit + fault_obj.Sen
 		props_dict['ass_init'] = fault_obj.aInit
 
-	props_dict['dr_tag'] = (fault_obj.rd_flag == -1)
+	props_dict['dr_tag'] = (fault_obj.rdFlag == -1)
 	props_dict['detect_tag'] = not bool(fault_obj.CFdsFlag)
 	props_dict['nest_tag'] = fault_obj.nestSenFlag
 
@@ -76,14 +76,14 @@ def filter_redundant_linked_sequences(linked_seq_pool):
 	return
 
 
-def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
+def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 	linked_seq_pool = {'Init_0': set(), 'Init_1': set()}
 	# the 'Init_-1' class is for the not redundant nonCFs, it can be transformed into either of main MEs
 	unlinked_seq_pool = {'Init_0': set(), 'Init_1': set(), 'Init_-1': set()}
 
 	unlinked_pool = sf_pool.union(unlinked_2cF_pool)
 
-	for linked_CFds in linked_pool:
+	for linked_CFds in linked_CFds_pool:
 		for comp_obj in linked_CFds.comps.values():
 			fault_sequence = Sequence(get_sequence_properties(comp_obj))
 			init_key = 'Init_' + fault_sequence.ass_init
@@ -99,13 +99,15 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_pool):
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 			continue
 
-		# compare with the CFds pool. if the same sequence exists, merge into CFds pool by merging the detect_tag and nest_tag
-		find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag', 'nest_tag'})
+		# compare with the CFds pool. if the same sequence exists, merge into CFds pool by merging the detect_tag,
+		# dr_tag and the nest_tag of nonCFds into CFds-sequence objects
+		find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
 		if find_result == DIFFERENT:
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 		# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
 		elif not unlinked_fault.CFdsFlag:
 			find_result.detect_tag |= fault_sequence.detect_tag
+			find_result.dr_tag |= fault_sequence.dr_tag
 			find_result.nest_tag = fault_sequence.nest_tag
 
 	filter_redundant_linked_sequences(linked_seq_pool)
