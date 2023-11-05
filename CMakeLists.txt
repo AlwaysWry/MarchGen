@@ -5,19 +5,16 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    #set(CMAKE_C_COMPILER gcc)
-    #set(CMAKE_CXX_COMPILER g++)
-    set(CMAKE_CXX_FLAGS "-fopenmp")
 
+    set(CMAKE_CXX_FLAGS "-fopenmp")
     find_package(OpenMP)
 
-    include_directories(mwvc_solver/QUICK_VC/include/gnn)
     include_directories(mwvc_solver/QUICK_VC/include/mwvc)
-    include_directories(mwvc_solver/QUICK_VC/include/mtx)
 
-    #settings for pybind11
+    # settings for pybind11
     set(PYTHON_EXECUTABLE /home/zsr/.conda/envs/March2Comp/bin/python)
-    set(pybind11_DIR "/home/zsr/.conda/pkgs/pybind11-2.9.1-py310h2571103_0/share/cmake/pybind11")
+    # the directory of pybind11 needs to be changed before compiling
+    set(pybind11_DIR "/home/zsr/.conda/envs/March2Comp/lib/python3.11/site-packages/pybind11/share/cmake/pybind11")
     find_package(pybind11 REQUIRED)
 
     set(LIBRARY_OUTPUT_PATH ../mwvc_solver/QUICK_VC)

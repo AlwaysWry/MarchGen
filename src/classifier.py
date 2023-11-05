@@ -1,5 +1,8 @@
 # A parse and classify module of input simple faults and 2cFs
 import copy
+import sys
+sys.path.append("../")
+
 from basic.fault_parser import *
 
 # MACRO definitions
