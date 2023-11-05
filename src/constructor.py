@@ -28,7 +28,27 @@ class CoverageVertex:
 
 		return init_seq
 
+
 # end of vertex definition
+
+class MarchElement:
+	content = ''
+	initial_state = ''
+	final_state = ''
+	head_tag = False
+	tail_tag = False
+	ass_tag = False
+
+	def __init__(self, element_text):
+		self.content = element_text
+		self.initial_state = element_text[1]
+		self.final_state = element_text[-1]
+
+	def update_states(self):
+		self.initial_state = self.content[1]
+		self.final_state = self.content[-1]
+
+# end of element definition
 
 
 def get_linked_sequence_intersection(init_0_pool, init_1_pool):
@@ -122,6 +142,7 @@ def get_vertex_winner(vertex_candidates: set):
 	def check_transition(vertex):
 		seq = vertex.get_march_sequence()
 		return seq[0] == seq[-1]
+
 	# priority level 1: unnest sequences get higher priority
 	if len(unnest_pool) > 1:
 		# priority level 2 for unnest_pool is bypassed
@@ -195,28 +216,37 @@ def build_coverage_chain(chain: str, vertex_pool: set):
 
 
 def terminal_decorator(chain: str):
-	march_elements = []
+	main_elements = []
 	terminal_feature = chain[0] + chain[-1]
 	match terminal_feature:
 		case '00':
-			march_elements.append('r1w0' + chain[1:])
-			march_elements.append(chain[1:] + 'w1')
+			main_elements.append(MarchElement('r1w0' + chain[1:]))
+			main_elements[-1].head_tag = True
+			main_elements.append(MarchElement(chain[1:] + 'w1'))
+			main_elements[-1].tail_tag = True
 		case '01':
-			march_elements.append('r1w0' + chain[1:] + 'w0')
-			march_elements.append(chain[1:])
+			main_elements.append(MarchElement('r1w0' + chain[1:] + 'w0'))
+			main_elements[-1].head_tag = True
+			main_elements[-1].tail_tag = True
+			main_elements.append(MarchElement(chain[1:]))
 		case '10':
-			march_elements.append('r0w1' + chain[1:] + 'w1')
-			march_elements.append(chain[1:])
+			main_elements.append(MarchElement('r0w1' + chain[1:] + 'w1'))
+			main_elements[-1].head_tag = True
+			main_elements[-1].tail_tag = True
+			main_elements.append(MarchElement(chain[1:]))
 		case '11':
-			march_elements.append('r0w1' + chain[1:])
-			march_elements.append(chain[1:] + 'w0')
+			main_elements.append(MarchElement('r0w1' + chain[1:]))
+			main_elements[-1].head_tag = True
+			main_elements.append(MarchElement(chain[1:] + 'w0'))
+			main_elements[-1].tail_tag = True
 		case _:
 			pass
 
 	if chain[1] != 'r':
-		march_elements[1] = 'r' + chain[0] + march_elements[1]
+		main_elements[-1].content = 'r' + chain[0] + main_elements[-1].content
+		main_elements[-1].update_states()
 
-	return march_elements
+	return main_elements
 
 
 def construct_main_elements(vertex_pool: set):
@@ -234,17 +264,19 @@ def construct_main_elements(vertex_pool: set):
 
 
 def check_odd_sensitization(elements: list, sequence_pool: set):
+	# find all sequences that are sensitized even-number times in ME, which violate the odd-sensitization condition
+	element_texts = list(map(lambda e: e.content, elements))
 	seq_texts = list(map(lambda s: s.seq_text, sequence_pool))
 	violated_pool = set()
 
-	for index, element in enumerate(elements):
+	for index, text in enumerate(element_texts):
 		count_dict = dict.fromkeys(seq_texts, 0)
 
 		for seq_obj in sequence_pool:
 			search_range = len(seq_obj.seq_text)
-			search_scope = element[1] + element
+			search_scope = text[1] + text
 			if index > 0 and search_range > 3:
-				search_scope = elements[index - 1][-search_range + 2:-1] + search_scope
+				search_scope = element_texts[index - 1][-search_range + 2:-1] + search_scope
 
 			for location in range(0, len(search_scope[:-search_range + 1]), 2):
 				segment = search_scope[location:location + search_range]
@@ -264,8 +296,25 @@ def check_odd_sensitization(elements: list, sequence_pool: set):
 		return NOT_FOUND
 
 
-def check_tail_cover(element: str, sequence_pool: set):
-	search_range = sorted(set(map(lambda s: len(s.seq_text), sequence_pool)), reverse=True)
+def check_tail_cover(elements: list, sequence_pool: set):
+	# check whether the ME adds tail terminal introduces sequence that violated order condition of 2cF2aa
+	tail_cover = set()
+	for element in elements:
+		element_text = element.content
+		search_range = sorted(set(map(lambda s: len(s.seq_text), sequence_pool)), reverse=True)
+		for location in search_range:
+			order_violation = set(filter(lambda s: s.seq_text == element_text[-location:], sequence_pool))
+			if len(order_violation) > 0:
+				tail_cover.update(order_violation)
+				break
+
+	if len(tail_cover) > 0:
+		return tail_cover
+	else:
+		return NOT_FOUND
+
+
+def construct_ass_elements():
 	pass
 
 
@@ -289,7 +338,6 @@ if __name__ == '__main__':
 	main_elements = construct_main_elements(vertex_intersection)
 	print(main_elements)
 	print(check_odd_sensitization(main_elements, linked_intersection))
+	print(check_tail_cover(list(filter(lambda e: e.tail_tag, main_elements)), linked_intersection))
 
 	terminal_seq = set(find_terminal_seq(linked_intersection, {'Init_0', 'Init_1'}))
-
-
