@@ -229,5 +229,5 @@ def filter_redundant_SF(classified_fault_pool, _2cF_pool):
 if __name__ == '__main__':
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds'])
+	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 	filter_redundant_SF(copy.deepcopy(classified_pool['SF']), filtered_2cF_pool)

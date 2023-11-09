@@ -118,7 +118,7 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 if __name__ == '__main__':
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_unlinked_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']))
+	filtered_unlinked_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked']))
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_unlinked_pool)
 
 	for pool in create_sequence_pool(flatten_sf_pool(filtered_SF_pool),

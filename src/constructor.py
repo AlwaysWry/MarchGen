@@ -2,6 +2,7 @@
 from subseq_creator import *
 
 NOT_FOUND = False
+NO_ELEMENT = False
 
 
 class CoverageVertex:
@@ -32,6 +33,14 @@ class CoverageVertex:
 # end of vertex definition
 
 class MarchElement:
+	"""
+	content: element text
+	initial_state: the state at the beginning of element
+	final_state: the state after the element is executed
+	head_tag: tag for record if the element is decorated at its head
+	tail_tag: tag for record if the element is decorated at its tail
+	ass_tag: tag for whether the element is an associate element
+	"""
 	content = ''
 	initial_state = ''
 	final_state = ''
@@ -51,22 +60,19 @@ class MarchElement:
 # end of element definition
 
 
-def get_linked_sequence_intersection(init_0_pool, init_1_pool):
-	seq_intersection = set()
-	redundant_0_seq = set()
-	redundant_1_seq = set()
+def get_linked_CFds_union(init_0_pool, init_1_pool):
+	seq_union = set()
+	seq_union.update(init_1_pool)
 
 	for seq in init_0_pool:
-		find_result = find_identical_objs(seq, init_1_pool, {'ass_init'})
-		if not isinstance(find_result, int):
-			seq_intersection.add(seq)
-			redundant_0_seq.add(seq)
-			redundant_1_seq.add(find_result)
+		find_result = find_identical_objs(seq, seq_union, {'ass_init'})
+		if isinstance(find_result, type(DIFFERENT)):
+			seq_union.add(seq)
 
-	init_0_pool -= redundant_0_seq
-	init_1_pool -= redundant_1_seq
+	for seq in seq_union:
+		seq.ass_init = -1
 
-	return seq_intersection
+	return seq_union
 
 
 def find_terminal_seq(seq_intersection, inits):
@@ -145,7 +151,7 @@ def get_vertex_winner(vertex_candidates: set):
 
 	# priority level 1: unnest sequences get higher priority
 	if len(unnest_pool) > 1:
-		# priority level 2 for unnest_pool is bypassed
+		# priority level 2-1 (for unnest_pool) is bypassed
 		secondary_pool = unnest_pool
 		# priority level 3: no-transition sequences get higher priority
 		if len(secondary_pool) > 1:
@@ -155,7 +161,7 @@ def get_vertex_winner(vertex_candidates: set):
 			tertiary_pool = set(filter(check_transition, secondary_pool))
 		else:
 			return next(iter(secondary_pool))
-	# priority level 2-2: donor nest sequences get higher priority
+	# priority level 2-2 (for nest pool): donor nest sequences get higher priority
 	elif len(unnest_pool) == 0:
 		secondary_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'donor', nest_pool))
 		# priority level 3 under 2-2: no-transition sequences get higher priority
@@ -201,7 +207,7 @@ def build_coverage_chain(chain: str, vertex_pool: set):
 			covered_vertices.add(receiver)
 			# merge the donor and the receiver vertices
 			vertex_for_chain.coverage.extend(copy.deepcopy(receiver.coverage))
-			# the corresponding march sequence of vertex gets longer after merging
+			# the corresponding march sequence of vertex gets longer after merging, calculate diff value again
 			vertex_for_chain.diff += (len(receiver.get_march_sequence()) - 3)
 			# check if there are other vertices covered by the current nest chain segment
 			covered_vertices.update(filter_vertices_covered_by_nest(vertex_for_chain, vertex_pool))
@@ -263,39 +269,6 @@ def construct_main_elements(vertex_pool: set):
 	return terminal_decorator(coverage_chain)
 
 
-def check_odd_sensitization(elements: list, sequence_pool: set):
-	# find all sequences that are sensitized even-number times in ME, which violate the odd-sensitization condition
-	element_texts = list(map(lambda e: e.content, elements))
-	seq_texts = list(map(lambda s: s.seq_text, sequence_pool))
-	violated_pool = set()
-
-	for index, text in enumerate(element_texts):
-		count_dict = dict.fromkeys(seq_texts, 0)
-
-		for seq_obj in sequence_pool:
-			search_range = len(seq_obj.seq_text)
-			search_scope = text[1] + text
-			if index > 0 and search_range > 3:
-				search_scope = element_texts[index - 1][-search_range + 2:-1] + search_scope
-
-			for location in range(0, len(search_scope[:-search_range + 1]), 2):
-				segment = search_scope[location:location + search_range]
-				if segment == seq_obj.seq_text:
-					count_dict[seq_obj.seq_text] += 1
-
-		even_pool = set(filter(lambda k: count_dict[k] % 2 == 0, count_dict.keys()))
-
-		if index > 0:
-			violated_pool = violated_pool.intersection(even_pool)
-		else:
-			violated_pool.update(even_pool)
-
-	if len(violated_pool) > 0:
-		return violated_pool
-	else:
-		return NOT_FOUND
-
-
 def check_tail_cover(elements: list, sequence_pool: set):
 	# check whether the ME adds tail terminal introduces sequence that violated order condition of 2cF2aa
 	tail_cover = set()
@@ -314,30 +287,154 @@ def check_tail_cover(elements: list, sequence_pool: set):
 		return NOT_FOUND
 
 
-def construct_ass_elements():
+def construct_tail_cover_elements(tail_cover):
+	# for each sequence object in tail_cover, it should be regarded as a CFds, since it just violates the
+	# no-swap condition for CFds
+	tail_cover_pool = set()
+	if len(tail_cover) > 0:
+		for seq_obj in tail_cover:
+			tail_cover_seq = Sequence(seq_obj.__dict__.copy())
+			tail_cover_seq.detect_tag = False
+			tail_cover_vertex = CoverageVertex({'diff': -1, 'coverage': [tail_cover_seq]})
+			tail_cover_pool.add(tail_cover_vertex)
+
+		vertex_candidate_pool = copy.deepcopy(tail_cover_pool)
+		initial_vertex = get_vertex_winner(vertex_candidate_pool)
+		vertex_candidate_pool -= {initial_vertex}
+		coverage_chain = initial_vertex.get_march_sequence()
+
+		while len(vertex_candidate_pool) > 0:
+			build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool)
+			vertex_candidate_pool -= build_result[0]
+			coverage_chain += build_result[1]
+
+		tail_cover_me = coverage_chain[1:]
+		if not tail_cover_me.startswith('r'):
+			tail_cover_me = 'r' + coverage_chain[0] + tail_cover_me
+
+		return tail_cover_me
+	else:
+		return NO_ELEMENT
+
+
+def check_odd_sensitization(elements: list, sequence_pool: set):
+	# find all sequences that are sensitized even-number times in ME, which violate the odd-sensitization condition
+	element_texts = list(map(lambda e: e.content, elements))
+	seq_texts = list(map(lambda s: s.seq_text, sequence_pool))
+	violated_seq_texts = set()
+
+	for index, text in enumerate(element_texts):
+		count_dict = dict.fromkeys(seq_texts, 0)
+
+		for seq_obj in sequence_pool:
+			search_range = len(seq_obj.seq_text)
+			search_scope = text[1] + text
+			if index > 0 and search_range > 3:
+				search_scope = element_texts[index - 1][-search_range + 2:-1] + search_scope
+
+			for location in range(0, len(search_scope[:-search_range + 1]), 2):
+				segment = search_scope[location:location + search_range]
+				if segment == seq_obj.seq_text:
+					count_dict[seq_obj.seq_text] += 1
+
+		even_pool = set(filter(lambda k: count_dict[k] % 2 == 0, count_dict.keys()))
+
+		if index > 0:
+			violated_seq_texts = violated_seq_texts.intersection(even_pool)
+		else:
+			violated_seq_texts.update(even_pool)
+
+	if len(violated_seq_texts) > 0:
+		return set(filter(lambda s: s.seq_text in violated_seq_texts, sequence_pool))
+	else:
+		return NOT_FOUND
+
+
+def construct_odd_sensitization_elements(odd_violation, main_elements):
+	# for each sequence object in odd_violation, it should be regarded as a CFds, since it just violates the
+	# odd-sensitization condition for CFds
+	violation_pool = set()
+	# a ME candidate pool for choosing the ME behind which the odd_violation ME is shortest
+	me_candidates = set(map(lambda m: m.content, main_elements))
+	violation_me_candidates = set()
+
+	if len(odd_violation) > 0:
+		for seq_obj in odd_violation:
+			violation_seq = Sequence(seq_obj.__dict__.copy())
+			violation_seq.detect_tag = False
+			violation_vertex = CoverageVertex({'diff': -1, 'coverage': [violation_seq]})
+			violation_pool.add(violation_vertex)
+
+		for element in me_candidates:
+			vertex_candidate_pool = copy.deepcopy(violation_pool)
+			max_range = max(set(map(lambda s: len(s.seq_text), odd_violation))) - 2
+			search_range = min(max_range, len(element))
+			coverage_chain = element[-search_range:] + 'r' + element[-1]
+
+			# the initial coverage chain may also cover a sequence
+			initial_coverage = set(filter(lambda v: v.coverage[0].seq_text in coverage_chain, vertex_candidate_pool))
+			vertex_candidate_pool -= initial_coverage
+
+			while len(vertex_candidate_pool) > 0:
+				build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool)
+				vertex_candidate_pool -= build_result[0]
+				coverage_chain += build_result[1]
+
+			violation_me_candidates.add(coverage_chain[search_range:])
+
+		odd_sensitization = sorted(violation_me_candidates, key=lambda c: len(c))[0]
+		return odd_sensitization
+	else:
+		return NO_ELEMENT
+
+
+def construct_ass_elements(main_elements, sequence_pool):
+	ass_elements = {'tail_cover_me': '', 'odd_sensitization_me': ''}
+	# check and build the ME for tail-cover first
+	tail_cover = check_tail_cover(list(filter(lambda m: m.tail_tag, main_elements)), sequence_pool)
+	tail_cover_me_text = construct_tail_cover_elements(tail_cover)
+
+	if isinstance(tail_cover_me_text, str):
+		tail_cover_me = MarchElement(tail_cover_me_text)
+		tail_cover_me.ass_tag = True
+		ass_elements['tail_cover_me'] = tail_cover_me
+
+	# check and build the ME for odd sensitization violation
+	odd_violation = check_odd_sensitization(main_elements, sequence_pool)
+	odd_sensitization_me_text = construct_odd_sensitization_elements(odd_violation, main_elements)
+
+	if isinstance(odd_sensitization_me_text, str):
+		odd_sensitization_me = MarchElement(odd_sensitization_me_text)
+		odd_sensitization_me.ass_tag = True
+		ass_elements['odd_sensitization_me'] = odd_sensitization_me
+
+	return ass_elements
+
+
+def linked_union_constructor(union_pool):
+	vertex_intersection = define_vertices(union_pool)
+	main_mes = construct_main_elements(vertex_intersection)
+	ass_mes = construct_ass_elements(main_mes, union_pool)
+	pass
+
+
+def unlinked_constructor(unlinked_pool):
 	pass
 
 
 if __name__ == '__main__':
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_2cF_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']))
+	filtered_2cF_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked']))
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_2cF_pool)
 	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
 
 	seq_pool = create_sequence_pool(flat_SF_pool, filtered_2cF_pool, classified_pool['2cF_CFds']['linked'])
-	linked_intersection = get_linked_sequence_intersection(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
-	# for vertex in define_vertices(linked_intersection):
-	# 	print(vertex.get_initial_sequence())
+	# for 01/10 type main ME, all linked seq need to be added for constructing
+	# for 00/11 type, init_0 and init_1 pool should be added for constructing separately,
+	# need to determine which is the better type
+	linked_CFds_union = get_linked_CFds_union(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
 
-	linked_intersection = linked_intersection
-	linked_remainder_0 = seq_pool['linked']['Init_0'] - linked_intersection
-	linked_remainder_1 = seq_pool['linked']['Init_1'] - linked_intersection
+	terminal_seq = set(find_terminal_seq(linked_CFds_union, {'Init_0', 'Init_1'}))
 
-	vertex_intersection = define_vertices(linked_intersection)
-	main_elements = construct_main_elements(vertex_intersection)
-	print(main_elements)
-	print(check_odd_sensitization(main_elements, linked_intersection))
-	print(check_tail_cover(list(filter(lambda e: e.tail_tag, main_elements)), linked_intersection))
-
-	terminal_seq = set(find_terminal_seq(linked_intersection, {'Init_0', 'Init_1'}))
+	linked_union_constructor(linked_CFds_union)

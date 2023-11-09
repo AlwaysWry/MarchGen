@@ -153,7 +153,7 @@ def remove_unlinked_2cF_by_linked_2cF_CFds(simplified_unlinked_2cF_cover, linked
 def filter_redundant_2cF(_2cF_nonCFds_pool, _2cF_CFds_pool):
 	print("Filtering redundant 2-composite faults...\n")
 
-	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool['unlinked']
+	unlinked_2cF_pool = _2cF_nonCFds_pool | _2cF_CFds_pool
 	unlinked_2cF_cover = set()
 
 	if len(unlinked_2cF_pool) > 0:
@@ -185,7 +185,8 @@ if __name__ == '__main__':
 	try:
 		parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 		classified_pool = classify(parsed_pool)
-		filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds'])
+		# TODO: consider the case that 2cF pool is empty at top level
+		filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 	except TypeError:
 		print("fail")
 		traceback.print_exc()
