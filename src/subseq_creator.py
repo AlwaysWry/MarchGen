@@ -21,7 +21,6 @@ class Sequence:
 		self.nest_tag = ''
 		self.__dict__.update(props_dict)
 
-
 # End of class definitions
 
 

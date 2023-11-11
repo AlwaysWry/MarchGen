@@ -59,7 +59,6 @@ class TwoComposite:
 				self.link_flag = 1
 		return
 
-
 # End of class definition
 
 

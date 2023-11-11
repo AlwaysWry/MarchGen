@@ -59,6 +59,8 @@ class SimpleFault:
     def dbg_Get_nestSenFlag(self):
         return self.__dict__['nestSenFlag']
 
+# end of SimpleFault definition
+
 
 def get_March_algorithm(filename):
     march = []

@@ -32,8 +32,8 @@ class CoverageVertex:
 
 		return init_seq
 
-
 # end of vertex definition
+
 
 class MarchElement:
 	"""
@@ -60,8 +60,8 @@ class MarchElement:
 		self.initial_state = self.content[1]
 		self.final_state = self.content[-1]
 
-
 # end of element definition
+
 
 class LinkedElementsBuilder:
 	@staticmethod
@@ -137,6 +137,8 @@ class LinkedElementsBuilder:
 			main_elements[-1].update_states()
 
 		return main_elements
+
+# end of LinkedElementsBuilder definition
 
 
 class UnlinkedElementsBuilder:
@@ -234,6 +236,8 @@ class UnlinkedElementsBuilder:
 			main_elements[-1].update_states()
 
 		return main_elements
+
+# end of UnlinkedElementsBuilder definition
 
 
 def get_linked_CFds_union(init_0_pool, init_1_pool):
