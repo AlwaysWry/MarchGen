@@ -32,7 +32,10 @@ def get_sequence_properties(fault_obj):
 		props_dict['ass_init'] = fault_obj.vInit
 	else:
 		props_dict['seq_text'] = fault_obj.vInit + fault_obj.Sen
-		props_dict['ass_init'] = fault_obj.aInit
+		if fault_obj.aInit != '-':
+			props_dict['ass_init'] = fault_obj.aInit
+		else:
+			props_dict['ass_init'] = '-1'
 
 	props_dict['dr_tag'] = (fault_obj.rdFlag == -1)
 	props_dict['detect_tag'] = not bool(fault_obj.CFdsFlag)
@@ -95,20 +98,33 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 		init_key = 'Init_' + fault_sequence.ass_init
 
 		# if the nonCF still exists after former filter phases, keep it into the sequence pool directly
-		if init_key == 'Init_-1':
-			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
-			continue
+		# if init_key == 'Init_-1':
+		#	unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
+		#	continue
 
-		# compare with the CFds pool. if the same sequence exists, merge into CFds pool by merging the detect_tag,
+		# compare with the linked CFds pool. if the same sequence exists, merge into linked CFds pool by merging the detect_tag,
 		# dr_tag and the nest_tag of nonCFds into CFds-sequence objects
-		find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
-		if find_result == DIFFERENT:
+		if init_key != 'Init_-1':
+			find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
+			if not isinstance(find_result, type(DIFFERENT)):
+				if not unlinked_fault.CFdsFlag:
+					# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
+					find_result.detect_tag |= fault_sequence.detect_tag
+					find_result.dr_tag |= fault_sequence.dr_tag
+					find_result.nest_tag = fault_sequence.nest_tag
+
+				continue
+
+		# if there's no identical seq_text in linked CFds pool, compare with current unlinked sequence pool. Similarly,
+		# the detect_tag, dr_tag and the nest_tag should be merged
+		find_result = find_identical_objs(fault_sequence, unlinked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
+		if not isinstance(find_result, type(DIFFERENT)):
+			if not unlinked_fault.CFdsFlag:
+				find_result.detect_tag |= fault_sequence.detect_tag
+				find_result.dr_tag |= fault_sequence.dr_tag
+				find_result.nest_tag = fault_sequence.nest_tag
+		else:
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
-		# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
-		elif not unlinked_fault.CFdsFlag:
-			find_result.detect_tag |= fault_sequence.detect_tag
-			find_result.dr_tag |= fault_sequence.dr_tag
-			find_result.nest_tag = fault_sequence.nest_tag
 
 	filter_redundant_linked_sequences(linked_seq_pool)
 

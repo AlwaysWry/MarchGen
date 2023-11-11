@@ -21,8 +21,11 @@ class CoverageVertex:
 			init_seq = self.__dict__['coverage'][0].seq_text[0]
 			for seq in self.__dict__['coverage']:
 				init_seq += seq.seq_text[1:]
-		else:
+		elif len(self.__dict__['coverage']) == 1:
 			init_seq = self.__dict__['coverage'][0].seq_text
+		else:
+			init_seq = ''
+			return init_seq
 
 		if self.__dict__['coverage'][-1].detect_tag:
 			init_seq += 'r' + init_seq[-1]
@@ -57,7 +60,180 @@ class MarchElement:
 		self.initial_state = self.content[1]
 		self.final_state = self.content[-1]
 
+
 # end of element definition
+
+class LinkedElementsBuilder:
+	@staticmethod
+	def get_vertex_winner(vertex_candidates: set, aux_pool: set, last_winner: CoverageVertex, init: str):
+		unnest_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'invalid', vertex_candidates))
+		nest_pool = vertex_candidates - unnest_pool
+
+		def check_transition(vertex):
+			seq = vertex.get_march_sequence()
+			return seq[0] == seq[-1]
+
+		# priority level 1: unnest sequences get higher priority
+		if len(unnest_pool) > 1:
+			# priority level 2-1 (for unnest_pool) is bypassed
+			secondary_pool = unnest_pool
+			# priority level 3: no-transition sequences get higher priority
+			if len(secondary_pool) > 1:
+				tertiary_pool = set(filter(check_transition, secondary_pool))
+			elif len(secondary_pool) == 0:
+				secondary_pool = unnest_pool - secondary_pool
+				tertiary_pool = set(filter(check_transition, secondary_pool))
+			else:
+				return next(iter(secondary_pool))
+		# priority level 2-2 (for nest pool): donor nest sequences get higher priority
+		elif len(unnest_pool) == 0:
+			secondary_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'donor', nest_pool))
+			# priority level 3 under 2-2: no-transition sequences get higher priority
+			if len(secondary_pool) > 1:
+				tertiary_pool = set(filter(check_transition, secondary_pool))
+			elif len(secondary_pool) == 0:
+				secondary_pool = nest_pool - secondary_pool
+				tertiary_pool = set(filter(check_transition, secondary_pool))
+			else:
+				return next(iter(secondary_pool))
+		else:
+			return next(iter(unnest_pool))
+
+		if len(tertiary_pool) > 0:
+			return next(iter(tertiary_pool))
+		else:
+			return next(iter(secondary_pool - tertiary_pool))
+
+	@staticmethod
+	def terminal_decorator(chain: str):
+		main_elements = []
+		terminal_feature = chain[0] + chain[-1]
+		match terminal_feature:
+			case '00':
+				main_elements.append(MarchElement('r1w0' + chain[1:]))
+				main_elements[-1].head_tag = True
+				main_elements.append(MarchElement(chain[1:] + 'w1'))
+				main_elements[-1].tail_tag = True
+			case '01':
+				main_elements.append(MarchElement('r1w0' + chain[1:] + 'w0'))
+				main_elements[-1].head_tag = True
+				main_elements[-1].tail_tag = True
+				main_elements.append(MarchElement(chain[1:]))
+			case '10':
+				main_elements.append(MarchElement('r0w1' + chain[1:] + 'w1'))
+				main_elements[-1].head_tag = True
+				main_elements[-1].tail_tag = True
+				main_elements.append(MarchElement(chain[1:]))
+			case '11':
+				main_elements.append(MarchElement('r0w1' + chain[1:]))
+				main_elements[-1].head_tag = True
+				main_elements.append(MarchElement(chain[1:] + 'w0'))
+				main_elements[-1].tail_tag = True
+			case _:
+				pass
+
+		if chain[1] != 'r':
+			main_elements[-1].content = 'r' + chain[0] + main_elements[-1].content
+			main_elements[-1].update_states()
+
+		return main_elements
+
+
+class UnlinkedElementsBuilder:
+	@staticmethod
+	def get_vertex_winner(vertex_candidates: set, aux_pool: set, last_winner: CoverageVertex, init: str):
+
+		def check_states(vertex):
+			seq = vertex.get_march_sequence()
+			if len(seq) > 0:
+				return seq[0] + seq[-1]
+			else:
+				return ''
+
+		aux_pool_dict = {'00': set(), '01': set(), '10': set(), '11': set()}
+		for feature in aux_pool_dict.keys():
+			aux_feature_pool = set(filter(lambda v: check_states(v) == feature, aux_pool))
+			aux_pool_dict[feature].update(aux_feature_pool)
+
+		def priority_filter(upper_pool: set, priority_feature: str):
+			priority_pool = set(filter(lambda v: check_states(v) == priority_feature, upper_pool))
+			aux_priority_pool = aux_pool_dict[priority_feature]
+
+			if len(priority_pool) == 0 and len(aux_priority_pool) == 0:
+				priority_pool = upper_pool - priority_pool
+				return priority_pool
+			elif len(priority_pool) == 0:
+				priority_pool.update(aux_priority_pool)
+				return next(iter(priority_pool))
+			else:
+				return next(iter(priority_pool))
+
+		feature_dict = {'Init_0': ['01', '11', '00', '10'], 'Init_1': ['10', '00', '11', '01']}
+		feature_list = feature_dict[init]
+
+		state_history = check_states(last_winner)
+		if (state_history == feature_list[0]) or (state_history == feature_list[1]):
+			primary_result = priority_filter(vertex_candidates, feature_list[1])
+			if isinstance(primary_result, CoverageVertex):
+				return primary_result
+
+			secondary_result = priority_filter(primary_result, feature_list[3])
+			if isinstance(secondary_result, CoverageVertex):
+				return secondary_result
+
+			return next(iter(secondary_result))
+		else:
+			primary_result = priority_filter(vertex_candidates, feature_list[2])
+			if isinstance(primary_result, CoverageVertex):
+				return primary_result
+
+			secondary_result = priority_filter(primary_result, feature_list[0])
+			if isinstance(secondary_result, CoverageVertex):
+				return secondary_result
+
+			return next(iter(secondary_result))
+
+	@staticmethod
+	def terminal_decorator(chain: str, init: str):
+		main_elements = []
+		terminal_feature = chain[0] + chain[-1]
+		match terminal_feature:
+			case '00':
+				if init == 'Init_0':
+					main_elements.append(MarchElement(chain[1:]))
+				else:
+					main_elements.append(MarchElement('r1w0' + chain[1:] + 'w1'))
+					main_elements[-1].head_tag = True
+					main_elements[-1].tail_tag = True
+			case '01':
+				if init == 'Init_0':
+					main_elements.append(MarchElement(chain[1:] + 'w0'))
+					main_elements[-1].tail_tag = True
+				else:
+					main_elements.append(MarchElement('r1w0' + chain[1:]))
+					main_elements[-1].head_tag = True
+			case '10':
+				if init == 'Init_1':
+					main_elements.append(MarchElement(chain[1:] + 'w1'))
+					main_elements[-1].tail_tag = True
+				else:
+					main_elements.append(MarchElement('r0w1' + chain[1:]))
+					main_elements[-1].head_tag = True
+			case '11':
+				if init == 'Init_1':
+					main_elements.append(MarchElement(chain[1:]))
+				else:
+					main_elements.append(MarchElement('r0w1' + chain[1:] + 'w0'))
+					main_elements[-1].head_tag = True
+					main_elements[-1].tail_tag = True
+			case _:
+				pass
+
+		if chain[1] != 'r':
+			main_elements[-1].content = 'r' + chain[0] + main_elements[-1].content
+			main_elements[-1].update_states()
+
+		return main_elements
 
 
 def get_linked_CFds_union(init_0_pool, init_1_pool):
@@ -73,29 +249,6 @@ def get_linked_CFds_union(init_0_pool, init_1_pool):
 		seq.ass_init = -1
 
 	return seq_union
-
-
-def find_terminal_seq(seq_intersection, inits):
-	# find terminal sequence in the sequence linked_intersection set.
-	# terminal sequences will be excluded from the shortest path search.
-	# terminal sequence has to meet following conditions:
-	# 1) start with a read operation
-	# 2) have different start and end states;
-	terminal_seq_pool = {}
-	for init_key in inits:
-		terminal_seq_pool[init_key] = set()
-
-	for seq in seq_intersection:
-		if seq.seq_text[1] != 'r':
-			continue
-		elif seq.seq_text[0] == seq.seq_text[-1]:
-			continue
-		else:
-			key = 'Init_' + str(seq.seq_text[0])
-			if key in terminal_seq_pool.keys():
-				terminal_seq_pool[key].add(seq)
-
-	return terminal_seq_pool
 
 
 def define_vertices(sequence_pool: set):
@@ -141,47 +294,7 @@ def calculate_diff_value(chain, vertex):
 	return len(match_target)
 
 
-def get_vertex_winner(vertex_candidates: set):
-	unnest_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'invalid', vertex_candidates))
-	nest_pool = vertex_candidates - unnest_pool
-
-	def check_transition(vertex):
-		seq = vertex.get_march_sequence()
-		return seq[0] == seq[-1]
-
-	# priority level 1: unnest sequences get higher priority
-	if len(unnest_pool) > 1:
-		# priority level 2-1 (for unnest_pool) is bypassed
-		secondary_pool = unnest_pool
-		# priority level 3: no-transition sequences get higher priority
-		if len(secondary_pool) > 1:
-			tertiary_pool = set(filter(check_transition, secondary_pool))
-		elif len(secondary_pool) == 0:
-			secondary_pool = unnest_pool - secondary_pool
-			tertiary_pool = set(filter(check_transition, secondary_pool))
-		else:
-			return next(iter(secondary_pool))
-	# priority level 2-2 (for nest pool): donor nest sequences get higher priority
-	elif len(unnest_pool) == 0:
-		secondary_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'donor', nest_pool))
-		# priority level 3 under 2-2: no-transition sequences get higher priority
-		if len(secondary_pool) > 1:
-			tertiary_pool = set(filter(check_transition, secondary_pool))
-		elif len(secondary_pool) == 0:
-			secondary_pool = nest_pool - secondary_pool
-			tertiary_pool = set(filter(check_transition, secondary_pool))
-		else:
-			return next(iter(secondary_pool))
-	else:
-		return next(iter(unnest_pool))
-
-	if len(tertiary_pool) > 0:
-		return next(iter(tertiary_pool))
-	else:
-		return next(iter(secondary_pool - tertiary_pool))
-
-
-def build_coverage_chain(chain: str, vertex_pool: set):
+def build_coverage_chain(chain: str, vertex_pool: set, aux_vertex_pool: set, last_winner: CoverageVertex, init: str, builder: type.__name__):
 	# a set records the covered vertices by this build process
 	covered_vertices = set()
 	for v_obj in vertex_pool:
@@ -192,7 +305,7 @@ def build_coverage_chain(chain: str, vertex_pool: set):
 
 	# if the only closest vertex exists, choose it directly, otherwise use priority function
 	if len(vertex_candidates) > 1:
-		vertex_winner = get_vertex_winner(vertex_candidates)
+		vertex_winner = builder.get_vertex_winner(vertex_candidates, aux_vertex_pool, last_winner, init)
 	else:
 		vertex_winner = next(iter(vertex_candidates))
 
@@ -221,52 +334,18 @@ def build_coverage_chain(chain: str, vertex_pool: set):
 	return covered_vertices, chain_appendix
 
 
-def terminal_decorator(chain: str):
-	main_elements = []
-	terminal_feature = chain[0] + chain[-1]
-	match terminal_feature:
-		case '00':
-			main_elements.append(MarchElement('r1w0' + chain[1:]))
-			main_elements[-1].head_tag = True
-			main_elements.append(MarchElement(chain[1:] + 'w1'))
-			main_elements[-1].tail_tag = True
-		case '01':
-			main_elements.append(MarchElement('r1w0' + chain[1:] + 'w0'))
-			main_elements[-1].head_tag = True
-			main_elements[-1].tail_tag = True
-			main_elements.append(MarchElement(chain[1:]))
-		case '10':
-			main_elements.append(MarchElement('r0w1' + chain[1:] + 'w1'))
-			main_elements[-1].head_tag = True
-			main_elements[-1].tail_tag = True
-			main_elements.append(MarchElement(chain[1:]))
-		case '11':
-			main_elements.append(MarchElement('r0w1' + chain[1:]))
-			main_elements[-1].head_tag = True
-			main_elements.append(MarchElement(chain[1:] + 'w0'))
-			main_elements[-1].tail_tag = True
-		case _:
-			pass
-
-	if chain[1] != 'r':
-		main_elements[-1].content = 'r' + chain[0] + main_elements[-1].content
-		main_elements[-1].update_states()
-
-	return main_elements
-
-
 def construct_main_elements(vertex_pool: set):
 	vertex_candidate_pool = copy.deepcopy(vertex_pool)
-	initial_vertex = get_vertex_winner(vertex_candidate_pool)
+	initial_vertex = LinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1')
 	vertex_candidate_pool -= {initial_vertex}
 	coverage_chain = initial_vertex.get_march_sequence()
 
 	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool)
+		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, 'Init_-1', LinkedElementsBuilder)
 		vertex_candidate_pool -= build_result[0]
 		coverage_chain += build_result[1]
 
-	return terminal_decorator(coverage_chain)
+	return LinkedElementsBuilder.terminal_decorator(coverage_chain)
 
 
 def check_tail_cover(elements: list, sequence_pool: set):
@@ -299,12 +378,12 @@ def construct_tail_cover_elements(tail_cover):
 			tail_cover_pool.add(tail_cover_vertex)
 
 		vertex_candidate_pool = copy.deepcopy(tail_cover_pool)
-		initial_vertex = get_vertex_winner(vertex_candidate_pool)
+		initial_vertex = LinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1')
 		vertex_candidate_pool -= {initial_vertex}
 		coverage_chain = initial_vertex.get_march_sequence()
 
 		while len(vertex_candidate_pool) > 0:
-			build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool)
+			build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, 'Init_-1', LinkedElementsBuilder)
 			vertex_candidate_pool -= build_result[0]
 			coverage_chain += build_result[1]
 
@@ -376,7 +455,7 @@ def construct_odd_sensitization_elements(odd_violation, main_elements):
 			vertex_candidate_pool -= initial_coverage
 
 			while len(vertex_candidate_pool) > 0:
-				build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool)
+				build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1', LinkedElementsBuilder)
 				vertex_candidate_pool -= build_result[0]
 				coverage_chain += build_result[1]
 
@@ -411,30 +490,87 @@ def construct_ass_elements(main_elements, sequence_pool):
 	return ass_elements
 
 
-def linked_union_constructor(union_pool):
-	vertex_intersection = define_vertices(union_pool)
-	main_mes = construct_main_elements(vertex_intersection)
+def linked_CFds_constructor(linked_pool):
+	# For 01/10 type main ME, all linked seq need to be added for constructing; for 00/11 type, init_0 and init_1 pool
+	# should be added for constructing separately. however, the different seq set in 00 and 11 ME may introduce the
+	# violation to sensitization order. As a result, we only use the 01/10 type ME, which means that all sequences in
+	# linked pool should be contained in both 2 ME, and the ass_init of them can be ignored
+	union_pool = get_linked_CFds_union(linked_pool['Init_0'], linked_pool['Init_1'])
+	vertex_union = define_vertices(union_pool)
+	main_mes = construct_main_elements(vertex_union)
 	ass_mes = construct_ass_elements(main_mes, union_pool)
-	pass
+
+	return {'main_ME': main_mes, 'ass_ME': ass_mes}
 
 
-def unlinked_constructor(unlinked_pool):
-	pass
+def construct_unlinked_element(vertex_pool: set, vertex_aux_pool: set, init: str):
+	vertex_candidate_pool = copy.deepcopy(vertex_pool)
+	initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, vertex_aux_pool, CoverageVertex({'coverage': [], 'diff': -1}), init)
+	vertex_candidate_pool -= {initial_vertex}
+	coverage_chain = initial_vertex.get_march_sequence()
+
+	while len(vertex_candidate_pool) > 0:
+		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, vertex_aux_pool, initial_vertex, init, LinkedElementsBuilder)
+
+		for vertex in build_result[0]:
+			if vertex in vertex_candidate_pool:
+				vertex_candidate_pool.remove(vertex)
+			elif vertex in vertex_aux_pool:
+				vertex_aux_pool.remove(vertex)
+
+		coverage_chain += build_result[1]
+
+	return coverage_chain
+
+
+def unlinked_2cF_constructor(unlinked_pool):
+	# since the sequences in unlinked_pool are unnecessary to abide any 2cF3 or 2cF2aa conditions, use 00/11 ME structure
+	# to make sure no redundant sequence will be contained. Besides, the instant-detect rule still need to be obeyed for
+	# nonCFds*nonCFds-type 2cFs
+	vertex_2cF_pool_0 = define_vertices(unlinked_pool['Init_0'])
+	vertex_2cF_pool_1 = define_vertices(unlinked_pool['Init_1'])
+	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
+
+	# build "00" ME
+	unlinked_me_00_text = construct_unlinked_element(vertex_2cF_pool_0, vertex_sf_pool, 'Init_0')
+	unlinked_me_00 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_00_text, 'Init_0')
+	# build "11" ME
+	unlinked_me_11_text = construct_unlinked_element(vertex_2cF_pool_1, vertex_sf_pool, 'Init_1')
+	unlinked_me_11 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_11_text, 'Init_1')
+
+	return {'00_ME': unlinked_me_00, '11_ME': unlinked_me_11}
+
+
+def sf_constructor(unlinked_pool):
+	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
+	vertex_candidate_pool = copy.deepcopy(vertex_sf_pool)
+	# reuse the priority rules for linked CFds, just for concise
+	initial_vertex = LinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1')
+	vertex_candidate_pool -= {initial_vertex}
+	coverage_chain = initial_vertex.get_march_sequence()
+
+	while len(vertex_candidate_pool) > 0:
+		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, 'Init_-1', LinkedElementsBuilder)
+		vertex_candidate_pool -= build_result[0]
+		coverage_chain += build_result[1]
+
+	return MarchElement(coverage_chain[1:])
 
 
 if __name__ == '__main__':
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_2cF_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked']))
+	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_2cF_pool)
 	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
 
 	seq_pool = create_sequence_pool(flat_SF_pool, filtered_2cF_pool, classified_pool['2cF_CFds']['linked'])
-	# for 01/10 type main ME, all linked seq need to be added for constructing
-	# for 00/11 type, init_0 and init_1 pool should be added for constructing separately,
-	# need to determine which is the better type
-	linked_CFds_union = get_linked_CFds_union(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
 
-	terminal_seq = set(find_terminal_seq(linked_CFds_union, {'Init_0', 'Init_1'}))
-
-	linked_union_constructor(linked_CFds_union)
+	if len(seq_pool['linked']['Init_0']) + len(seq_pool['linked']['Init_1']) > 0:
+		linked_CFds_union = get_linked_CFds_union(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
+		linked_CFds_constructor(seq_pool['linked'])
+	if len(seq_pool['unlinked']['Init_0']) + len(seq_pool['unlinked']['Init_1']) > 0:
+		unlinked_2cF_constructor(seq_pool['unlinked'])
+	elif len(seq_pool['unlinked']['Init_-1']) > 0:
+		sf_constructor(seq_pool['unlinked'])
+	pass
