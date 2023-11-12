@@ -96,6 +96,7 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 		fault_sequence = Sequence(get_sequence_properties(unlinked_fault))
 		init_key = 'Init_' + fault_sequence.ass_init
 
+		# TODO: consider the static*dynamic case, if the sf as composite should be filtered
 		# if the nonCF still exists after former filter phases, keep it into the sequence pool directly
 		# if init_key == 'Init_-1':
 		#	unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
@@ -136,8 +137,7 @@ if __name__ == '__main__':
 	filtered_unlinked_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked']))
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_unlinked_pool)
 
-	for pool in create_sequence_pool(flatten_sf_pool(filtered_SF_pool),
-									 filtered_unlinked_pool, classified_pool['2cF_CFds']['linked']).values():
+	for pool in create_sequence_pool(flatten_sf_pool(filtered_SF_pool), filtered_unlinked_pool, classified_pool['2cF_CFds']['linked']).values():
 		for sub_pool in pool.values():
 			for sequence in sub_pool:
 				print([sequence.nest_tag, sequence.seq_text])

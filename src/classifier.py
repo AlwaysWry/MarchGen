@@ -1,6 +1,7 @@
 # A parse and classify module of input simple faults and 2cFs
 import copy
 import sys
+
 sys.path.append("../")
 
 from basic.fault_parser import *
@@ -58,6 +59,7 @@ class TwoComposite:
 			else:
 				self.link_flag = 1
 		return
+
 
 # End of class definition
 

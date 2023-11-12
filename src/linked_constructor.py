@@ -7,6 +7,8 @@ NO_ELEMENT = False
 
 class CoverageVertex:
 	"""data structure of vertices in coverage graph"""
+	coverage = []
+	diff = -1
 
 	def __init__(self, prop_dict):
 		"""
@@ -32,6 +34,7 @@ class CoverageVertex:
 
 		return init_seq
 
+
 # end of vertex definition
 
 
@@ -47,18 +50,21 @@ class MarchElement:
 	content = ''
 	initial_state = ''
 	final_state = ''
+	address_order = ''
 	head_tag = False
 	tail_tag = False
 	ass_tag = False
 
 	def __init__(self, element_text):
 		self.content = element_text
-		self.initial_state = element_text[1]
-		self.final_state = element_text[-1]
+		if len(element_text) > 0:
+			self.initial_state = element_text[1]
+			self.final_state = element_text[-1]
 
 	def update_states(self):
 		self.initial_state = self.content[1]
 		self.final_state = self.content[-1]
+
 
 # end of element definition
 
@@ -106,138 +112,48 @@ class LinkedElementsBuilder:
 
 	@staticmethod
 	def terminal_decorator(chain: str):
-		main_elements = []
+		main_elements = {'01_me': MarchElement(''), '10_me': MarchElement('')}
 		terminal_feature = chain[0] + chain[-1]
 		match terminal_feature:
 			case '00':
-				main_elements.append(MarchElement('r1w0' + chain[1:]))
-				main_elements[-1].head_tag = True
-				main_elements.append(MarchElement(chain[1:] + 'w1'))
-				main_elements[-1].tail_tag = True
+				main_elements['10_me'] = MarchElement('r1w0' + chain[1:])
+				main_elements['10_me'].head_tag = True
+				main_elements['01_me'] = MarchElement(chain[1:] + 'w1')
+				main_elements['01_me'].tail_tag = True
+				if chain[1] != 'r':
+					main_elements['01_me'].content = 'r' + chain[0] + main_elements['01_me'].content
+					main_elements['01_me'].update_states()
 			case '01':
-				main_elements.append(MarchElement('r1w0' + chain[1:] + 'w0'))
-				main_elements[-1].head_tag = True
-				main_elements[-1].tail_tag = True
-				main_elements.append(MarchElement(chain[1:]))
+				main_elements['10_me'] = MarchElement('r1w0' + chain[1:] + 'w0')
+				main_elements['10_me'].head_tag = True
+				main_elements['10_me'].tail_tag = True
+				main_elements['01_me'] = MarchElement(chain[1:])
+				if chain[1] != 'r':
+					main_elements['01_me'].content = 'r' + chain[0] + main_elements['01_me'].content
+					main_elements['01_me'].update_states()
 			case '10':
-				main_elements.append(MarchElement('r0w1' + chain[1:] + 'w1'))
-				main_elements[-1].head_tag = True
-				main_elements[-1].tail_tag = True
-				main_elements.append(MarchElement(chain[1:]))
+				main_elements['01_me'] = MarchElement('r0w1' + chain[1:] + 'w1')
+				main_elements['01_me'].head_tag = True
+				main_elements['01_me'].tail_tag = True
+				main_elements['10_me'] = MarchElement(chain[1:])
+				if chain[1] != 'r':
+					main_elements['10_me'].content = 'r' + chain[0] + main_elements['10_me'].content
+					main_elements['10_me'].update_states()
 			case '11':
-				main_elements.append(MarchElement('r0w1' + chain[1:]))
-				main_elements[-1].head_tag = True
-				main_elements.append(MarchElement(chain[1:] + 'w0'))
-				main_elements[-1].tail_tag = True
+				main_elements['01_me'] = MarchElement('r0w1' + chain[1:])
+				main_elements['01_me'].head_tag = True
+				main_elements['10_me'] = MarchElement(chain[1:] + 'w0')
+				main_elements['10_me'].tail_tag = True
+				if chain[1] != 'r':
+					main_elements['10_me'].content = 'r' + chain[0] + main_elements['10_me'].content
+					main_elements['10_me'].update_states()
 			case _:
 				pass
 
-		if chain[1] != 'r':
-			main_elements[-1].content = 'r' + chain[0] + main_elements[-1].content
-			main_elements[-1].update_states()
-
 		return main_elements
+
 
 # end of LinkedElementsBuilder definition
-
-
-class UnlinkedElementsBuilder:
-	@staticmethod
-	def get_vertex_winner(vertex_candidates: set, aux_pool: set, last_winner: CoverageVertex, init: str):
-
-		def check_states(vertex):
-			seq = vertex.get_march_sequence()
-			if len(seq) > 0:
-				return seq[0] + seq[-1]
-			else:
-				return ''
-
-		aux_pool_dict = {'00': set(), '01': set(), '10': set(), '11': set()}
-		for feature in aux_pool_dict.keys():
-			aux_feature_pool = set(filter(lambda v: check_states(v) == feature, aux_pool))
-			aux_pool_dict[feature].update(aux_feature_pool)
-
-		def priority_filter(upper_pool: set, priority_feature: str):
-			priority_pool = set(filter(lambda v: check_states(v) == priority_feature, upper_pool))
-			aux_priority_pool = aux_pool_dict[priority_feature]
-
-			if len(priority_pool) == 0 and len(aux_priority_pool) == 0:
-				priority_pool = upper_pool - priority_pool
-				return priority_pool
-			elif len(priority_pool) == 0:
-				priority_pool.update(aux_priority_pool)
-				return next(iter(priority_pool))
-			else:
-				return next(iter(priority_pool))
-
-		feature_dict = {'Init_0': ['01', '11', '00', '10'], 'Init_1': ['10', '00', '11', '01']}
-		feature_list = feature_dict[init]
-
-		state_history = check_states(last_winner)
-		if (state_history == feature_list[0]) or (state_history == feature_list[1]):
-			primary_result = priority_filter(vertex_candidates, feature_list[1])
-			if isinstance(primary_result, CoverageVertex):
-				return primary_result
-
-			secondary_result = priority_filter(primary_result, feature_list[3])
-			if isinstance(secondary_result, CoverageVertex):
-				return secondary_result
-
-			return next(iter(secondary_result))
-		else:
-			primary_result = priority_filter(vertex_candidates, feature_list[2])
-			if isinstance(primary_result, CoverageVertex):
-				return primary_result
-
-			secondary_result = priority_filter(primary_result, feature_list[0])
-			if isinstance(secondary_result, CoverageVertex):
-				return secondary_result
-
-			return next(iter(secondary_result))
-
-	@staticmethod
-	def terminal_decorator(chain: str, init: str):
-		main_elements = []
-		terminal_feature = chain[0] + chain[-1]
-		match terminal_feature:
-			case '00':
-				if init == 'Init_0':
-					main_elements.append(MarchElement(chain[1:]))
-				else:
-					main_elements.append(MarchElement('r1w0' + chain[1:] + 'w1'))
-					main_elements[-1].head_tag = True
-					main_elements[-1].tail_tag = True
-			case '01':
-				if init == 'Init_0':
-					main_elements.append(MarchElement(chain[1:] + 'w0'))
-					main_elements[-1].tail_tag = True
-				else:
-					main_elements.append(MarchElement('r1w0' + chain[1:]))
-					main_elements[-1].head_tag = True
-			case '10':
-				if init == 'Init_1':
-					main_elements.append(MarchElement(chain[1:] + 'w1'))
-					main_elements[-1].tail_tag = True
-				else:
-					main_elements.append(MarchElement('r0w1' + chain[1:]))
-					main_elements[-1].head_tag = True
-			case '11':
-				if init == 'Init_1':
-					main_elements.append(MarchElement(chain[1:]))
-				else:
-					main_elements.append(MarchElement('r0w1' + chain[1:] + 'w0'))
-					main_elements[-1].head_tag = True
-					main_elements[-1].tail_tag = True
-			case _:
-				pass
-
-		if chain[1] != 'r':
-			main_elements[-1].content = 'r' + chain[0] + main_elements[-1].content
-			main_elements[-1].update_states()
-
-		return main_elements
-
-# end of UnlinkedElementsBuilder definition
 
 
 def get_linked_CFds_union(init_0_pool, init_1_pool):
@@ -267,7 +183,13 @@ def define_vertices(sequence_pool: set):
 def find_nest_match(nest_vertex, vertex_pool):
 	# check if the corresponding nest sequence exists
 	seq = nest_vertex.coverage[0]
-	nest_init = lambda i: '0' if i == '1' else '1'
+
+	def nest_init(seq_text):
+		if seq_text == '1':
+			return '0'
+		else:
+			return '1'
+
 	nest_text = nest_init(seq.seq_text[0]) + seq.seq_text[1:]
 	nest_match = list(filter(lambda v: nest_text in map(lambda s: s.seq_text, v.coverage), vertex_pool))
 	if len(nest_match) > 0:
@@ -400,9 +322,9 @@ def construct_tail_cover_elements(tail_cover):
 		return NO_ELEMENT
 
 
-def check_odd_sensitization(elements: list, sequence_pool: set):
+def check_odd_sensitization(elements, sequence_pool: set):
 	# find all sequences that are sensitized even-number times in ME, which violate the odd-sensitization condition
-	element_texts = list(map(lambda e: e.content, elements))
+	element_texts = list(map(lambda e: e.content, elements.values()))
 	seq_texts = list(map(lambda s: s.seq_text, sequence_pool))
 	violated_seq_texts = set()
 
@@ -438,10 +360,10 @@ def construct_odd_sensitization_elements(odd_violation, main_elements):
 	# odd-sensitization condition for CFds
 	violation_pool = set()
 	# a ME candidate pool for choosing the ME behind which the odd_violation ME is shortest
-	me_candidates = set(map(lambda m: m.content, main_elements))
+	me_candidates = set(map(lambda m: m.content, main_elements.values()))
 	violation_me_candidates = set()
 
-	if len(odd_violation) > 0:
+	if odd_violation != NOT_FOUND:
 		for seq_obj in odd_violation:
 			violation_seq = Sequence(seq_obj.__dict__.copy())
 			violation_seq.detect_tag = False
@@ -472,9 +394,9 @@ def construct_odd_sensitization_elements(odd_violation, main_elements):
 
 
 def construct_ass_elements(main_elements, sequence_pool):
-	ass_elements = {'tail_cover_me': '', 'odd_sensitization_me': ''}
+	ass_elements = {'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}
 	# check and build the ME for tail-cover first
-	tail_cover = check_tail_cover(list(filter(lambda m: m.tail_tag, main_elements)), sequence_pool)
+	tail_cover = check_tail_cover(list(filter(lambda m: m.tail_tag, main_elements.values())), sequence_pool)
 	tail_cover_me_text = construct_tail_cover_elements(tail_cover)
 
 	if isinstance(tail_cover_me_text, str):
@@ -504,61 +426,7 @@ def linked_CFds_constructor(linked_pool):
 	main_mes = construct_main_elements(vertex_union)
 	ass_mes = construct_ass_elements(main_mes, union_pool)
 
-	return {'main_ME': main_mes, 'ass_ME': ass_mes}
-
-
-def construct_unlinked_element(vertex_pool: set, vertex_aux_pool: set, init: str):
-	vertex_candidate_pool = copy.deepcopy(vertex_pool)
-	initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, vertex_aux_pool, CoverageVertex({'coverage': [], 'diff': -1}), init)
-	vertex_candidate_pool -= {initial_vertex}
-	coverage_chain = initial_vertex.get_march_sequence()
-
-	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, vertex_aux_pool, initial_vertex, init, LinkedElementsBuilder)
-
-		for vertex in build_result[0]:
-			if vertex in vertex_candidate_pool:
-				vertex_candidate_pool.remove(vertex)
-			elif vertex in vertex_aux_pool:
-				vertex_aux_pool.remove(vertex)
-
-		coverage_chain += build_result[1]
-
-	return coverage_chain
-
-
-def unlinked_2cF_constructor(unlinked_pool):
-	# since the sequences in unlinked_pool are unnecessary to abide any 2cF3 or 2cF2aa conditions, use 00/11 ME structure
-	# to make sure no redundant sequence will be contained. Besides, the instant-detect rule still need to be obeyed for
-	# nonCFds*nonCFds-type 2cFs
-	vertex_2cF_pool_0 = define_vertices(unlinked_pool['Init_0'])
-	vertex_2cF_pool_1 = define_vertices(unlinked_pool['Init_1'])
-	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
-
-	# build "00" ME
-	unlinked_me_00_text = construct_unlinked_element(vertex_2cF_pool_0, vertex_sf_pool, 'Init_0')
-	unlinked_me_00 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_00_text, 'Init_0')
-	# build "11" ME
-	unlinked_me_11_text = construct_unlinked_element(vertex_2cF_pool_1, vertex_sf_pool, 'Init_1')
-	unlinked_me_11 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_11_text, 'Init_1')
-
-	return {'00_ME': unlinked_me_00, '11_ME': unlinked_me_11}
-
-
-def sf_constructor(unlinked_pool):
-	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
-	vertex_candidate_pool = copy.deepcopy(vertex_sf_pool)
-	# reuse the priority rules for linked CFds, just for concise
-	initial_vertex = LinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1')
-	vertex_candidate_pool -= {initial_vertex}
-	coverage_chain = initial_vertex.get_march_sequence()
-
-	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, 'Init_-1', LinkedElementsBuilder)
-		vertex_candidate_pool -= build_result[0]
-		coverage_chain += build_result[1]
-
-	return MarchElement(coverage_chain[1:])
+	return {'main_me': main_mes, 'ass_me': ass_mes}
 
 
 if __name__ == '__main__':
@@ -573,8 +441,5 @@ if __name__ == '__main__':
 	if len(seq_pool['linked']['Init_0']) + len(seq_pool['linked']['Init_1']) > 0:
 		linked_CFds_union = get_linked_CFds_union(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
 		linked_CFds_constructor(seq_pool['linked'])
-	if len(seq_pool['unlinked']['Init_0']) + len(seq_pool['unlinked']['Init_1']) > 0:
-		unlinked_2cF_constructor(seq_pool['unlinked'])
-	elif len(seq_pool['unlinked']['Init_-1']) > 0:
-		sf_constructor(seq_pool['unlinked'])
+
 	pass

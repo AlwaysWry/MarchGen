@@ -373,7 +373,7 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 
 	unlinked_2cF_pool = remove_inclusive_unlinked_2cF(unlinked_2cF_pool)
 
-	if len(unlinked_2cF_pool) > 0:
+	if len(unlinked_2cF_pool) > 1:
 		vertices_map = []
 		CFdr_map = []
 		print("Building unlinked 2cF graph...\n")
@@ -393,6 +393,9 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 				ignore_keys = {'aCell'}
 			if isinstance(find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys), int):
 				unlinked_2cF_cover.add(CFdr)
+	else:
+		for unlinked_2cF in unlinked_2cF_pool:
+			unlinked_2cF_cover.update(set(unlinked_2cF.comps.values()))
 
 	print("\n2-composite faults are filtered.\n")
 	return unlinked_2cF_cover
