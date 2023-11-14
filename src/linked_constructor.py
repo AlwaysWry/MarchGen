@@ -48,6 +48,7 @@ class MarchElement:
 	ass_tag: tag for whether the element is an associate element
 	"""
 	content = ''
+	tied_element = ''
 	initial_state = ''
 	final_state = ''
 	address_order = ''
@@ -385,12 +386,13 @@ def construct_odd_sensitization_elements(odd_violation, main_elements):
 				vertex_candidate_pool -= build_result[0]
 				coverage_chain += build_result[1]
 
-			violation_me_candidates.add(coverage_chain[search_range:])
+			# each odd_sensitization candidate has to follow the tied precedent element, or the odd sensitization may be destroyed
+			violation_me_candidates.add((coverage_chain[search_range:], element))
 
-		odd_sensitization = sorted(violation_me_candidates, key=lambda c: len(c))[0]
+		odd_sensitization = sorted(violation_me_candidates, key=lambda c: len(c[0]))[0]
 		return odd_sensitization
 	else:
-		return NO_ELEMENT
+		return (NO_ELEMENT,)
 
 
 def construct_ass_elements(main_elements, sequence_pool):
@@ -406,11 +408,12 @@ def construct_ass_elements(main_elements, sequence_pool):
 
 	# check and build the ME for odd sensitization violation
 	odd_violation = check_odd_sensitization(main_elements, sequence_pool)
-	odd_sensitization_me_text = construct_odd_sensitization_elements(odd_violation, main_elements)
-
+	construct_result = construct_odd_sensitization_elements(odd_violation, main_elements)
+	odd_sensitization_me_text = construct_result[0]
 	if isinstance(odd_sensitization_me_text, str):
 		odd_sensitization_me = MarchElement(odd_sensitization_me_text)
 		odd_sensitization_me.ass_tag = True
+		odd_sensitization_me.tied_element = list(filter(lambda m: m.content == construct_result[1], main_elements.values()))[0]
 		ass_elements['odd_sensitization_me'] = odd_sensitization_me
 
 	return ass_elements
@@ -430,6 +433,8 @@ def linked_CFds_constructor(linked_pool):
 
 
 if __name__ == '__main__':
+	os.chdir("../")
+	sys.path.append("src/")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
 	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
@@ -439,7 +444,6 @@ if __name__ == '__main__':
 	seq_pool = create_sequence_pool(flat_SF_pool, filtered_2cF_pool, classified_pool['2cF_CFds']['linked'])
 
 	if len(seq_pool['linked']['Init_0']) + len(seq_pool['linked']['Init_1']) > 0:
-		linked_CFds_union = get_linked_CFds_union(seq_pool['linked']['Init_0'], seq_pool['linked']['Init_1'])
 		linked_CFds_constructor(seq_pool['linked'])
 
 	pass

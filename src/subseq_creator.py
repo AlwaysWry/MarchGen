@@ -96,28 +96,36 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 		fault_sequence = Sequence(get_sequence_properties(unlinked_fault))
 		init_key = 'Init_' + fault_sequence.ass_init
 
-		# TODO: consider the static*dynamic case, if the sf as composite should be filtered
-		# if the nonCF still exists after former filter phases, keep it into the sequence pool directly
-		# if init_key == 'Init_-1':
-		#	unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
-		#	continue
-
 		# compare with the linked CFds pool. if the same sequence exists, merge into linked CFds pool by merging the detect_tag,
 		# dr_tag and the nest_tag of nonCFds into CFds-sequence objects
 		if init_key != 'Init_-1':
 			find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
-			if not isinstance(find_result, type(DIFFERENT)):
-				if not unlinked_fault.CFdsFlag:
-					# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
-					find_result.detect_tag |= fault_sequence.detect_tag
-					find_result.dr_tag |= fault_sequence.dr_tag
-					find_result.nest_tag = fault_sequence.nest_tag
+		else:
+			find_result = DIFFERENT
+			for pool_init_key in linked_seq_pool.keys():
+				find_result = find_identical_objs(fault_sequence, linked_seq_pool[pool_init_key], {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'})
+				if not isinstance(find_result, type(DIFFERENT)):
+					break
 
-				continue
+		if not isinstance(find_result, type(DIFFERENT)):
+			if not unlinked_fault.CFdsFlag:
+				# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
+				find_result.detect_tag |= fault_sequence.detect_tag
+				find_result.dr_tag |= fault_sequence.dr_tag
+				find_result.nest_tag = fault_sequence.nest_tag
+
+			continue
 
 		# if there's no identical seq_text in linked CFds pool, compare with current unlinked sequence pool. Similarly,
 		# the detect_tag, dr_tag and the nest_tag should be merged
-		find_result = find_identical_objs(fault_sequence, unlinked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
+		if init_key != 'Init_-1':
+			find_result = find_identical_objs(fault_sequence, unlinked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
+		else:
+			for pool_init_key in unlinked_seq_pool.keys():
+				find_result = find_identical_objs(fault_sequence, unlinked_seq_pool[pool_init_key], {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'})
+				if not isinstance(find_result, type(DIFFERENT)):
+					break
+
 		if not isinstance(find_result, type(DIFFERENT)):
 			if not unlinked_fault.CFdsFlag:
 				find_result.detect_tag |= fault_sequence.detect_tag
@@ -132,6 +140,7 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 
 
 if __name__ == '__main__':
+	os.chdir("../")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
 	filtered_unlinked_pool = (filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked']))

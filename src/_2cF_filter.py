@@ -2,7 +2,6 @@
 # The filter strategies include the sf-based method and the minimum weight vertices coverage method.
 import traceback
 from classifier import *
-import sys
 
 REDUNDANT = True
 NOT_REDUNDANT = False
@@ -55,7 +54,7 @@ def get_vertex_weight(fault_obj):
 
 
 def output_graph_file_QUICK_VC(vertices, edges):
-	filename = '../results/unlinked_2cF.m2c'
+	filename = '../results/unlinked_2cF_graph.m2c'
 	with open(filename, 'w') as graph:
 		graph.write(str(len(edges)) + ' ' + str(len(vertices)) + '\n')
 		for vertex in vertices[:-1]:
@@ -74,7 +73,7 @@ def output_graph_file_QUICK_VC(vertices, edges):
 
 
 def output_graph_file_DYNWVC2(vertices, edges):
-	filename = '../results/unlinked_2cF.m2c'
+	filename = './results/unlinked_2cF_graph.m2c'
 	with open(filename, 'w') as graph:
 		graph.write('p edge ' + str(len(vertices)) + ' ' + str(len(edges)) + '\n')
 		for vertex in vertices:
@@ -371,17 +370,18 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 	unlinked_2cF_pool = _2cF_nonCFds_pool | unlinked_2cF_CFds_pool
 	unlinked_2cF_cover = set()
 
+	# filter the 2cF pool by itself first, according to inclusive rule
 	unlinked_2cF_pool = remove_inclusive_unlinked_2cF(unlinked_2cF_pool)
 
 	if len(unlinked_2cF_pool) > 1:
 		vertices_map = []
 		CFdr_map = []
-		print("Building unlinked 2cF graph...\n")
+		print("Building unlinked 2cF graph...")
 		graph_file = build_unlinked_2cF_graph(unlinked_2cF_pool, vertices_map, CFdr_map)
-		print("Invoking MWVC solver...\n")
+		print("Invoking MWVC solver...")
 		remove_unlinked_2cF_by_MWVC(graph_file)
 
-		with open("../results/mwvc.log", "r") as result:
+		with open("results/mwvclog", "r") as result:
 			for vertex in result.readlines():
 				vertex.strip()
 				unlinked_2cF_cover.add(vertices_map[int(vertex) - 1])
@@ -394,14 +394,17 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 			if isinstance(find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys), int):
 				unlinked_2cF_cover.add(CFdr)
 	else:
+		# if there is only 1 2cF, use its 2 vertices as the final cover directly
 		for unlinked_2cF in unlinked_2cF_pool:
 			unlinked_2cF_cover.update(set(unlinked_2cF.comps.values()))
 
-	print("\n2-composite faults are filtered.\n")
+	# print("\n2-composite faults are filtered.\n")
 	return unlinked_2cF_cover
 
 
 if __name__ == '__main__':
+	os.chdir("../")
+	# sys.path.append("src/")
 	try:
 		parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 		classified_pool = classify(parsed_pool)

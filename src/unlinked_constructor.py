@@ -142,7 +142,7 @@ def unlinked_2cF_constructor(unlinked_pool):
 def sf_constructor(unlinked_pool):
 	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
 	vertex_candidate_pool = copy.deepcopy(vertex_sf_pool)
-	# reuse the priority rules for linked CFds, just for concise
+	# reuse the priority rules for linked CFds, just for concise, since no necessary rules for SFs
 	initial_vertex = LinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1')
 	vertex_candidate_pool -= {initial_vertex}
 	coverage_chain = initial_vertex.get_march_sequence()
@@ -156,6 +156,7 @@ def sf_constructor(unlinked_pool):
 
 
 if __name__ == '__main__':
+	os.chdir("../")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
 	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])

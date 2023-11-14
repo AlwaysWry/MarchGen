@@ -53,11 +53,12 @@ def filter_redundant_SF(classified_fault_pool, _2cF_pool):
 		for op_num in filtered_fault_pool[init].keys():
 			filtered_fault_pool[init][op_num] = filtered_fault_pool[init][op_num] - redundant_fault_pool[init][op_num]
 
-	print("Simple faults are filtered.\n")
+	# print("Simple faults are filtered.\n")
 	return filtered_fault_pool
 
 
 if __name__ == '__main__':
+	os.chdir("../")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
 	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])

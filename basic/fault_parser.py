@@ -2,8 +2,8 @@
 import re
 
 # unparsed fault list definitions
-fault_list_file = '../resources/fault_lists/' + 'stat_stat'
-fault_model_name = '2cF_2aa'
+fault_list_file = 'resources/fault_lists/' + 'complete'
+fault_model_name = '2cF_3'
 
 NEST = True
 NOT_NEST = False
@@ -72,7 +72,7 @@ def get_March_algorithm(filename):
             elif ME.strip():
                 march.append(ME.strip())
 
-    print("March test is successfully loaded.\n")
+    # print("March test is successfully loaded.")
     return march
 
 
