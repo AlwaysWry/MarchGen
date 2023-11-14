@@ -67,7 +67,8 @@ def March2Comp(fault_list, fault_model, fp):
 	fp.write("\nGenerated March test:\n")
 	for me in result:
 		fp.write("%s\n" % me)
-	fp.write("\nMarch test complexity: %dn\n" % sum(map(lambda t: t.count('r') + t.count('w') - t.count('down'), result)))
+	fp.write(
+		"\nMarch test complexity: %dn\n" % sum(map(lambda t: t.count('r') + t.count('w') - t.count('down'), result)))
 	fp.write("Elapsed generation time: %lf s.\n" % (end_time - start_time))
 
 	return result
@@ -76,7 +77,7 @@ def March2Comp(fault_list, fault_model, fp):
 if __name__ == '__main__':
 	march_test_file = 'results/march.m2c'
 	test_logs_file = 'results/testlog'
-	fault_list_file = 'resources/fault_lists/' + 'dyn2comp'
+	fault_list_file = 'resources/fault_lists/' + 'complete_with_novel'
 
 	with open("results/generation_report.txt", 'w') as report:
 		report.write("***********************************************************************************\n")
@@ -121,31 +122,47 @@ if __name__ == '__main__':
 		report.write(table_h2.format("", "", "2cF_3 model", "", "", "2cF_2aa model", ""))
 		report.write(table_h3.format("", "Items", "", "", ""))
 		report.write("|--------------------------|--------------------------|--------------------------|\n")
-		report.write(table.format("", "undetected faults", "", "", str(len(_2cF_3_undetected)), "", "",
+		report.write(table.format("", "undetected faults*", "", "", str(len(_2cF_3_undetected)), "", "",
 								  str(len(_2cF_2aa_undetected)), ""))
 		report.write("|--------------------------|--------------------------|--------------------------|\n")
+
 		if (_2cF_3_coverage >= 100) and (_2cF_2aa_coverage >= 100):
-			report.write(table_f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+			report.write(
+				table_f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%",
+									 ""))
 		elif (_2cF_3_coverage < 100) and (_2cF_2aa_coverage < 100):
 			if (_2cF_3_coverage < 10) and (_2cF_2aa_coverage < 10):
-				report.write(table_3f_1_3f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(table_3f_1_3f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+													_2cF_2aa_coverage, "%", ""))
 			elif _2cF_3_coverage < 10:
-				report.write(table_3f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(table_3f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+													_2cF_2aa_coverage, "%", ""))
 			elif _2cF_2aa_coverage < 10:
-				report.write(table_3f_2_2f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(table_3f_2_2f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+													_2cF_2aa_coverage, "%", ""))
 			else:
-				report.write(table_2f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(table_2f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+													_2cF_2aa_coverage, "%", ""))
 		elif _2cF_3_coverage < 100:
 			if _2cF_3_coverage < 10:
-				report.write(table_3f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(
+					table_3f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+										  "%", ""))
 			else:
-				report.write(table_2f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(
+					table_2f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+										  "%", ""))
 		else:
 			if _2cF_2aa_coverage < 10:
-				report.write(table_3f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(
+					table_3f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+										  "%", ""))
 			else:
-				report.write(table_2f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%", ""))
+				report.write(
+					table_2f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+										  "%", ""))
 		report.write("|--------------------------------------------------------------------------------|\n")
+		report.write("*a 2-composite fault are regarded as detected only when it can be detected under all possible cell orders.\n")
 
 		if len(_2cF_3_undetected) > 0:
 			report.write("\nUndetected faults in 2cF_3 model:\n")
