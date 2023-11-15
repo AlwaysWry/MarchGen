@@ -67,8 +67,9 @@ def March2Comp(fault_list, fault_model, fp):
 	fp.write("\nGenerated March test:\n")
 	for me in result:
 		fp.write("%s\n" % me)
+	fp.write("\nMarch element number: %d\n" % len(result))
 	fp.write(
-		"\nMarch test complexity: %dn\n" % sum(map(lambda t: t.count('r') + t.count('w') - t.count('down'), result)))
+		"March test complexity: %dn\n" % sum(map(lambda t: t.count('r') + t.count('w') - t.count('down'), result)))
 	fp.write("Elapsed generation time: %lf s.\n" % (end_time - start_time))
 
 	return result
@@ -175,3 +176,5 @@ if __name__ == '__main__':
 				report.write(undetected + '\n')
 
 		print("\nSee elaborate test logs in file \"testlog\".\n")
+		report.write("\nSee elaborate test logs in file \"testlog\".\n")
+		report.write("\n-----------------------------------------------------------------------------------\n")
