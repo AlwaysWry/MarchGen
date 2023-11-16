@@ -180,5 +180,5 @@ if __name__ == '__main__':
 				report.write(undetected + '\n')
 
 		print("\nCheck elaborate information in \"results/generation_report.txt\".\n")
-		report.write("\nSee elaborate test logs in file \"testlog\".\n")
+		report.write("\nSee elaborate test logs in file \"results/testlog\".\n")
 		report.write("\n-----------------------------------------------------------------------------------\n")
