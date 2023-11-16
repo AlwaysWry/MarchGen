@@ -34,7 +34,6 @@ Commands for using fault simulator independently:
 
 ### Compile and run on Windows
 You can use your own compiler and python intepreter to compile and run March2Comp. What follows is an example using CMake and MinGW:
-
 <br>    ```cmake -G "MinGW makefiles"```
 <br>    ```mingw32-make```
 
@@ -43,6 +42,15 @@ Using March test generator:
 
 Using fault simulator independently:
 <br>    ```python ./sim/sim2comp.py <march test filename> <fault list filename>```
+
+### Instructions
+1. Standard format of fault lists: a fault list consist of faults in standard fault primitive (FP) format: <br> ```<Sa;Sv/F/R>```
+<br> ```<Sa;Sv/F/R>```
+<br> ```<Sa;Sv/F/R>```
+<br> ```...``` <br> where: <br> ```Sa```: sensitization operations on aggressor cell <br> ```Sv```: sensitization operations on victim cell <br> ```F```: faulty value of victim cell <br> ```R```: read-out value of victim cell
+<br> <br> An FP example: ```<1w1w0;0/1/->```
+
+2. 
 
 
  
