@@ -79,7 +79,7 @@ def March2Comp(fault_list, fault_model, fp):
 if __name__ == '__main__':
 	march_test_file = 'results/march.m2c'
 	test_logs_file = 'results/testlog'
-	fault_list_file = 'resources/fault_lists/' + 'dyn2comp'
+	fault_list_file = 'resources/fault_lists/' + 'complete_with_novel'
 
 	with open("results/generation_report.txt", 'w') as report:
 		report.write("***********************************************************************************\n")

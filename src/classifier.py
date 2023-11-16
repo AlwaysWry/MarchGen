@@ -66,7 +66,7 @@ class TwoComposite:
 
 
 def parse_fault_pool(fault_pool, fault_model):
-	print("Parsing fault list...\n")
+	print("\n***Parsing fault list...\n")
 	fault_obj_list = get_fault_primitive(fault_pool, fault_model)
 	parsed_pool = []
 	fault_comps = TwoComposite()
@@ -163,7 +163,7 @@ def classify_2cF_CFds(_2cF_CFds_pool, comp_obj):
 
 
 def classify(unclassified_fault_pool):
-	print("Implementing fault classification...\n")
+	print("\n***Implementing fault classification...\n")
 	sf_pool = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
 	_2cF_nonCFds_pool = set()
 	_2cF_CFds_pool = {'linked': set(), 'unlinked': set()}

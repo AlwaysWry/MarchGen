@@ -365,7 +365,7 @@ def remove_inclusive_unlinked_2cF(_2cF_pool):
 
 
 def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
-	print("Filtering redundant 2-composite faults...\n")
+	print("\n***Filtering redundant 2-composite faults...\n")
 
 	unlinked_2cF_pool = _2cF_nonCFds_pool | unlinked_2cF_CFds_pool
 	unlinked_2cF_cover = set()
