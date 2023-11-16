@@ -17,7 +17,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(pybind11_DIR "/home/zsr/.conda/envs/March2Comp/lib/python3.11/site-packages/pybind11/share/cmake/pybind11")
     find_package(pybind11 REQUIRED)
 
-    set(LIBRARY_OUTPUT_PATH ../mwvc_solver/QUICK_VC)
+    set(LIBRARY_OUTPUT_PATH mwvc_solver/QUICK_VC)
     pybind11_add_module(QUICK_VC_Py mwvc_solver/QUICK_VC/QUICK_VC_Py.cpp)
 
 
@@ -25,7 +25,7 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(CMAKE_CXX_STANDARD 17)
 
     include_directories(mwvc_solver/DynWVC2)
-    set(LIBRARY_OUTPUT_PATH ../mwvc_solver/DynWVC2)
+    set(LIBRARY_OUTPUT_PATH mwvc_solver/DynWVC2)
 
     add_library(DynWVC2 SHARED mwvc_solver/DynWVC2/mwvc.cpp)
 
