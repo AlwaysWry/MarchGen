@@ -25,7 +25,7 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(CMAKE_CXX_STANDARD 17)
 
     include_directories(mwvc_solver/DynWVC2)
-    set(LIBRARY_OUTPUT_PATH ../mwvc_solver/DynWVC2)
+    set(LIBRARY_OUTPUT_PATH mwvc_solver/DynWVC2)
 
     add_library(DynWVC2 SHARED mwvc_solver/DynWVC2/mwvc.cpp)
 
