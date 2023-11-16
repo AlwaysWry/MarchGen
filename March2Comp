@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# a shell script for starting the March2Comp automatic March generation tool
+set -e
+
+case $1 in
+"gen")
+	if [ $# -ne 2 ];then
+		echo "March generation command: March2Comp gen <fault list filename>"
+		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+	else
+		python3 March2Comp.py $2
+		cat ./results/generation_report.txt
+	fi
+;;
+"sim")
+	if [ $# -ne 3 ];then
+		echo "March generation command: March2Comp gen <fault list filename>"
+		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+	else
+		cd ./sim
+		python3 sim2comp.py $2 $3
+		cat ../results/simulation_report.txt
+	fi
+;;
+*)
+	echo "March generation command: March2Comp gen <fault list filename>"
+	echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+esac
