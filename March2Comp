@@ -3,8 +3,17 @@
 set -e
 
 case $1 in
+"compile")
+	if [ $# -ne 1 ];then
+		echo "Compilation command: March2Comp compile"
+	else
+		cmake .
+		make
+	fi
+;;
 "gen")
 	if [ $# -ne 2 ];then
+		echo "Compilation command: March2Comp compile"
 		echo "March generation command: March2Comp gen <fault list filename>"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
@@ -14,6 +23,7 @@ case $1 in
 ;;
 "sim")
 	if [ $# -ne 3 ];then
+		echo "Compilation command: March2Comp compile"
 		echo "March generation command: March2Comp gen <fault list filename>"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
@@ -23,6 +33,7 @@ case $1 in
 	fi
 ;;
 *)
+	echo "Compilation command: March2Comp compile"
 	echo "March generation command: March2Comp gen <fault list filename>"
 	echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 esac
