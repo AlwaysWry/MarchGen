@@ -179,6 +179,6 @@ if __name__ == '__main__':
 			for undetected in _2cF_2aa_undetected:
 				report.write(undetected + '\n')
 
-		print("\nCheck elaborate information in \"results/generation_report.txt\".\n")
+		print("\n***Check elaborate information in \"results/generation_report.txt\".\n")
 		report.write("\nSee elaborate test logs in file \"results/testlog\".\n")
 		report.write("\n-----------------------------------------------------------------------------------\n")
