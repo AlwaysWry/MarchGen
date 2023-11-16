@@ -1,7 +1,6 @@
 # main script of the March2Comp program
 import sys
 import time
-import datetime
 
 sys.path.append("src/")
 sys.path.append("sim/")
