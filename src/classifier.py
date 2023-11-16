@@ -163,7 +163,7 @@ def classify_2cF_CFds(_2cF_CFds_pool, comp_obj):
 
 
 def classify(unclassified_fault_pool):
-	print("\n***Implementing fault classification...\n")
+	print("***Implementing fault classification...\n")
 	sf_pool = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
 	_2cF_nonCFds_pool = set()
 	_2cF_CFds_pool = {'linked': set(), 'unlinked': set()}

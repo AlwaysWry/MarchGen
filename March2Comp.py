@@ -86,6 +86,7 @@ if __name__ == '__main__':
 		report.write("***********************************************************************************\n")
 		report.write("*            March2Comp: A March test generator for 2-composite faults            *\n")
 		report.write("*                                    v1.0                                         *\n")
+		report.write("*                            Author: Sunrui Zhang                                 *\n")
 		report.write("***********************************************************************************\n")
 		report.write("\n-------------------------------GENERATION REPORT-----------------------------------\n")
 		report.write("\nGeneration starts at %s\n" % datetime.datetime.now())

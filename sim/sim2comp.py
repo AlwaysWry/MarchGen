@@ -1,6 +1,7 @@
 # ---------------------------- #
 # a March test evaluation tool #
 # ---------------------------- #
+import datetime
 import os
 import sys
 sys.path.append("../")
@@ -25,7 +26,7 @@ def sim2Comp(test_file, logs_file, fault_list_file, fault_model_name):
         print("\nEmpty or illegal fault list!\n")
         return ev.ERROR
 
-    # print("Fault list is successfully loaded.")
+    print("Fault list is successfully loaded.")
     print("Applying March test...")
 
     undetected_fault = []
@@ -63,6 +64,105 @@ def sim2Comp(test_file, logs_file, fault_list_file, fault_model_name):
 
 if __name__ == '__main__':
     os.chdir("../")
-    march_test_file = 'resources/march_tests'
+    march_test_file = sys.argv[1]
+    fault_list_file = sys.argv[2]
     test_logs_file = 'results/testlog'
-    sim2Comp(march_test_file, test_logs_file, ps.fault_list_file, ps.fault_model_name)
+
+    with open("results/simulation_report.txt", 'w') as report:
+        report.write("***********************************************************************************\n")
+        report.write("*            March2Comp: A March test generator for 2-composite faults            *\n")
+        report.write("*                                    v1.0                                         *\n")
+        report.write("*                            Author: Sunrui Zhang                                 *\n")
+        report.write("***********************************************************************************\n")
+        report.write("\n-------------------------------SIMULATION REPORT-----------------------------------\n")
+        report.write("\nGeneration starts at %s\n" % datetime.datetime.now())
+        report.write("Fault list file: " + fault_list_file + "\n")
+        report.write("March test file: " + march_test_file + "\n")
+
+        print("\n***Calculating fault coverage...\n")
+        print("**Coverage result under 2cF_3 model:")
+        fault_model_name = '2cF_3'
+        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file,
+                                                      fault_model_name)
+        print("**Coverage result under 2cF_2aa model:")
+        fault_model_name = '2cF_2aa'
+        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file,
+                                                          fault_model_name)
+
+        table_t = '|{:^80s}|\n'
+        table = '|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'
+        table_h1 = '|{:^4s}{:>18s}{:^4s}|{:^26s}|{:^26s}|\n'
+        table_h2 = '|{:^26s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'
+        table_h3 = '|{:^4s}{:<18s}{:^4s}|{:^26s}|{:^26s}|\n'
+        table_f_1_f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.1f}{:<1s}{:^10s}|{:^10s}{:^.1f}{:<1s}{:^10s}|\n'
+        table_2f_1_f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.2f}{:<1s}{:^10s}|{:^10s}{:^.1f}{:<1s}{:^10s}|\n'
+        table_2f_2_f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.1f}{:<1s}{:^10s}|{:^10s}{:^.2f}{:<1s}{:^10s}|\n'
+        table_2f_1_2f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.2f}{:<1s}{:^10s}|{:^10s}{:^.2f}{:<1s}{:^10s}|\n'
+        table_3f_1_f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.3f}{:<1s}{:^10s}|{:^10s}{:^.1f}{:<1s}{:^10s}|\n'
+        table_3f_2_f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.1f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n'
+        table_3f_1_2f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.3f}{:<1s}{:^10s}|{:^10s}{:^.2f}{:<1s}{:^10s}|\n'
+        table_3f_2_2f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.2f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n'
+        table_3f_1_3f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.3f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n'
+
+        report.write("\n|--------------------------------------------------------------------------------|\n")
+        report.write(table_t.format("FAULT SIMULATION RESULT"))
+        report.write("|--------------------------------------------------------------------------------|\n")
+        report.write(table_h1.format("", "Fault Models", "", "", ""))
+        report.write(table_h2.format("", "", "2cF_3 model", "", "", "2cF_2aa model", ""))
+        report.write(table_h3.format("", "Items", "", "", ""))
+        report.write("|--------------------------|--------------------------|--------------------------|\n")
+        report.write(table.format("", "undetected faults*", "", "", str(len(_2cF_3_undetected)), "", "",
+                                  str(len(_2cF_2aa_undetected)), ""))
+        report.write("|--------------------------|--------------------------|--------------------------|\n")
+
+        if (_2cF_3_coverage >= 100) and (_2cF_2aa_coverage >= 100):
+            report.write(
+                table_f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage, "%",
+                                     ""))
+        elif (_2cF_3_coverage < 100) and (_2cF_2aa_coverage < 100):
+            if (_2cF_3_coverage < 10) and (_2cF_2aa_coverage < 10):
+                report.write(table_3f_1_3f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+                                                    _2cF_2aa_coverage, "%", ""))
+            elif _2cF_3_coverage < 10:
+                report.write(table_3f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+                                                    _2cF_2aa_coverage, "%", ""))
+            elif _2cF_2aa_coverage < 10:
+                report.write(table_3f_2_2f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+                                                    _2cF_2aa_coverage, "%", ""))
+            else:
+                report.write(table_2f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
+                                                    _2cF_2aa_coverage, "%", ""))
+        elif _2cF_3_coverage < 100:
+            if _2cF_3_coverage < 10:
+                report.write(
+                    table_3f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+                                          "%", ""))
+            else:
+                report.write(
+                    table_2f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+                                          "%", ""))
+        else:
+            if _2cF_2aa_coverage < 10:
+                report.write(
+                    table_3f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+                                          "%", ""))
+            else:
+                report.write(
+                    table_2f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
+                                          "%", ""))
+        report.write("|--------------------------------------------------------------------------------|\n")
+        report.write("*a 2-composite fault are regarded as detected only when it can be detected under all possible cell orders.\n")
+
+        if len(_2cF_3_undetected) > 0:
+            report.write("\nUndetected faults in 2cF_3 model:\n")
+            for undetected in _2cF_3_undetected:
+                report.write(undetected + '\n')
+
+        if len(_2cF_2aa_undetected) > 0:
+            report.write("\nUndetected faults in 2cF_2aa model:\n")
+            for undetected in _2cF_2aa_undetected:
+                report.write(undetected + '\n')
+
+        print("\nCheck elaborate information in \"results/simulation_report.txt\".\n")
+        report.write("\nSee elaborate test logs in file \"testlog\".\n")
+        report.write("\n-----------------------------------------------------------------------------------\n")

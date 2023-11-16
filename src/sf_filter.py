@@ -22,7 +22,7 @@ def generate_2cF_SF_set_dict(_2cF_pool):
 def filter_redundant_SF(classified_fault_pool, _2cF_pool):
 	# the filter search of SF can only happen in the same init_sub_list, since a CF can be covered by another CF
 	# only if they have the same sensitization initial conditions, while nonCFs not have such limitations
-	print("\n***Filtering redundant simple faults...\n")
+	print("***Filtering redundant simple faults...\n")
 
 	filtered_fault_pool = copy.deepcopy(classified_fault_pool)
 	candidate_set_dict_SF = generate_inclusive_search_set(filtered_fault_pool)
