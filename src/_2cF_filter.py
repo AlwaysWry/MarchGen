@@ -54,7 +54,7 @@ def get_vertex_weight(fault_obj):
 
 
 def output_graph_file_QUICK_VC(vertices, edges):
-	filename = '../results/unlinked_2cF_graph.m2c'
+	filename = 'results/unlinked_2cF_graph.m2c'
 	with open(filename, 'w') as graph:
 		graph.write(str(len(edges)) + ' ' + str(len(vertices)) + '\n')
 		for vertex in vertices[:-1]:
@@ -73,7 +73,7 @@ def output_graph_file_QUICK_VC(vertices, edges):
 
 
 def output_graph_file_DYNWVC2(vertices, edges):
-	filename = './results/unlinked_2cF_graph.m2c'
+	filename = 'results/unlinked_2cF_graph.m2c'
 	with open(filename, 'w') as graph:
 		graph.write('p edge ' + str(len(vertices)) + ' ' + str(len(edges)) + '\n')
 		for vertex in vertices:

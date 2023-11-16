@@ -1,6 +1,7 @@
 # main script of the March2Comp program
 import sys
 import time
+import datetime
 
 sys.path.append("src/")
 sys.path.append("sim/")
@@ -78,7 +79,7 @@ def March2Comp(fault_list, fault_model, fp):
 if __name__ == '__main__':
 	march_test_file = 'results/march.m2c'
 	test_logs_file = 'results/testlog'
-	fault_list_file = 'resources/fault_lists/' + 'complete_with_novel'
+	fault_list_file = 'resources/fault_lists/' + 'dyn2comp'
 
 	with open("results/generation_report.txt", 'w') as report:
 		report.write("***********************************************************************************\n")
@@ -86,7 +87,8 @@ if __name__ == '__main__':
 		report.write("*                                    v1.0                                         *\n")
 		report.write("***********************************************************************************\n")
 		report.write("\n-------------------------------GENERATION REPORT-----------------------------------\n")
-		report.write("\nFault list file: " + fault_list_file + "\n")
+		report.write("\nGeneration starts at %s\n" % datetime.datetime.now())
+		report.write("Fault list file: " + fault_list_file + "\n")
 
 		generation_result = March2Comp(fault_list_file, fault_model_name, report)
 		march_test = generation_result[0]
