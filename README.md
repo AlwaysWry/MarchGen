@@ -1,6 +1,6 @@
 # March2Comp: A Structure-oriented March Test Generator for Static and Multi-operation Dynamic 2-composite Faults in Memory
 
-  It is a demo Python project for March2Comp.
+  March2Comp is an automatic March test generator, aiming to generate March tests for 2-composite faults with arbitrary number of sensitization operations. It also integrates Sim2Comp, a fault simulator to check the fault coverage of a given March test under different 2-composite fault models.
     
   File dictionary structure:
 
@@ -50,7 +50,7 @@ Using fault simulator independently:
 <br> ```...``` <br> where: <br> ```Sa```: sensitization operations on aggressor cell <br> ```Sv```: sensitization operations on victim cell <br> ```F```: faulty value of victim cell <br> ```R```: read-out value of victim cell
 
 2. Standard format of March tests: a March test includes a series of March elements (ME). An ME consists of address order (AO) and operation sequence (OS). Here's an example:
-<br> ```up,r0,w0,w1,w0,w1,r1``` <br> Possible AO includes ```up```, ```down``` and ```any```. <br> Possible operations in OS includes ```r0```, ```w0```, ```r1``` and ```w1```.
+<br> ```up,r0,w0,w1,w0,w1,r1``` <br> Possible AO includes ```up```, ```down``` and ```any```. <br> Possible operations in OS includes ```r0```, ```w0```, ```r1``` and ```w1```. <br> There are some examples of March tests in resources/march_tests.
 
 3. Report of March test generator, fault simulator and test log are in generation_report.txt, simulation_report.txt and testlog in results/ respectively.
 
