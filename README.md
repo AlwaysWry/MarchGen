@@ -48,9 +48,13 @@ Using fault simulator independently:
 <br> ```<Sa;Sv/F/R>```
 <br> ```<Sa;Sv/F/R>```
 <br> ```...``` <br> where: <br> ```Sa```: sensitization operations on aggressor cell <br> ```Sv```: sensitization operations on victim cell <br> ```F```: faulty value of victim cell <br> ```R```: read-out value of victim cell
-<br> <br> An FP example: ```<1w1w0;0/1/->```
 
-2. 
+2. Standard format of March tests: a March test includes a series of March elements (ME). An ME consists of address order (AO) and operation sequence (OS). Here's an example:
+<br> ```up,r0,w0,w1,w0,w1,r1``` <br> Possible AO includes ```up```, ```down``` and ```any```. <br> Possible operations in OS includes ```r0```, ```w0```, ```r1``` and ```w1```.
+
+3. Report of March test generator, fault simulator and test log are in generation_report.txt, simulation_report.txt and testlog in results/ respectively.
+
+### Contact alwayswry@stu.pku.edu.cn if you have any problem.
 
 
  
