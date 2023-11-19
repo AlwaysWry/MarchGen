@@ -52,7 +52,7 @@ Using fault simulator independently:
 2. Standard format of March tests: a March test includes a series of March elements (ME). An ME consists of address order (AO) and operation sequence (OS). Here's an example:
 <br> ```up,r0,w0,w1,w0,w1,r1``` <br> Possible AOs include ```up```, ```down``` and ```any```. <br> Possible operations in OS include ```r0```, ```w0```, ```r1``` and ```w1```. <br> There are some examples of March tests in ```resources/march_tests```.
 
-3. Report of March test generator, fault simulator and test log are in generation_report.txt, simulation_report.txt and testlog in ```results/``` respectively.
+3. Report of March test generator, fault simulator and test log are in ```generation_report.txt```, ```simulation_report.txt``` and ```testlog``` in ```results/``` respectively.
 
 ### Contact alwayswry@stu.pku.edu.cn if you have any problem.
 
