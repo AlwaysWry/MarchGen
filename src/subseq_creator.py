@@ -82,8 +82,9 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 	linked_seq_pool = {'Init_0': set(), 'Init_1': set()}
 	# the 'Init_-1' class is for the not redundant nonCFs, it can be transformed into either of main MEs
 	unlinked_seq_pool = {'Init_0': set(), 'Init_1': set(), 'Init_-1': set()}
-
 	unlinked_pool = sf_pool.union(unlinked_2cF_pool)
+	unlinked_CF_pool = set(filter(lambda f: f.aInit != '-', unlinked_pool))
+	unlinked_nonCF_pool = unlinked_pool - unlinked_CF_pool
 
 	for linked_CFds in linked_CFds_pool:
 		for comp_obj in linked_CFds.comps.values():
@@ -92,46 +93,46 @@ def create_sequence_pool(sf_pool, unlinked_2cF_pool, linked_CFds_pool):
 			if isinstance(find_identical_objs(fault_sequence, linked_seq_pool[init_key], {}), type(DIFFERENT)):
 				linked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
-	for unlinked_fault in unlinked_pool:
+	def filter_redundant_unlinked_sequences(fault_seq, target_seq_pool, ignored_properties):
+		find_result = DIFFERENT
+		for pool_init_key in target_seq_pool.keys():
+			find_result = find_identical_objs(fault_seq, target_seq_pool[pool_init_key], ignored_properties)
+			if not isinstance(find_result, type(DIFFERENT)):
+				break
+
+		if not isinstance(find_result, type(DIFFERENT)):
+			if not unlinked_fault.CFdsFlag:
+				# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
+				find_result.detect_tag |= fault_seq.detect_tag
+				find_result.dr_tag |= fault_seq.dr_tag
+				find_result.nest_tag = fault_seq.nest_tag
+
+			return REDUNDANT
+		else:
+			return NOT_REDUNDANT
+
+	for unlinked_fault in unlinked_CF_pool:
 		fault_sequence = Sequence(get_sequence_properties(unlinked_fault))
 		init_key = 'Init_' + fault_sequence.ass_init
 
 		# compare with the linked CFds pool. if the same sequence exists, merge into linked CFds pool by merging the detect_tag,
 		# dr_tag and the nest_tag of nonCFds into CFds-sequence objects
-		if init_key != 'Init_-1':
-			find_result = find_identical_objs(fault_sequence, linked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
-		else:
-			find_result = DIFFERENT
-			for pool_init_key in linked_seq_pool.keys():
-				find_result = find_identical_objs(fault_sequence, linked_seq_pool[pool_init_key], {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'})
-				if not isinstance(find_result, type(DIFFERENT)):
-					break
-
-		if not isinstance(find_result, type(DIFFERENT)):
-			if not unlinked_fault.CFdsFlag:
-				# only nonCFds with same sequence needs to merge the detect_tag and nest_tag
-				find_result.detect_tag |= fault_sequence.detect_tag
-				find_result.dr_tag |= fault_sequence.dr_tag
-				find_result.nest_tag = fault_sequence.nest_tag
-
+		if filter_redundant_unlinked_sequences(fault_sequence, linked_seq_pool, {'detect_tag', 'dr_tag', 'nest_tag'}):
 			continue
 
 		# if there's no identical seq_text in linked CFds pool, compare with current unlinked sequence pool. Similarly,
 		# the detect_tag, dr_tag and the nest_tag should be merged
-		if init_key != 'Init_-1':
-			find_result = find_identical_objs(fault_sequence, unlinked_seq_pool[init_key], {'detect_tag', 'dr_tag', 'nest_tag'})
-		else:
-			for pool_init_key in unlinked_seq_pool.keys():
-				find_result = find_identical_objs(fault_sequence, unlinked_seq_pool[pool_init_key], {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'})
-				if not isinstance(find_result, type(DIFFERENT)):
-					break
+		if not filter_redundant_unlinked_sequences(fault_sequence, unlinked_seq_pool, {'detect_tag', 'dr_tag', 'nest_tag'}):
+			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
-		if not isinstance(find_result, type(DIFFERENT)):
-			if not unlinked_fault.CFdsFlag:
-				find_result.detect_tag |= fault_sequence.detect_tag
-				find_result.dr_tag |= fault_sequence.dr_tag
-				find_result.nest_tag = fault_sequence.nest_tag
-		else:
+	# check the redundancy of nonCFs after the check of CFs
+	for unlinked_fault in unlinked_nonCF_pool:
+		fault_sequence = Sequence(get_sequence_properties(unlinked_fault))
+		init_key = 'Init_' + fault_sequence.ass_init
+
+		if filter_redundant_unlinked_sequences(fault_sequence, linked_seq_pool, {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'}):
+			continue
+		if not filter_redundant_unlinked_sequences(fault_sequence, unlinked_seq_pool, {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'}):
 			unlinked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
 	filter_redundant_linked_sequences(linked_seq_pool)

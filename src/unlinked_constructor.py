@@ -153,6 +153,9 @@ def sf_constructor(unlinked_pool):
 			build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, init, UnlinkedElementsBuilder)
 			vertex_candidate_pool -= build_result[0]
 			coverage_chain += build_result[1]
+		# make sure that the SF me also starts with read operation, since terminal decorator is not applied
+		if coverage_chain[1] != 'r':
+			coverage_chain = coverage_chain[0] + 'r' + coverage_chain
 
 		return MarchElement(coverage_chain[1:])
 
