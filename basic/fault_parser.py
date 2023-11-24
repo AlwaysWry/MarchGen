@@ -64,15 +64,17 @@ class SimpleFault:
 
 def get_March_algorithm(filename):
     march = []
+    try:
+        with open(filename, 'r') as file:
+            for ME in file:
+                if ME.strip().startswith('#'):
+                    continue
+                elif ME.strip():
+                    march.append(ME.strip())
+    except FileNotFoundError:
+        print("March test file doesn't exist!\n")
+        return
 
-    with open(filename, 'r') as file:
-        for ME in file:
-            if ME.strip().startswith('#'):
-                continue
-            elif ME.strip():
-                march.append(ME.strip())
-
-    # print("March test is successfully loaded.")
     return march
 
 

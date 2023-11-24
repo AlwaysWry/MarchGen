@@ -28,8 +28,7 @@ def March2Comp(fault_list, fault_model, fp):
 	classified_faults = classify(parsed_faults)
 	# print("Classification finished.\n")
 	# filter 2cF pool
-	filtered_2cFs = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'],
-										 classified_faults['2cF_CFds']['unlinked'])
+	filtered_2cFs = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'], classified_faults['2cF_CFds']['unlinked'])
 	# filter SF pool
 	filtered_SFs = filter_redundant_SF(classified_faults['SF'], filtered_2cFs)
 	flat_SFs = flatten_sf_pool(filtered_SFs)
@@ -41,7 +40,7 @@ def March2Comp(fault_list, fault_model, fp):
 	print("***Building march elements...\n")
 	me_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
 		{'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
-				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'sf_ME': MarchElement('')}
+				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'sf_ME': {MarchElement('')}}
 
 	if len(sequence_pool['linked']['Init_0']) + len(sequence_pool['linked']['Init_1']) > 0:
 		print("Building linked CFds*CFds ME...")

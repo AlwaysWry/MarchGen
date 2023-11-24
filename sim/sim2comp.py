@@ -15,13 +15,15 @@ import evaluator as ev
 # fault_model_name = '2cF_3'
 
 
-def sim2Comp(test_file, logs_file, fault_list_file, fault_model_name):
+def sim2Comp(test_file, logs_file, fault_list, fault_model):
     logfile = open(logs_file, 'w')
     # logfile = sys.stdout
 
     march = ps.get_March_algorithm(test_file)
+    if not isinstance(march, list):
+        return ev.ERROR
 
-    fobj_list = ps.get_fault_primitive(fault_list_file, fault_model_name)
+    fobj_list = ps.get_fault_primitive(fault_list, fault_model)
     if len(fobj_list) == 0:
         print("\nEmpty or illegal fault list!\n")
         return ev.ERROR
@@ -81,13 +83,9 @@ if __name__ == '__main__':
 
         print("\n***Calculating fault coverage...\n")
         print("**Coverage result under 2cF_3 model:")
-        fault_model_name = '2cF_3'
-        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file,
-                                                      fault_model_name)
+        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file, '2cF_3')
         print("**Coverage result under 2cF_2aa model:")
-        fault_model_name = '2cF_2aa'
-        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file,
-                                                          fault_model_name)
+        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file, '2cF_2aa')
 
         table_t = '|{:^80s}|\n'
         table = '|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'

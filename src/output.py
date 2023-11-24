@@ -2,154 +2,136 @@
 from unlinked_constructor import *
 
 
+def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
+	# if current element is odd-sensitization element, it will be assigned with its two tied main elements in fixed order
+	if isinstance(element.tied_element, list):
+		precedent = element.tied_element[-1]
+		precedent_list.extend(element.tied_element)
+		return initial_based_assign(linked_me, sf_me, me_dict, precedent_list, precedent)
+
+	match element.initial_state:
+		case '0':
+			feature_keys = ['00', '10', '11', '01']
+			for key in feature_keys:
+				iter_key = iter(me_dict[key])
+				precedent = next(iter_key, '')
+				if not isinstance(precedent, MarchElement):
+					continue
+				else:
+					if (len(me_dict[key]) > 1) and (precedent in linked_me['main_me'].values()):
+						precedent = next(iter_key)
+					# if an ME for SFs are visited, the other sf_me candidate can be discarded
+					if precedent in sf_me:
+						useless_me = next(iter(sf_me - {precedent}))
+						me_dict[useless_me.initial_state + useless_me.final_state].remove(useless_me)
+
+					me_dict[key].remove(precedent)
+
+					if key == '11' or key == '01':
+						transition_text = 'r1w0'
+						transition = MarchElement(transition_text)
+						transition.address_order = precedent.address_order
+						precedent_list.extend([transition])
+
+					precedent_list.extend([precedent])
+
+					return initial_based_assign(linked_me, sf_me, me_dict, precedent_list, precedent)
+			return
+
+		case '1':
+			feature_keys = ['11', '01', '00', '10']
+			for key in feature_keys:
+				iter_key = iter(me_dict[key])
+				precedent = next(iter_key, '')
+				if not isinstance(precedent, MarchElement):
+					continue
+				else:
+					# if an ME for SFs are visited, the other sf_me candidate can be discarded
+					if precedent in sf_me:
+						sf_me -= {precedent}
+						useless_me = next(iter(sf_me))
+						me_dict[useless_me.initial_state + useless_me.final_state].remove(useless_me)
+
+					if (len(me_dict[key]) > 1) and (precedent in linked_me['main_me'].values()):
+						precedent = next(iter_key)
+					me_dict[key].remove(precedent)
+
+					if key == '00' or key == '10':
+						transition_text = 'r0w1'
+						transition = MarchElement(transition_text)
+						transition.address_order = precedent.address_order
+						precedent_list.extend([transition])
+
+					precedent_list.extend([precedent])
+
+					return initial_based_assign(linked_me, sf_me, me_dict, precedent_list, precedent)
+			return
+
+		case _:
+			return
+
+
 def element_assigner(linked_me, unlinked_2cF_me, sf_me):
-	me_dict = {'00': set(), '01': set(), '10': set(), '11': set()}
+	me_dict = {'00': [], '01': [], '10': [], '11': []}
 	precedent_list = []
 	assign_start_me = MarchElement('')
+
+	# the visit priority of MEs in the same state_key is unlinked_ME (because of no transition) > linked_ME > sf_ME(because it has candidates)
+	for me in unlinked_2cF_me.values():
+		if len(me.content) > 0:
+			state = me.initial_state + me.final_state
+			me.address_order = 'up'
+			me_dict[state].append(me)
 
 	for me in linked_me['main_me'].values():
 		if len(me.content) > 0:
 			state = me.initial_state + me.final_state
 			me.address_order = 'up'
-			me_dict[state].add(me)
-
-	for me in unlinked_2cF_me.values():
-		if len(me.content) > 0:
-			state = me.initial_state + me.final_state
-			me.address_order = 'up'
-			me_dict[state].add(me)
-
-	if len(sf_me.content) > 0:
-		state = sf_me.initial_state + sf_me.final_state
-		sf_me.address_order = 'up'
-		me_dict[state].add(sf_me)
+			me_dict[state].append(me)
 
 	if len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
-		if isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, MarchElement):
-			tied_element = linked_me['ass_me']['odd_sensitization_me'].tied_element
-			tied_state = tied_element.initial_state + tied_element.final_state
-			# remove the main element at other place, the element will be added with the odd sensitization ME
-			me_dict[tied_state].remove(tied_element)
+		if isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, list):
+			tied_elements = linked_me['ass_me']['odd_sensitization_me'].tied_element
+			for tied_element in tied_elements:
+				tied_state = tied_element.initial_state + tied_element.final_state
+				# remove the main element at other place, the element will be added with the odd sensitization ME
+				me_dict[tied_state].remove(tied_element)
 
 		state = linked_me['ass_me']['odd_sensitization_me'].initial_state + linked_me['ass_me']['odd_sensitization_me'].final_state
 		linked_me['ass_me']['odd_sensitization_me'].address_order = 'up'
-		me_dict[state].add(linked_me['ass_me']['odd_sensitization_me'])
+		me_dict[state].append(linked_me['ass_me']['odd_sensitization_me'])
 
-	# since the tail ME has to be added separately (it has opposite AO), use this ME as the beginning
-	def initial_based_assign(element):
-		if isinstance(element.tied_element, MarchElement):
-			precedent = element.tied_element
-			precedent_list.extend([precedent])
-			return initial_based_assign(precedent)
-		match element.initial_state:
-			case '0':
-				iter_00 = iter(me_dict['00'])
-				precedent = next(iter_00, '')
-				if not isinstance(precedent, MarchElement):
-					iter_10 = iter(me_dict['10'])
-					precedent = next(iter_10, '')
-					if not isinstance(precedent, MarchElement):
-						iter_11 = iter(me_dict['11'])
-						precedent = next(iter_11, '')
-						if not isinstance(precedent, MarchElement):
-							iter_01 = iter(me_dict['01'])
-							precedent = next(iter_01, '')
-							if not isinstance(precedent, MarchElement):
-								return
-							else:
-								transition_text = 'r1w0'
-								transition = MarchElement(transition_text)
-								transition.address_order = precedent.address_order
-								if (len(me_dict['01']) > 1) and (precedent in linked_me['main_me'].values()):
-									precedent = next(iter_01)
-								me_dict['01'].remove(precedent)
-								precedent_list.extend([transition, precedent])
-								return initial_based_assign(precedent)
-						else:
-							transition_text = 'r1w0'
-							transition = MarchElement(transition_text)
-							transition.address_order = precedent.address_order
-							if (len(me_dict['11']) > 1) and (precedent in linked_me['main_me'].values()):
-								precedent = next(iter_11)
-							me_dict['11'].remove(precedent)
-							precedent_list.extend([transition, precedent])
-							return initial_based_assign(precedent)
-					else:
-						if (len(me_dict['10']) > 1) and (precedent in linked_me['main_me'].values()):
-							precedent = next(iter_10)
-						me_dict['10'].remove(precedent)
-						precedent_list.extend([precedent])
-						return initial_based_assign(precedent)
-				else:
-					if (len(me_dict['00']) > 1) and (precedent in linked_me['main_me'].values()):
-						precedent = next(iter_00)
-					me_dict['00'].remove(precedent)
-					precedent_list.extend([precedent])
-					return initial_based_assign(precedent)
-			case '1':
-				iter_11 = iter(me_dict['11'])
-				precedent = next(iter_11, '')
-				if not isinstance(precedent, MarchElement):
-					iter_01 = iter(me_dict['01'])
-					precedent = next(iter_01, '')
-					if not isinstance(precedent, MarchElement):
-						iter_00 = iter(me_dict['00'])
-						precedent = next(iter_00, '')
-						if not isinstance(precedent, MarchElement):
-							iter_10 = iter(me_dict['10'])
-							precedent = next(iter_10, '')
-							if not isinstance(precedent, MarchElement):
-								return
-							else:
-								transition_text = 'r0w1'
-								transition = MarchElement(transition_text)
-								transition.address_order = precedent.address_order
-								if (len(me_dict['10']) > 1) and (precedent in linked_me['main_me'].values()):
-									precedent = next(iter_10)
-								me_dict['10'].remove(precedent)
-								precedent_list.extend([transition, precedent])
-								return initial_based_assign(precedent)
-						else:
-							transition_text = 'r0w1'
-							transition = MarchElement(transition_text)
-							transition.address_order = precedent.address_order
-							if (len(me_dict['00']) > 1) and (precedent in linked_me['main_me'].values()):
-								precedent = next(iter_00)
-							me_dict['00'].remove(precedent)
-							precedent_list.extend([transition, precedent])
-							return initial_based_assign(precedent)
-					else:
-						if (len(me_dict['01']) > 1) and (precedent in linked_me['main_me'].values()):
-							precedent = next(iter_01)
-						me_dict['01'].remove(precedent)
-						precedent_list.extend([precedent])
-						return initial_based_assign(precedent)
-				else:
-					if (len(me_dict['11']) > 1) and (precedent in linked_me['main_me'].values()):
-						precedent = next(iter_11)
-					me_dict['11'].remove(precedent)
-					precedent_list.extend([precedent])
-					return initial_based_assign(precedent)
-			case _:
-				pass
-		return
+	for me in sf_me:
+		# there are 2 candidate MEs in sf_me, just use one of them
+		if len(me.content) > 0:
+			state = me.initial_state + me.final_state
+			me.address_order = 'up'
+			me_dict[state].append(me)
 
+	# since the tail ME has to be added separately (it has opposite AO), use this ME as the start_me. The build order is from
+	# bottom to the top
 	if len(linked_me['ass_me']['tail_cover_me'].content) > 0:
 		assign_start_me = linked_me['ass_me']['tail_cover_me']
 		assign_start_me.address_order = 'down'
-		initial_based_assign(assign_start_me)
+		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
 	elif len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
 		assign_start_me = linked_me['ass_me']['odd_sensitization_me']
 		assign_start_me.address_order = 'up'
-		initial_based_assign(assign_start_me)
+		# if odd-sensitization ME is chosen to start, it should be removed from me_dict first, since it is added before
+		me_dict[assign_start_me.initial_state + assign_start_me.final_state].remove(assign_start_me)
+		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
 	else:
 		for state_key in ['00', '11', '01', '10']:
 			if len(me_dict[state_key]) > 0:
 				assign_start_me = next(iter(me_dict[state_key]))
 				me_dict[state_key].remove(assign_start_me)
+				if assign_start_me in sf_me:
+					# if a sf_me candidate is chosen as the start_me, directly discard the other candidate
+					useless_me = next(iter(sf_me - {assign_start_me}))
+					me_dict[useless_me.initial_state + useless_me.final_state].remove(useless_me)
 				break
 
-		initial_based_assign(assign_start_me)
+		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
 
 	precedent_list.reverse()
 

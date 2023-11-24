@@ -325,33 +325,41 @@ def construct_tail_cover_elements(tail_cover):
 
 def check_odd_sensitization(elements, sequence_pool: set):
 	# find all sequences that are sensitized even-number times in ME, which violate the odd-sensitization condition
-	element_texts = list(map(lambda e: e.content, elements.values()))
+	element_text_list = list(map(lambda e: e.content, elements.values()))
 	seq_texts = list(map(lambda s: s.seq_text, sequence_pool))
-	violated_seq_texts = set()
+	violation_pool = []
 
-	for index, text in enumerate(element_texts):
-		count_dict = dict.fromkeys(seq_texts, 0)
+	def get_violated_seq_texts(element_list):
+		violated_seq_texts = set()
+		for index, text in enumerate(element_list):
+			count_dict = dict.fromkeys(seq_texts, 0)
+			for seq_obj in sequence_pool:
+				search_range = len(seq_obj.seq_text)
+				search_scope = text[1] + text
+				if (index > 0) and (search_range > 3):
+					search_scope = element_list[index - 1][-search_range + 2:-1] + search_scope
 
-		for seq_obj in sequence_pool:
-			search_range = len(seq_obj.seq_text)
-			search_scope = text[1] + text
-			if index > 0 and search_range > 3:
-				search_scope = element_texts[index - 1][-search_range + 2:-1] + search_scope
+				for location in range(0, len(search_scope[:-search_range + 1]), 2):
+					segment = search_scope[location:location + search_range]
+					if segment == seq_obj.seq_text:
+						count_dict[seq_obj.seq_text] += 1
 
-			for location in range(0, len(search_scope[:-search_range + 1]), 2):
-				segment = search_scope[location:location + search_range]
-				if segment == seq_obj.seq_text:
-					count_dict[seq_obj.seq_text] += 1
+			even_pool = set(filter(lambda k: count_dict[k] % 2 == 0, count_dict.keys()))
 
-		even_pool = set(filter(lambda k: count_dict[k] % 2 == 0, count_dict.keys()))
+			if index > 0:
+				violated_seq_texts = violated_seq_texts.intersection(even_pool)
+			else:
+				violated_seq_texts.update(even_pool)
 
-		if index > 0:
-			violated_seq_texts = violated_seq_texts.intersection(even_pool)
-		else:
-			violated_seq_texts.update(even_pool)
-
-	if len(violated_seq_texts) > 0:
 		return set(filter(lambda s: s.seq_text in violated_seq_texts, sequence_pool))
+
+	# save the violations of odd-sensitization for each order case
+	violation_pool.append((get_violated_seq_texts(element_text_list), element_text_list[1], element_text_list[0]))
+	element_text_list.reverse()
+	violation_pool.append((get_violated_seq_texts(element_text_list), element_text_list[1], element_text_list[0]))
+
+	if max(map(lambda t: len(t[0]), violation_pool)) > 0:
+		return violation_pool
 	else:
 		return NOT_FOUND
 
@@ -360,26 +368,24 @@ def construct_odd_sensitization_elements(odd_violation, main_elements):
 	# for each sequence object in odd_violation, it should be regarded as a CFds, since it just violates the
 	# odd-sensitization condition for CFds
 	violation_pool = set()
-	# a ME candidate pool for choosing the ME behind which the odd_violation ME is shortest
-	me_candidates = set(map(lambda m: m.content, main_elements.values()))
 	violation_me_candidates = set()
 
-	if odd_violation != NOT_FOUND:
-		for seq_obj in odd_violation:
-			violation_seq = Sequence(seq_obj.__dict__.copy())
-			violation_seq.detect_tag = False
-			violation_vertex = CoverageVertex({'diff': -1, 'coverage': [violation_seq]})
-			violation_pool.add(violation_vertex)
+	if isinstance(odd_violation, list):
+		for odd_case in odd_violation:
+			for seq_obj in odd_case[0]:
+				violation_seq = Sequence(seq_obj.__dict__.copy())
+				violation_seq.detect_tag = False
+				violation_vertex = CoverageVertex({'diff': -1, 'coverage': [violation_seq]})
+				violation_pool.add(violation_vertex)
 
-		for element in me_candidates:
 			vertex_candidate_pool = copy.deepcopy(violation_pool)
-			max_range = max(set(map(lambda s: len(s.seq_text), odd_violation))) - 2
-			search_range = min(max_range, len(element))
-			coverage_chain = element[-search_range:] + 'r' + element[-1]
+			max_range = max(set(map(lambda s: len(s.seq_text), odd_case[0]))) - 2
+			search_range = min(max_range, len(odd_case[1]))
+			coverage_chain = odd_case[1][-search_range:] + 'r' + odd_case[1][-1]
 
 			# the initial coverage chain may also cover a sequence
-			initial_coverage = set(filter(lambda v: v.coverage[0].seq_text in coverage_chain, vertex_candidate_pool))
-			vertex_candidate_pool -= initial_coverage
+			initial_vertex = set(filter(lambda v: v.coverage[0].seq_text in coverage_chain, vertex_candidate_pool))
+			vertex_candidate_pool -= initial_vertex
 
 			while len(vertex_candidate_pool) > 0:
 				build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1', LinkedElementsBuilder)
@@ -387,9 +393,9 @@ def construct_odd_sensitization_elements(odd_violation, main_elements):
 				coverage_chain += build_result[1]
 
 			# each odd_sensitization candidate has to follow the tied precedent element, or the odd sensitization may be destroyed
-			violation_me_candidates.add((coverage_chain[search_range:], element))
+			violation_me_candidates.add((coverage_chain[search_range:], odd_case[1], odd_case[2]))
 
-		odd_sensitization = sorted(violation_me_candidates, key=lambda c: len(c[0]))[0]
+		odd_sensitization = min(violation_me_candidates, key=lambda c: len(c[0]))
 		return odd_sensitization
 	else:
 		return (NO_ELEMENT,)
@@ -413,7 +419,9 @@ def construct_ass_elements(main_elements, sequence_pool):
 	if isinstance(odd_sensitization_me_text, str):
 		odd_sensitization_me = MarchElement(odd_sensitization_me_text)
 		odd_sensitization_me.ass_tag = True
-		odd_sensitization_me.tied_element = list(filter(lambda m: m.content == construct_result[1], main_elements.values()))[0]
+		odd_sensitization_me.tied_element = []
+		for tied_element_text in construct_result[1:]:
+			odd_sensitization_me.tied_element.extend(list(filter(lambda m: m.content == tied_element_text, main_elements.values())))
 		ass_elements['odd_sensitization_me'] = odd_sensitization_me
 
 	return ass_elements

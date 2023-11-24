@@ -141,18 +141,25 @@ def unlinked_2cF_constructor(unlinked_pool):
 
 def sf_constructor(unlinked_pool):
 	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
-	vertex_candidate_pool = copy.deepcopy(vertex_sf_pool)
-	# reuse the priority rules for linked CFds, just for concise, since no necessary rules for SFs
-	initial_vertex = LinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), 'Init_-1')
-	vertex_candidate_pool -= {initial_vertex}
-	coverage_chain = initial_vertex.get_march_sequence()
+	sf_me_candidates = set()
 
-	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, 'Init_-1', LinkedElementsBuilder)
-		vertex_candidate_pool -= build_result[0]
-		coverage_chain += build_result[1]
+	def get_sf_me_candidates(init, vertex_candidate_pool):
+		# reuse the priority rules for linked CFds, just for concise, since no necessary rules for SFs
+		initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), init)
+		vertex_candidate_pool -= {initial_vertex}
+		coverage_chain = initial_vertex.get_march_sequence()
 
-	return MarchElement(coverage_chain[1:])
+		while len(vertex_candidate_pool) > 0:
+			build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, init, UnlinkedElementsBuilder)
+			vertex_candidate_pool -= build_result[0]
+			coverage_chain += build_result[1]
+
+		return MarchElement(coverage_chain[1:])
+
+	sf_me_candidates.add(get_sf_me_candidates('Init_0', copy.deepcopy(vertex_sf_pool)))
+	sf_me_candidates.add(get_sf_me_candidates('Init_1', copy.deepcopy(vertex_sf_pool)))
+
+	return sf_me_candidates
 
 
 if __name__ == '__main__':
