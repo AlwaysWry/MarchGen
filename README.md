@@ -15,11 +15,12 @@
 <br>    ├── March2Comp.py // entrance program of March2Comp
 
 ## Requirements
-  gcc/g++ 9.3.1 or higher
+  gcc/g++ 8.3.1 or higher
 <br>  Python 3.11 or higher
 <br>  pybind11
 <br> CMake 3.24 or higher
 ## Users' Guide
+Please change ```pybind11_DIR``` and ```PYTHON_EXECUTABLE``` in ```CMakeLists.txt``` to your path of pybind11 library and Python3 before compilation.
 ### Compile and run on Linux
 A shell script is used to implement compilation and running of March2Comp. 
 
