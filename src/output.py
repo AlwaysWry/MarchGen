@@ -135,7 +135,10 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 
 	precedent_list.reverse()
 
-	if (len(precedent_list) > 0) and (precedent_list[-1] in linked_me['main_me'].values()) and (assign_start_me is linked_me['ass_me']['tail_cover_me']):
+	# only the CFds-detected ME, like main ME and odd-sensitization ME, need to add a single read operation before the
+	# tail-cover ME
+	if (len(precedent_list) > 0) and ((precedent_list[-1] in linked_me['main_me'].values()) or (
+			precedent_list[-1] is linked_me['ass_me']['odd_sensitization_me'])) and (assign_start_me is linked_me['ass_me']['tail_cover_me']):
 		address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
 		address_order_me.address_order = precedent_list[-1].address_order
 		precedent_list.append(address_order_me)

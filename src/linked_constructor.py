@@ -314,9 +314,21 @@ def construct_tail_cover_elements(tail_cover):
 			vertex_candidate_pool -= build_result[0]
 			coverage_chain += build_result[1]
 
-		tail_cover_me = coverage_chain[1:]
-		if not tail_cover_me.startswith('r'):
-			tail_cover_me = 'r' + coverage_chain[0] + tail_cover_me
+		# the terminal of tail-cover ME need to be decorated to match the original terminal states of the ME where
+		# tail-cover seq in. The initial state of the v-cell needs to be consistent with the original ME, since the AO is reversed.
+		# for instance, assume a main ME has a tail-cover "1w0r0w1", a tail-cover ME "down,r1,w0,r0,w1" cannot cover
+		# the fault <1w0r0w1;0/1/->*<1r1w1w0;1/0/->, since the tail-cover ME is "11" type, the initial state of v-cell is
+		# different from the original "01" type ME.
+		match coverage_chain[0] + coverage_chain[-1]:
+			case '00':
+				tail_cover_me = 'r1w' + coverage_chain
+			case '11':
+				tail_cover_me = 'r0w' + coverage_chain
+			case _:
+				if not coverage_chain[1:].startswith('r'):
+					tail_cover_me = 'r' + coverage_chain
+				else:
+					tail_cover_me = coverage_chain[1:]
 
 		return tail_cover_me
 	else:
@@ -354,9 +366,9 @@ def check_odd_sensitization(elements, sequence_pool: set):
 		return set(filter(lambda s: s.seq_text in violated_seq_texts, sequence_pool))
 
 	# save the violations of odd-sensitization for each order case
-	violation_pool.append((get_violated_seq_texts(element_text_list), element_text_list[1], element_text_list[0]))
+	violation_pool.append([get_violated_seq_texts(element_text_list), element_text_list[1], element_text_list[0]])
 	element_text_list.reverse()
-	violation_pool.append((get_violated_seq_texts(element_text_list), element_text_list[1], element_text_list[0]))
+	violation_pool.append([get_violated_seq_texts(element_text_list), element_text_list[1], element_text_list[0]])
 
 	if max(map(lambda t: len(t[0]), violation_pool)) > 0:
 		return violation_pool
@@ -364,7 +376,7 @@ def check_odd_sensitization(elements, sequence_pool: set):
 		return NOT_FOUND
 
 
-def construct_odd_sensitization_elements(odd_violation, main_elements):
+def construct_odd_sensitization_elements(odd_violation, tail_cover):
 	# for each sequence object in odd_violation, it should be regarded as a CFds, since it just violates the
 	# odd-sensitization condition for CFds
 	violation_pool = set()
@@ -372,6 +384,10 @@ def construct_odd_sensitization_elements(odd_violation, main_elements):
 
 	if isinstance(odd_violation, list):
 		for odd_case in odd_violation:
+			# if an odd violation has been in tail-cover ME, it will be sensitized individually,
+			# so no need to add it in this ME
+			odd_case[0] -= tail_cover
+
 			for seq_obj in odd_case[0]:
 				violation_seq = Sequence(seq_obj.__dict__.copy())
 				violation_seq.detect_tag = False
@@ -414,7 +430,7 @@ def construct_ass_elements(main_elements, sequence_pool):
 
 	# check and build the ME for odd sensitization violation
 	odd_violation = check_odd_sensitization(main_elements, sequence_pool)
-	construct_result = construct_odd_sensitization_elements(odd_violation, main_elements)
+	construct_result = construct_odd_sensitization_elements(odd_violation, tail_cover)
 	odd_sensitization_me_text = construct_result[0]
 	if isinstance(odd_sensitization_me_text, str):
 		odd_sensitization_me = MarchElement(odd_sensitization_me_text)
