@@ -1,4 +1,4 @@
-from linked_constructor import *
+from linked_ass_constructor import *
 
 
 class UnlinkedElementsBuilder:
@@ -108,7 +108,9 @@ def construct_unlinked_element(vertex_pool: set, vertex_aux_pool: set, init: str
 	coverage_chain = initial_vertex.get_march_sequence()
 
 	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, vertex_aux_pool, initial_vertex, init, LinkedElementsBuilder)
+		# use build method in LinkedMainElementsBuilder, for the instant-detect rule still need to be obeyed for
+		# nonCFds*nonCFds-type 2cFs
+		build_result = build_coverage_chain(coverage_chain, set(), -1, vertex_candidate_pool, vertex_aux_pool, initial_vertex, init, LinkedMainElementsBuilder)
 
 		for vertex in build_result[0]:
 			if vertex in vertex_candidate_pool:
@@ -150,7 +152,7 @@ def sf_constructor(unlinked_pool):
 		coverage_chain = initial_vertex.get_march_sequence()
 
 		while len(vertex_candidate_pool) > 0:
-			build_result = build_coverage_chain(coverage_chain, vertex_candidate_pool, set(), initial_vertex, init, UnlinkedElementsBuilder)
+			build_result = build_coverage_chain(coverage_chain, set(), -1, vertex_candidate_pool, set(), initial_vertex, init, UnlinkedElementsBuilder)
 			vertex_candidate_pool -= build_result[0]
 			coverage_chain += build_result[1]
 		# make sure that the SF me also starts with read operation, since terminal decorator is not applied

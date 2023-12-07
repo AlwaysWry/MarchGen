@@ -15,6 +15,7 @@ def March2Comp(fault_list, fault_model, fp):
 	print("*                             v1.0                                  *")
 	print("*********************************************************************")
 	start_time = time.time()
+
 	# parse the input fault list
 	parsed_faults = parse_fault_pool(fault_list, fault_model)
 	if len(parsed_faults) == 0:
@@ -24,18 +25,23 @@ def March2Comp(fault_list, fault_model, fp):
 		pass
 	# print("Fault list is successfully loaded.\n")
 	fp.write("Total fault number: %d\n" % len(parsed_faults))
+
 	# classify
 	classified_faults = classify(parsed_faults)
 	# print("Classification finished.\n")
+
 	# filter 2cF pool
 	filtered_2cFs = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'], classified_faults['2cF_CFds']['unlinked'])
+
 	# filter SF pool
 	filtered_SFs = filter_redundant_SF(classified_faults['SF'], filtered_2cFs)
 	flat_SFs = flatten_sf_pool(filtered_SFs)
+
 	# create sequence objects
 	print("***Generating sensitization units...\n")
 	sequence_pool = create_sequence_pool(flat_SFs, filtered_2cFs, classified_faults['2cF_CFds']['linked'])
 	# print("Sensitization units are generated.\n")
+
 	# build MEs for linked CFds
 	print("***Building march elements...\n")
 	me_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
@@ -44,7 +50,7 @@ def March2Comp(fault_list, fault_model, fp):
 
 	if len(sequence_pool['linked']['Init_0']) + len(sequence_pool['linked']['Init_1']) > 0:
 		print("Building linked CFds*CFds ME...")
-		me_dict['linked_ME'] = linked_CFds_constructor(sequence_pool['linked'])
+		me_dict['linked_ME'] = linked_CFds_constructor(sequence_pool['linked'], classified_faults['2cF_CFds']['linked'])
 
 	if len(sequence_pool['unlinked']['Init_0']) + len(sequence_pool['unlinked']['Init_1']) > 0:
 		print("Building unlinked 2cF ME...")
@@ -171,11 +177,15 @@ if __name__ == '__main__':
 			report.write("\nUndetected faults in 2cF_3 model:\n")
 			for undetected in _2cF_3_undetected:
 				report.write(undetected + '\n')
+		else:
+			report.write("\nAll faults in 2cF_3 model are detected.\n")
 
 		if len(_2cF_2aa_undetected) > 0:
 			report.write("\nUndetected faults in 2cF_2aa model:\n")
 			for undetected in _2cF_2aa_undetected:
 				report.write(undetected + '\n')
+		else:
+			report.write("\nAll faults in 2cF_2aa model are detected.\n")
 
 		print("\n***Check elaborate information in \"results/generation_report.txt\".\n")
 		report.write("\nSee elaborate test logs in file \"results/testlog\".\n")

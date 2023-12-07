@@ -31,6 +31,7 @@ def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
 						transition_text = 'r1w0'
 						transition = MarchElement(transition_text)
 						transition.address_order = precedent.address_order
+						transition.transition_flag = True
 						precedent_list.extend([transition])
 
 					precedent_list.extend([precedent])
@@ -60,6 +61,7 @@ def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
 						transition_text = 'r0w1'
 						transition = MarchElement(transition_text)
 						transition.address_order = precedent.address_order
+						transition.transition_flag = True
 						precedent_list.extend([transition])
 
 					precedent_list.extend([precedent])
@@ -90,16 +92,20 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 			me_dict[state].append(me)
 
 	if len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
-		if isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, list):
-			tied_elements = linked_me['ass_me']['odd_sensitization_me'].tied_element
-			for tied_element in tied_elements:
-				tied_state = tied_element.initial_state + tied_element.final_state
-				# remove the main element at other place, the element will be added with the odd sensitization ME
-				me_dict[tied_state].remove(tied_element)
 
 		state = linked_me['ass_me']['odd_sensitization_me'].initial_state + linked_me['ass_me']['odd_sensitization_me'].final_state
 		linked_me['ass_me']['odd_sensitization_me'].address_order = 'up'
 		me_dict[state].append(linked_me['ass_me']['odd_sensitization_me'])
+
+		if isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, list):
+			tied_elements = linked_me['ass_me']['odd_sensitization_me'].tied_element
+			for tied_element in tied_elements:
+				if tied_element in linked_me['main_me'].values():
+					tied_state = tied_element.initial_state + tied_element.final_state
+					# remove the main element at other place, the element will be added with the odd sensitization ME
+					me_dict[tied_state].remove(tied_element)
+				else:
+					tied_element.address_order = linked_me['ass_me']['odd_sensitization_me'].address_order
 
 	for me in sf_me:
 		# there are 2 candidate MEs in sf_me, just use one of them
@@ -135,10 +141,10 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 
 	precedent_list.reverse()
 
-	# only the CFds-detected ME, like main ME and odd-sensitization ME, need to add a single read operation before the
+	# only the CFds-detected ME, like main ME and odd-sensitization MEs, need to add a single read operation before the
 	# tail-cover ME
-	if (len(precedent_list) > 0) and ((precedent_list[-1] in linked_me['main_me'].values()) or (
-			precedent_list[-1] is linked_me['ass_me']['odd_sensitization_me'])) and (assign_start_me is linked_me['ass_me']['tail_cover_me']):
+	if (len(precedent_list) > 0) and (precedent_list[-1] not in sf_me) and (
+			precedent_list[-1].transition_flag is False) and (assign_start_me is linked_me['ass_me']['tail_cover_me']):
 		address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
 		address_order_me.address_order = precedent_list[-1].address_order
 		precedent_list.append(address_order_me)
@@ -180,10 +186,10 @@ if __name__ == '__main__':
 
 	ME_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
 		{'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
-		{'00_me': MarchElement(''), '11_me': MarchElement('')}, 'sf_ME': MarchElement('')}
+				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'sf_ME': MarchElement('')}
 
 	if len(seq_pool['linked']['Init_0']) + len(seq_pool['linked']['Init_1']) > 0:
-		ME_dict['linked_ME'] = linked_CFds_constructor(seq_pool['linked'])
+		ME_dict['linked_ME'] = linked_CFds_constructor(seq_pool['linked'], classified_pool['2cF_CFds']['linked'])
 
 	if len(seq_pool['unlinked']['Init_0']) + len(seq_pool['unlinked']['Init_1']) > 0:
 		ME_dict['unlinked_2cF_ME'] = unlinked_2cF_constructor(seq_pool['unlinked'])
