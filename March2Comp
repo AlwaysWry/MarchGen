@@ -17,7 +17,7 @@ case $1 in
 		echo "March generation command: March2Comp gen <fault list filename>"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
-		python3 March2Comp.py $2
+		python3 March2Comp.py "$2"
 		cat ./results/generation_report.txt
 	fi
 ;;
@@ -28,7 +28,7 @@ case $1 in
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
 		cd ./sim
-		python3 sim2comp.py $2 $3
+		python3 sim2comp.py "$2" "$3"
 		cat ../results/simulation_report.txt
 	fi
 ;;
