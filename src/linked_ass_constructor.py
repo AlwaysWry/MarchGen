@@ -23,9 +23,10 @@ def construct_tail_cover_elements(tail_cover):
 	# for each sequence object in tail_cover, it should be regarded as a CFds, since it just violates the
 	# no-swap condition for CFds
 	tail_cover_pool = set()
-	if len(tail_cover) > 0:
+	if isinstance(tail_cover, set):
 		for seq_obj in tail_cover:
 			tail_cover_seq = Sequence(seq_obj.__dict__.copy())
+			# tail cover is for CFds
 			tail_cover_seq.detect_tag = False
 			tail_cover_vertex = CoverageVertex({'diff': -1, 'coverage': [tail_cover_seq]})
 			tail_cover_pool.add(tail_cover_vertex)
@@ -38,7 +39,7 @@ def construct_tail_cover_elements(tail_cover):
 		coverage_chain = initial_vertex.get_march_sequence()
 
 		while len(vertex_candidate_pool) > 0:
-			build_result = build_coverage_chain(coverage_chain, set(), -1, vertex_candidate_pool, set(), initial_vertex, 'Init_-1',
+			build_result = build_coverage_chain(coverage_chain, -1, vertex_candidate_pool, set(), initial_vertex, 'Init_-1',
 												LinkedMainElementsBuilder)
 			vertex_candidate_pool -= build_result[0]
 			coverage_chain += build_result[1]
@@ -65,9 +66,9 @@ def construct_tail_cover_elements(tail_cover):
 		return NO_ELEMENT
 
 
-def check_odd_sensitization(elements, sequence_pool: set):
+def check_odd_sensitization(main_elements, sequence_pool: set):
 	# find all sequences that are sensitized even-number times in ME, which violate the odd-sensitization condition
-	element_text_list = list(map(lambda e: e.content, elements.values()))
+	element_text_list = list(map(lambda e: e.content, main_elements.values()))
 	seq_texts = list(map(lambda s: s.seq_text, sequence_pool))
 	violation_pool = []
 
@@ -143,6 +144,12 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 		for odd_case in odd_violation:
 			# list for multiple odd-sensitization MEs
 			odd_mes = []
+			# in a specific order of main MEs, the odd-sensitization ME is empty
+			if len(odd_case[0]) < 1:
+				odd_mes.append('')
+				violation_me_candidates.append((odd_mes, odd_case[1], odd_case[2]))
+				continue
+
 			violation_pool.clear()
 			# if an odd violation has been in tail-cover ME, it will be sensitized individually,
 			# so no need to add it in this ME
@@ -198,9 +205,137 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 		return (NO_ELEMENT,)
 
 
-def construct_ass_elements(main_elements, filtered_sequence_pool, original_sequence_pool):
-	ass_elements = {'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}
-	# check and build the ME for tail-cover first
+def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
+	# check whether the head of the ME destroys the sensitization of the first nonCF of middle part. The head operation
+	# "r1,w0" or "r0,w1" may introduce new mis-sensitization sequences (sequences that are just sensitized but not detected),
+	# which can result in the damage to the initial state of the following normal sequence in MP.
+	head_cover = []
+	head_cover_candidates = []
+	victims = []
+	expected_locations = []
+	head_decorated_me = next(iter(filter(lambda m: m.head_tag is True, main_elements.values())))
+	head_decorated_content = head_decorated_me.content[1] + head_decorated_me.content
+
+	search_range = sorted(set(map(lambda s: len(s.seq_text), sequence_pool)), reverse=True)
+	# only two possible head cover sequences, since the head consists of 2 operations
+	for head_operation in range(2):
+		for location in search_range:
+			start_location = 2 * head_operation
+			end_location = 2 * head_operation + location
+			head_cover_candidate = next(iter(filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
+			if isinstance(head_cover_candidate, Sequence):
+				head_cover_candidates.append((head_cover_candidate, head_operation))
+				break
+	if len(head_cover_candidates) < 1:
+		return NOT_FOUND
+
+	for candidate, index in head_cover_candidates:
+		head_cover_text = candidate.seq_text
+		# if there's read operation that follows the head_cover candidate, the cover is harmless, since the head cover
+		# will be detected instantly
+		if head_decorated_content.find(head_cover_text) == head_decorated_content.find(head_cover_text + 'r' + head_cover_text[-1]):
+			continue
+		expected_locations.append(chain.find(head_cover_text + 'r' + head_cover_text[-1]))
+		for location in search_range:
+			start_location = 2 * index + location - 1
+			end_location = 2 * (index + location) - 1
+			victim = next(iter(filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
+			if isinstance(victim, Sequence):
+				victims.append(victim)
+				break
+	if len(victims) < 1:
+		return NOT_FOUND
+
+	head_information = list(zip(head_cover_candidates, victims, expected_locations))
+
+	for information in head_information:
+		victim_text = information[1].seq_text
+		if chain[information[2] + 1 - len(victim_text):information[2] + 1] == victim_text:
+			head_cover.append((information[0][0], information[1]))
+
+	if len(head_cover) > 0:
+		return head_cover
+	else:
+		return NOT_FOUND
+
+
+def construct_head_cover_element(odd_element, main_elements, head_cover):
+	if not isinstance(head_cover, list):
+		return NO_ELEMENT
+	# the head cover element should follow the odd_sensitization elements. If there's no odd elements, follow main elements
+	vertex_candidate_pool = set()
+	for seq_obj in map(lambda h: h[0], head_cover):
+		head_cover_seq = Sequence(seq_obj.__dict__.copy())
+		# head cover is for nonCFds
+		head_cover_seq.detect_tag = True
+		head_cover_vertex = CoverageVertex({'diff': -1, 'coverage': [head_cover_seq]})
+		vertex_candidate_pool.add(head_cover_vertex)
+
+	# determine the precedent element
+	head_decorated_me = next(iter(filter(lambda m: m.head_tag is True, main_elements.values())))
+	if isinstance(odd_element.tied_element, list):
+		if len(odd_element.content) > 0:
+			precedent = odd_element
+		else:
+			precedent = odd_element.tied_element[0]
+
+		if precedent.content[-1] != head_decorated_me.content[1]:
+			transition_me_dict = {'1': MarchElement('r0,w1'), '0': MarchElement('r1,w0')}
+			transition_me = transition_me_dict[head_decorated_me.content[1]]
+			transition_me.transition_flag = True
+			transition_me.tied_element = [precedent]
+			precedent = transition_me
+	else:
+		# if there's no precedent restriction, choose the main ME that final state equals to the initial state of head decorated ME
+		precedent = next(iter(filter(lambda m: m.head_tag is False, main_elements.values())))
+
+	max_range = max(set(map(lambda s: len(s[0].seq_text), head_cover))) - 2
+	precedent_text = precedent.content
+	search_range = min(max_range, len(precedent_text))
+
+	chain_candidate = []
+	# The initial state of the head_cover ME should be consistent with the initial state of the head-decorated main ME.
+	# see the explanation in tail_cover part
+	coverage_chain = precedent_text[-search_range:] + 'r' + precedent_text[-1]
+	vertex_candidate_list = list(vertex_candidate_pool)
+
+	def build_head_cover_chain(candidate_list, chain):
+		head_cover_chain = chain
+		max_check_range = max(set(map(lambda s: len(s[0].seq_text), head_cover)))
+		check_range = min(max_check_range, len(chain))
+		for vertex in candidate_list:
+			diff = calculate_diff_value(head_cover_chain, vertex)
+			segment = vertex.get_march_sequence()
+			if diff == len(segment):
+				head_cover_chain += 'w' + segment[0]
+
+			victim = next(iter(set(filter(lambda i: i[0].seq_text == vertex.coverage[0].seq_text, head_cover))))[1]
+			if victim.seq_text == head_cover_chain[-check_range:]:
+				head_cover_chain += 'r' + head_cover_chain[-1]
+				continue
+			else:
+				head_cover_chain += segment[1:]
+
+		return head_cover_chain
+
+	chain_candidate.append(build_head_cover_chain(vertex_candidate_list, coverage_chain)[search_range:])
+	vertex_candidate_list.reverse()
+	chain_candidate.append(build_head_cover_chain(vertex_candidate_list, coverage_chain)[search_range:])
+
+	chain_winner = min(chain_candidate, key=lambda c: len(c))
+	if chain_winner[-1] != head_decorated_me.content[-1]:
+		chain_winner += 'w' + head_decorated_me.content[-1]
+
+	head_cover_me = MarchElement(chain_winner)
+	head_cover_me.ass_tag = True
+	head_cover_me.tied_element = [precedent]
+	return head_cover_me
+
+
+def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_pool, original_sequence_pool):
+	ass_elements = {'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}
+
+	# check and build the ME for tail-cover first, it may be used in constructing odd-sensitization MEs
 	tail_cover = check_tail_cover(list(filter(lambda m: m.tail_tag, main_elements.values())), filtered_sequence_pool)
 	tail_cover_me_text = construct_tail_cover_elements(tail_cover)
 
@@ -214,6 +349,8 @@ def construct_ass_elements(main_elements, filtered_sequence_pool, original_seque
 	construct_result = construct_odd_sensitization_elements(odd_violation, tail_cover)
 	odd_sensitization_me_texts = construct_result[0]
 	odd_sensitization_mes = []
+	# if the odd_sensitization_me_texts is a list, it means that the odd-sensitization ME exists, or not exist only under
+	# one specific order of main MEs (the tied elements need to be arranged)
 	if isinstance(odd_sensitization_me_texts, list):
 		for odd_sensitization_me_text in odd_sensitization_me_texts:
 			odd_sensitization_me = MarchElement(odd_sensitization_me_text)
@@ -229,6 +366,12 @@ def construct_ass_elements(main_elements, filtered_sequence_pool, original_seque
 
 		ass_elements['odd_sensitization_me'] = odd_sensitization_mes[0]
 
+	# check and build the ME for head-cover
+	head_cover = check_head_cover(main_elements, main_middle_part, filtered_sequence_pool)
+	head_cover_me = construct_head_cover_element(odd_sensitization_mes[0], main_elements, head_cover)
+	if isinstance(head_cover_me, MarchElement):
+		ass_elements['head_cover_me'] = head_cover_me
+
 	return ass_elements
 
 
@@ -239,11 +382,16 @@ def linked_CFds_constructor(filtered_linked_seq_pool, original_linked_fault_pool
 	# linked pool should be contained in both 2 ME, and the ass_init of them can be ignored
 	filtered_union_pool = get_linked_CFds_union(filtered_linked_seq_pool['Init_0'], filtered_linked_seq_pool['Init_1'])
 	vertex_union = define_vertices(filtered_union_pool)
-	main_mes = construct_main_elements(vertex_union)
+	main_result = construct_main_elements(vertex_union)
+	main_mes = main_result[0]
+	main_coverage_chain = main_result[1]
 
 	linked_CFds_pool = copy.deepcopy(original_linked_fault_pool)
 	original_linked_seq_pool = {'Init_0': set(), 'Init_1': set()}
 
+	# for odd sensitization ME, the sequence of all number of operations need to be considered, since the inclusive rule
+	# cannot make sure that a shorter sequence is only included once in longer sequence, so even the longer sequence is
+	# included odd times, it does not mean that included shorter sequences are also included odd times.
 	for linked_CFds in linked_CFds_pool:
 		for comp_obj in linked_CFds.comps.values():
 			fault_sequence = Sequence(get_sequence_properties(comp_obj))
@@ -252,7 +400,7 @@ def linked_CFds_constructor(filtered_linked_seq_pool, original_linked_fault_pool
 				original_linked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
 
 	original_union_pool = get_linked_CFds_union(original_linked_seq_pool['Init_0'], original_linked_seq_pool['Init_1'])
-	ass_mes = construct_ass_elements(main_mes, filtered_union_pool, original_union_pool)
+	ass_mes = construct_ass_elements(main_mes, main_coverage_chain, filtered_union_pool, original_union_pool)
 
 	return {'main_me': main_mes, 'ass_me': ass_mes}
 

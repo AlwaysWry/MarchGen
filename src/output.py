@@ -91,14 +91,16 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 			me.address_order = 'up'
 			me_dict[state].append(me)
 
-	if len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
+	if isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, list):
+		# if the odd sensitization element not exist, it could be under specific main element order. In this case, the
+		# tied_element still need to use.
+		tied_elements = linked_me['ass_me']['odd_sensitization_me'].tied_element
 
-		state = linked_me['ass_me']['odd_sensitization_me'].initial_state + linked_me['ass_me']['odd_sensitization_me'].final_state
-		linked_me['ass_me']['odd_sensitization_me'].address_order = 'up'
-		me_dict[state].append(linked_me['ass_me']['odd_sensitization_me'])
+		if len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
+			state = linked_me['ass_me']['odd_sensitization_me'].initial_state + linked_me['ass_me']['odd_sensitization_me'].final_state
+			linked_me['ass_me']['odd_sensitization_me'].address_order = 'up'
+			me_dict[state].append(linked_me['ass_me']['odd_sensitization_me'])
 
-		if isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, list):
-			tied_elements = linked_me['ass_me']['odd_sensitization_me'].tied_element
 			for tied_element in tied_elements:
 				if tied_element in linked_me['main_me'].values():
 					tied_state = tied_element.initial_state + tied_element.final_state
@@ -106,6 +108,23 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 					me_dict[tied_state].remove(tied_element)
 				else:
 					tied_element.address_order = linked_me['ass_me']['odd_sensitization_me'].address_order
+		else:
+			# in this case, all ME in tied_elements are main MEs, so no need to add substitute_me into me_dict again
+			substitute_me = tied_elements[0]
+			substitute_me.tied_element = tied_elements[1:]
+			for tied_element in tied_elements[1:]:
+				tied_state = tied_element.initial_state + tied_element.final_state
+				me_dict[tied_state].remove(tied_element)
+
+	if len(linked_me['ass_me']['head_cover_me'].content) > 0:
+		linked_me['ass_me']['head_cover_me'].address_order = 'up'
+		state = linked_me['ass_me']['head_cover_me'].initial_state + linked_me['ass_me']['head_cover_me'].final_state
+		me_dict[state].append(linked_me['ass_me']['head_cover_me'])
+		tied_element = next(iter(linked_me['ass_me']['head_cover_me'].tied_element))
+		tied_element.address_order = linked_me['ass_me']['head_cover_me'].address_order
+		tied_state = tied_element.initial_state + tied_element.final_state
+		if tied_element in me_dict[tied_state]:
+			me_dict[tied_state].remove(tied_element)
 
 	for me in sf_me:
 		# there are 2 candidate MEs in sf_me, just use one of them
@@ -115,14 +134,20 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 			me_dict[state].append(me)
 
 	# since the tail ME has to be added separately (it has opposite AO), use this ME as the start_me. The build order is from
-	# bottom to the top
+	# the bottom to the top
 	if len(linked_me['ass_me']['tail_cover_me'].content) > 0:
 		assign_start_me = linked_me['ass_me']['tail_cover_me']
 		assign_start_me.address_order = 'down'
 		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
-	elif len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
-		assign_start_me = linked_me['ass_me']['odd_sensitization_me']
-		assign_start_me.address_order = 'up'
+	elif len(linked_me['ass_me']['head_cover_me'].content) > 0:
+		assign_start_me = linked_me['ass_me']['head_cover_me']
+		me_dict[assign_start_me.initial_state + assign_start_me.final_state].remove(assign_start_me)
+		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
+	elif isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, list):
+		if len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
+			assign_start_me = linked_me['ass_me']['odd_sensitization_me']
+		else:
+			assign_start_me = linked_me['ass_me']['odd_sensitization_me'].tied_element[0]
 		# if odd-sensitization ME is chosen to start, it should be removed from me_dict first, since it is added before
 		me_dict[assign_start_me.initial_state + assign_start_me.final_state].remove(assign_start_me)
 		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
@@ -143,8 +168,8 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 
 	# only the CFds-detected ME, like main ME and odd-sensitization MEs, need to add a single read operation before the
 	# tail-cover ME
-	if (len(precedent_list) > 0) and (precedent_list[-1] not in sf_me) and (
-			precedent_list[-1].transition_flag is False) and (assign_start_me is linked_me['ass_me']['tail_cover_me']):
+	if ((len(precedent_list) > 0) and (precedent_list[-1] not in sf_me) and (precedent_list[-1] is not linked_me['ass_me']['head_cover_me'])
+			and (precedent_list[-1].transition_flag is False) and (assign_start_me is linked_me['ass_me']['tail_cover_me'])):
 		address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
 		address_order_me.address_order = precedent_list[-1].address_order
 		precedent_list.append(address_order_me)

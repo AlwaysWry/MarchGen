@@ -74,43 +74,28 @@ class MarchElement:
 class LinkedMainElementsBuilder:
 	@staticmethod
 	def get_vertex_winner(vertex_candidates: set, aux_pool: set, last_winner: CoverageVertex, init: str):
-		unnest_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'invalid', vertex_candidates))
-		nest_pool = vertex_candidates - unnest_pool
+		donor_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'donor', vertex_candidates))
 
 		def check_transition(vertex):
 			seq = vertex.get_march_sequence()
 			return seq[0] == seq[-1]
 
-		# priority level 1: unnest sequences get higher priority
-		if len(unnest_pool) > 1:
-			# priority level 2-1 (for unnest_pool) is bypassed
-			secondary_pool = unnest_pool
-			# priority level 3: no-transition sequences get higher priority
-			if len(secondary_pool) > 1:
-				tertiary_pool = set(filter(check_transition, secondary_pool))
-			elif len(secondary_pool) == 0:
-				secondary_pool = unnest_pool - secondary_pool
-				tertiary_pool = set(filter(check_transition, secondary_pool))
-			else:
+		# priority level 1: donor nest sequences get higher priority
+		if len(donor_pool) == 1:
+			return next(iter(donor_pool))
+		elif len(donor_pool) > 1:
+			# priority level 2: no-transition sequences get higher priority
+			secondary_pool = set(filter(check_transition, donor_pool))
+			if len(secondary_pool) > 0:
 				return next(iter(secondary_pool))
-		# priority level 2-2 (for nest pool): donor nest sequences get higher priority
-		elif len(unnest_pool) == 0:
-			secondary_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'donor', nest_pool))
-			# priority level 3 under 2-2: no-transition sequences get higher priority
-			if len(secondary_pool) > 1:
-				tertiary_pool = set(filter(check_transition, secondary_pool))
-			elif len(secondary_pool) == 0:
-				secondary_pool = nest_pool - secondary_pool
-				tertiary_pool = set(filter(check_transition, secondary_pool))
 			else:
+				return next(iter(donor_pool - secondary_pool))
+		else:
+			secondary_pool = set(filter(check_transition, vertex_candidates))
+			if len(secondary_pool) > 0:
 				return next(iter(secondary_pool))
-		else:
-			return next(iter(unnest_pool))
-
-		if len(tertiary_pool) > 0:
-			return next(iter(tertiary_pool))
-		else:
-			return next(iter(secondary_pool - tertiary_pool))
+			else:
+				return next(iter(vertex_candidates - secondary_pool))
 
 	@staticmethod
 	def terminal_decorator(chain: str):
@@ -118,7 +103,7 @@ class LinkedMainElementsBuilder:
 		terminal_feature = chain[0] + chain[-1]
 		match terminal_feature:
 			case '00':
-				main_elements['10_me'] = MarchElement('r1w0' + chain[1:])
+				main_elements['10_me'] = MarchElement('r1w' + chain)
 				main_elements['10_me'].head_tag = True
 				main_elements['01_me'] = MarchElement(chain[1:] + 'w1')
 				main_elements['01_me'].tail_tag = True
@@ -126,7 +111,7 @@ class LinkedMainElementsBuilder:
 					main_elements['01_me'].content = 'r' + chain[0] + main_elements['01_me'].content
 					main_elements['01_me'].update_states()
 			case '01':
-				main_elements['10_me'] = MarchElement('r1w0' + chain[1:] + 'w0')
+				main_elements['10_me'] = MarchElement('r1w' + chain + 'w0')
 				main_elements['10_me'].head_tag = True
 				main_elements['10_me'].tail_tag = True
 				main_elements['01_me'] = MarchElement(chain[1:])
@@ -134,7 +119,7 @@ class LinkedMainElementsBuilder:
 					main_elements['01_me'].content = 'r' + chain[0] + main_elements['01_me'].content
 					main_elements['01_me'].update_states()
 			case '10':
-				main_elements['01_me'] = MarchElement('r0w1' + chain[1:] + 'w1')
+				main_elements['01_me'] = MarchElement('r0w' + chain + 'w1')
 				main_elements['01_me'].head_tag = True
 				main_elements['01_me'].tail_tag = True
 				main_elements['10_me'] = MarchElement(chain[1:])
@@ -142,7 +127,7 @@ class LinkedMainElementsBuilder:
 					main_elements['10_me'].content = 'r' + chain[0] + main_elements['10_me'].content
 					main_elements['10_me'].update_states()
 			case '11':
-				main_elements['01_me'] = MarchElement('r0w1' + chain[1:])
+				main_elements['01_me'] = MarchElement('r0w' + chain)
 				main_elements['01_me'].head_tag = True
 				main_elements['10_me'] = MarchElement(chain[1:] + 'w0')
 				main_elements['10_me'].tail_tag = True
@@ -205,8 +190,10 @@ def check_vertices_covered_by_nest(nest_vertex, vertex_pool):
 	nest_seq_text = set(map(lambda s: s.seq_text, nest_vertex.coverage))
 	redundant_vertices = set()
 	for v_obj in vertex_pool:
+		# sensitized and also detected, seen as covered
 		if v_obj.get_march_sequence() in nest_text:
 			redundant_vertices.add(v_obj)
+		# if just sensitized but not detected, the current nest sequence is not allowed
 		elif (v_obj.coverage[0].seq_text in nest_text[:-2]) and (v_obj.coverage[0].seq_text not in nest_seq_text):
 			return NOT_ALLOWED
 
@@ -225,7 +212,7 @@ def calculate_diff_value(chain, vertex):
 	return len(match_target)
 
 
-def build_coverage_chain(chain: str, covered_pool: set, seq_check_range: int, vertex_pool: set, aux_vertex_pool: set, last_winner: CoverageVertex, init: str,
+def build_coverage_chain(chain: str, seq_check_range: int, vertex_pool: set, aux_vertex_pool: set, last_winner: CoverageVertex, init: str,
 						 builder: type.__name__):
 	# a set records the covered vertices by this build process
 	covered_vertices = set()
@@ -247,6 +234,9 @@ def build_coverage_chain(chain: str, covered_pool: set, seq_check_range: int, ve
 
 	if vertex_winner.coverage[0].nest_tag == 'donor':
 		chain_check_range = len(chain) - (len(vertex_winner.get_march_sequence()) - vertex_winner.diff) + 1
+
+		# if the number of operations before the current nest sequence, it cannot be known if mis-sensitization
+		# sequences exist, since the former ME is not decided yet, as a result, not allowed nest sequence in this case
 		if chain_check_range >= seq_check_range:
 			receiver = find_nest_match(vertex_winner, vertex_pool)
 			if isinstance(receiver, CoverageVertex):
@@ -285,10 +275,10 @@ def construct_main_elements(vertex_pool: set):
 	nest_check_range = max(map(lambda v: len(v.coverage[0].seq_text), vertex_pool))
 
 	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, covered_vertex_pool, nest_check_range, vertex_candidate_pool, set(), initial_vertex, 'Init_-1',
+		build_result = build_coverage_chain(coverage_chain, nest_check_range, vertex_candidate_pool, set(), initial_vertex, 'Init_-1',
 											LinkedMainElementsBuilder)
 		vertex_candidate_pool -= build_result[0]
 		covered_vertex_pool.update(build_result[0])
 		coverage_chain += build_result[1]
 
-	return LinkedMainElementsBuilder.terminal_decorator(coverage_chain)
+	return LinkedMainElementsBuilder.terminal_decorator(coverage_chain), coverage_chain
