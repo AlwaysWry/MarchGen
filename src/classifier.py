@@ -18,11 +18,10 @@ NOT_NONCFDS_INCLUDED = False
 
 
 class TwoComposite:
-	"""a 2-composite fault contains two simple faults"""
-	link_flag = ''
-	fp_text = ''
-
 	def __init__(self):
+		"""a 2-composite fault contains two simple faults"""
+		self.link_flag = ''
+		self.fp_text = ''
 		self.comps = {}
 
 	def get_FP_text(self, text):

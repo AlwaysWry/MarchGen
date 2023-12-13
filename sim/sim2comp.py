@@ -68,7 +68,8 @@ if __name__ == '__main__':
     os.chdir("../")
     march_test_file = sys.argv[1]
     fault_list_file = sys.argv[2]
-    test_logs_file = 'results/testlog'
+    test_logs_file_2cF3 = 'results/testlog_2cF3'
+    test_logs_file_2cF_2aa = 'results/testlog_2cF_2aa'
 
     with open("results/simulation_report.txt", 'w') as report:
         report.write("***********************************************************************************\n")
@@ -83,9 +84,9 @@ if __name__ == '__main__':
 
         print("\n***Calculating fault coverage...\n")
         print("**Coverage result under 2cF_3 model:")
-        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file, '2cF_3')
+        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF3, fault_list_file, '2cF_3')
         print("**Coverage result under 2cF_2aa model:")
-        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file, fault_list_file, '2cF_2aa')
+        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file, '2cF_2aa')
 
         table_t = '|{:^80s}|\n'
         table = '|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'
@@ -162,5 +163,5 @@ if __name__ == '__main__':
                 report.write(undetected + '\n')
 
         print("\n***Check elaborate information in \"results/simulation_report.txt\".\n")
-        report.write("\nSee elaborate test logs in file \"results/testlog\".\n")
+        report.write("\nSee elaborate test logs in file \"results/testlog_2cF3\" and \"results/testlog_2cF_2aa\".\n")
         report.write("\n-----------------------------------------------------------------------------------\n")
