@@ -12,7 +12,7 @@ s_stat = ps.get_fault_primitive("../resources/fault_lists/simple_static", model_
 ss_stat = ps.get_fault_primitive("../resources/fault_lists/ss_static", model_name)
 s_3dyn = ps.get_fault_primitive("../resources/fault_lists/simple_3dynamic", model_name)
 ss_3dyn = ps.get_fault_primitive("../resources/fault_lists/ss_3dynamic", model_name)
-
+s_max2 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max2", model_name)
 # test = ps.get_fault_primitive("test_fault_list")
 
 
@@ -64,10 +64,10 @@ def remove_unrealistic_tuples(full_combs):
 
 
 if __name__ == '__main__':
-    fp_combs_obj_list = generate_combinations(ss_3dyn, s_3dyn)
+    fp_combs_obj_list = generate_combinations(s_3dyn, s_max2)
     realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
 
-    file = open("../resources/fault_lists/3dyn2comp", 'w')
+    file = open("../resources/fault_lists/3_complete", 'w')
     for tup in realistic_faults:
         lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
         file.write(lf)

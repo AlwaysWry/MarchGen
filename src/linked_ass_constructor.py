@@ -134,6 +134,18 @@ def build_single_sensitization_chain(chain: str, vertex_pool: set, covered_verte
 		return {}, ''
 
 
+def check_vertices_covered_by_appendix(chain: str, appendix: str, vertex_pool: set):
+	covered_vertices = set()
+	for vertex in vertex_pool:
+		segment_under_check = vertex.get_march_sequence()
+		search_range = min(len(segment_under_check) - 2, len(chain))
+		chain_under_check = chain[-search_range:] + appendix
+		if segment_under_check in chain_under_check:
+			covered_vertices.add(vertex)
+
+	return covered_vertices
+
+
 def construct_odd_sensitization_elements(odd_violation, tail_cover):
 	# for each sequence object in odd_violation, it should be regarded as a CFds, since it just violates the
 	# odd-sensitization condition for CFds
@@ -178,8 +190,9 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool, covered_vertex_pool)
 				if len(build_result[0]) > 0:
 					# if there is sequence that satisfy the single-sensitization, append it normally
-					vertex_candidate_pool -= build_result[0]
-					covered_vertex_pool.update(build_result[0])
+					covered_vertices = build_result[0].union(check_vertices_covered_by_appendix(coverage_chain, build_result[1], vertex_candidate_pool))
+					covered_vertex_pool.update(covered_vertices)
+					vertex_candidate_pool -= covered_vertices
 					coverage_chain += build_result[1]
 				else:
 					# if not, save and end this odd-sensitization ME

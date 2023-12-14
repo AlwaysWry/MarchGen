@@ -45,7 +45,7 @@ def March2Comp(fault_list, fault_model, fp):
 	# build MEs for linked CFds
 	print("***Building march elements...\n")
 	me_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
-		{'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
+		{'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
 				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'sf_ME': {MarchElement('')}}
 
 	if len(sequence_pool['linked']['Init_0']) + len(sequence_pool['linked']['Init_1']) > 0:
