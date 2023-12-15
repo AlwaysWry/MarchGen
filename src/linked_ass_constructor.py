@@ -1,22 +1,55 @@
 from linked_main_constructor import *
+import itertools as it
 
 
-def check_tail_cover(elements: list, sequence_pool: set):
+def check_tail_cover(tail_decorated_element, sequence_pool):
 	# check whether the ME adds tail terminal introduces sequence that violated order condition of 2cF2aa
 	tail_cover = set()
-	for element in elements:
-		element_text = element.content
-		search_range = sorted(set(map(lambda s: len(s.seq_text), sequence_pool)), reverse=True)
-		for location in search_range:
-			order_violation = set(filter(lambda s: s.seq_text == element_text[-location:], sequence_pool))
-			if len(order_violation) > 0:
-				tail_cover.update(order_violation)
-				break
+	element_text = tail_decorated_element.content
+	search_range = sorted(set(map(lambda s: len(s.seq_text), sequence_pool)), reverse=True)
+	for location in search_range:
+		# tail cover sequences are included in the longest sequence at the tail of the tail-decorated ME
+		order_violation = set(filter(lambda s: s.seq_text == element_text[-location:], sequence_pool))
+		if len(order_violation) > 0:
+			tail_cover.update(order_violation)
 
 	if len(tail_cover) > 0:
 		return tail_cover
 	else:
 		return NOT_FOUND
+
+
+def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElement):
+	# get priority of all possible couples of tail cover sequences
+	tail_cover_texts = set(map(lambda s: s.seq_text, tail_cover))
+	seq_text_couples = it.combinations(tail_cover_texts, 2)
+	element_text = tail_decorated_element.content[1] + tail_decorated_element.content
+	couple_priority = []
+
+	for text_couple in seq_text_couples:
+		sorted_text_couple = sorted(text_couple, key=lambda s: len(s))
+		priority_winner = ''
+		location_under_check = 0
+		location_offset = 1
+		while True:
+			location_0 = element_text.find(sorted_text_couple[0], location_under_check + location_offset - 1)
+			location_1 = element_text.find(sorted_text_couple[1], location_under_check + location_offset - 1)
+			if location_1 < 0 and location_0 < 0:
+				break
+
+			location_under_check = min(location_0, location_1)
+			if 0 < location_1 == location_under_check:
+				location_offset = len(sorted_text_couple[1])
+				if priority_winner != sorted_text_couple[1]:
+					priority_winner = sorted_text_couple[1]
+				else:
+					priority_winner = sorted_text_couple[0]
+			else:
+				location_offset = len(sorted_text_couple[0])
+				priority_winner = sorted_text_couple[0]
+
+		couple_priority.append([next(iter(filter(lambda s: s != priority_winner, text_couple))), priority_winner])
+	pass
 
 
 def construct_tail_cover_elements(tail_cover):
@@ -285,7 +318,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 		vertex_candidate_pool.add(head_cover_vertex)
 
 	# determine the precedent element
-	head_decorated_me = next(iter(filter(lambda m: m.head_tag is True, main_elements.values())))
+	head_decorated_me = next(iter(filter(lambda m: m.head_tag, main_elements.values())))
 	if isinstance(odd_element.tied_element, list):
 		if len(odd_element.content) > 0:
 			precedent = odd_element
@@ -300,7 +333,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 			precedent = transition_me
 	else:
 		# if there's no precedent restriction, choose the main ME that final state equals to the initial state of head decorated ME
-		precedent = next(iter(filter(lambda m: m.head_tag is False, main_elements.values())))
+		precedent = next(iter(filter(lambda m: not m.head_tag, main_elements.values())))
 
 	max_range = max(set(map(lambda s: len(s[0].seq_text), head_cover))) - 2
 	precedent_text = precedent.content
@@ -349,7 +382,9 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 	ass_elements = {'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}
 
 	# check and build the ME for tail-cover first, it may be used in constructing odd-sensitization MEs
-	tail_cover = check_tail_cover(list(filter(lambda m: m.tail_tag, main_elements.values())), filtered_sequence_pool)
+	tail_decorated_me = next(iter(filter(lambda m: m.tail_tag, main_elements.values())), MarchElement(''))
+	tail_cover = check_tail_cover(tail_decorated_me, original_sequence_pool)
+	get_tail_cover_priority(tail_cover, tail_decorated_me)
 	tail_cover_me_text = construct_tail_cover_elements(tail_cover)
 
 	if isinstance(tail_cover_me_text, str):

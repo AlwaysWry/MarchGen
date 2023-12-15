@@ -398,7 +398,6 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 		for unlinked_2cF in unlinked_2cF_pool:
 			unlinked_2cF_cover.update(set(unlinked_2cF.comps.values()))
 
-	# print("\n2-composite faults are filtered.\n")
 	return unlinked_2cF_cover
 
 
