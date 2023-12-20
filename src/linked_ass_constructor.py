@@ -23,8 +23,11 @@ def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElemen
 	if not isinstance(tail_cover, set):
 		return NOT_FOUND
 
-	# get priority of all possible couples of tail cover sequences
 	tail_cover_texts = set(map(lambda s: s.seq_text, tail_cover))
+	if len(tail_cover_texts) < 2:
+		return [next(iter(tail_cover_texts))], [next(iter(tail_cover_texts))]
+
+	# get priority of all possible couples of tail cover sequences
 	seq_text_couples = it.combinations(tail_cover_texts, 2)
 	element_text = tail_decorated_element.content[1] + tail_decorated_element.content
 	couple_priority = []
@@ -416,8 +419,7 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 	tail_decorated_me = next(iter(filter(lambda m: m.tail_tag, main_elements.values())), MarchElement(''))
 	tail_cover = check_tail_cover(tail_decorated_me, original_sequence_pool)
 	tail_requirements = get_tail_cover_priority(tail_cover, tail_decorated_me)
-	tail_cover_me_texts = construct_tail_cover_elements(tail_requirements[0], tail_requirements[1],
-														original_sequence_pool)
+	tail_cover_me_texts = construct_tail_cover_elements(tail_requirements[0], tail_requirements[1], original_sequence_pool)
 
 	# get the transition ME for multiple tail-cover MEs
 	match tail_decorated_me.final_state:
