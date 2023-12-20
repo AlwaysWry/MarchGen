@@ -1,4 +1,4 @@
-# March2Comp: A Structure-oriented March Test Generator for Static and Multi-operation Dynamic 2-composite Faults in Memory
+# March2Comp: A Structure-oriented March Test Generator for Multi-operation Dynamic 2-composite Faults in Memory
 
   March2Comp is an automatic March test generator, aiming to generate March tests for 2-composite faults with arbitrary number of sensitization operations. It also integrates Sim2Comp, a fault simulator to check the fault coverage of a given March test under different 2-composite fault models.
     

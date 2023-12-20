@@ -138,6 +138,8 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 	if len(linked_me['ass_me']['tail_cover_me'].content) > 0:
 		assign_start_me = linked_me['ass_me']['tail_cover_me']
 		assign_start_me.address_order = 'down'
+		for element in assign_start_me.tied_element:
+			element.address_order = assign_start_me.address_order
 		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
 	elif len(linked_me['ass_me']['head_cover_me'].content) > 0:
 		assign_start_me = linked_me['ass_me']['head_cover_me']
@@ -169,7 +171,7 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 	# only the CFds-detected ME, like main ME and odd-sensitization MEs, need to add a single read operation before the
 	# tail-cover ME
 	if ((len(precedent_list) > 0) and (precedent_list[-1] not in sf_me) and (precedent_list[-1] is not linked_me['ass_me']['head_cover_me'])
-			and (precedent_list[-1].transition_flag is False) and (assign_start_me is linked_me['ass_me']['tail_cover_me'])):
+			and (precedent_list[-1].transition_flag is False) and (assign_start_me.address_order != precedent_list[-1].address_order)):
 		address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
 		address_order_me.address_order = precedent_list[-1].address_order
 		precedent_list.append(address_order_me)

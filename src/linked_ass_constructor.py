@@ -20,6 +20,9 @@ def check_tail_cover(tail_decorated_element, sequence_pool):
 
 
 def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElement):
+	if not isinstance(tail_cover, set):
+		return NOT_FOUND
+
 	# get priority of all possible couples of tail cover sequences
 	tail_cover_texts = set(map(lambda s: s.seq_text, tail_cover))
 	seq_text_couples = it.combinations(tail_cover_texts, 2)
@@ -49,33 +52,34 @@ def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElemen
 				priority_winner = sorted_text_couple[0]
 
 		couple_priority.append([next(iter(filter(lambda s: s != priority_winner, text_couple))), priority_winner])
-	pass
+
+	# get segments in each tail-cover MEs
+	tail_requirements = sorted(set(map(lambda p: p[-1], couple_priority)), key=lambda p: len(p))
+	filtered_tail_requirements = tail_requirements.copy()
+
+	for index in range(0, len(tail_requirements) - 1):
+		segment_under_check = tail_requirements[index]
+		adjacent_segment = tail_requirements[index + 1]
+		requirement = next(
+			iter(filter(lambda s: (segment_under_check in s) and (adjacent_segment in s), couple_priority)))
+		if tail_requirements[index] == requirement[0]:
+			filtered_tail_requirements.remove(tail_requirements[index])
+
+	return filtered_tail_requirements, tail_requirements
 
 
-def construct_tail_cover_elements(tail_cover):
+def construct_tail_cover_elements(target_tail_requirements, tail_requirements, sequence_pool):
+	if not isinstance(target_tail_requirements, list):
+		return NO_ELEMENT
 	# for each sequence object in tail_cover, it should be regarded as a CFds, since it just violates the
 	# no-swap condition for CFds
-	tail_cover_pool = set()
-	if isinstance(tail_cover, set):
-		for seq_obj in tail_cover:
-			tail_cover_seq = Sequence(seq_obj.__dict__.copy())
-			# tail cover is for CFds
-			tail_cover_seq.detect_tag = False
-			tail_cover_vertex = CoverageVertex({'diff': -1, 'coverage': [tail_cover_seq]})
-			tail_cover_pool.add(tail_cover_vertex)
-
-		vertex_candidate_pool = copy.deepcopy(tail_cover_pool)
-		initial_vertex = LinkedMainElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(),
-																	 CoverageVertex({'coverage': [], 'diff': -1}),
-																	 'Init_-1')
-		vertex_candidate_pool -= {initial_vertex}
-		coverage_chain = initial_vertex.get_march_sequence()
-
-		while len(vertex_candidate_pool) > 0:
-			build_result = build_coverage_chain(coverage_chain, -1, vertex_candidate_pool, set(), initial_vertex, 'Init_-1',
-												LinkedMainElementsBuilder)
-			vertex_candidate_pool -= build_result[0]
-			coverage_chain += build_result[1]
+	tail_cover_mes = []
+	for tail_text in target_tail_requirements:
+		tail_cover_seq = copy.deepcopy(next(iter(filter(lambda s: s.seq_text == tail_text, sequence_pool))))
+		# tail cover is for CFds
+		tail_cover_seq.detect_tag = False
+		tail_cover_vertex = CoverageVertex({'diff': -1, 'coverage': [tail_cover_seq]})
+		coverage_chain = tail_cover_vertex.get_march_sequence()
 
 		# the terminal of tail-cover ME need to be decorated to match the original terminal states of the ME where
 		# tail-cover seq in. The initial state of the v-cell needs to be consistent with the original ME, since the AO is reversed.
@@ -85,18 +89,37 @@ def construct_tail_cover_elements(tail_cover):
 		# operation fault list.
 		match coverage_chain[0] + coverage_chain[-1]:
 			case '00':
-				tail_cover_me = 'r1w' + coverage_chain
+				me_text = 'r1w' + coverage_chain
 			case '11':
-				tail_cover_me = 'r0w' + coverage_chain
+				me_text = 'r0w' + coverage_chain
 			case _:
 				if not coverage_chain[1:].startswith('r'):
-					tail_cover_me = 'r' + coverage_chain
+					me_text = 'r' + coverage_chain
 				else:
-					tail_cover_me = coverage_chain[1:]
+					me_text = coverage_chain[1:]
 
-		return tail_cover_me
-	else:
-		return NO_ELEMENT
+		# check if the me_text includes sequences that longer than the target sequence
+		max_range = max(map(lambda t: len(t), tail_requirements))
+		requirements_under_check = set(filter(lambda r: len(r) > len(tail_text), tail_requirements))
+		while True:
+			check_range = min(max_range, len(me_text[1] + me_text))
+			segment_under_check = (me_text[1] + me_text)[-check_range:]
+			if len(set(filter(lambda r: r in segment_under_check, requirements_under_check))) == 0:
+				break
+			# if so, add the target sequence at the end of current me_text, check the inclusion repeatedly
+			match coverage_chain[0] + coverage_chain[-1]:
+				case '00' | '11':
+					me_text += coverage_chain[1:]
+				case '01':
+					me_text += 'w0' + coverage_chain[1:]
+				case '10':
+					me_text += 'w1' + coverage_chain[1:]
+				case _:
+					pass
+
+		tail_cover_mes.append(me_text)
+
+	return tail_cover_mes
 
 
 def check_odd_sensitization(main_elements, sequence_pool: set):
@@ -220,10 +243,12 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 
 			while len(vertex_candidate_pool) > 0:
 
-				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool, covered_vertex_pool)
+				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool,
+																covered_vertex_pool)
 				if len(build_result[0]) > 0:
 					# if there is sequence that satisfy the single-sensitization, append it normally
-					covered_vertices = build_result[0].union(check_vertices_covered_by_appendix(coverage_chain, build_result[1], vertex_candidate_pool))
+					covered_vertices = build_result[0].union(
+						check_vertices_covered_by_appendix(coverage_chain, build_result[1], vertex_candidate_pool))
 					covered_vertex_pool.update(covered_vertices)
 					vertex_candidate_pool -= covered_vertices
 					coverage_chain += build_result[1]
@@ -236,7 +261,8 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 					search_range = min(max_range, len(odd_mes[-1]))
 					coverage_chain = odd_mes[-1][-search_range:] + 'r' + odd_mes[-1][-1]
 
-					initial_vertex = set(filter(lambda v: v.coverage[0].seq_text in coverage_chain, vertex_candidate_pool))
+					initial_vertex = set(
+						filter(lambda v: v.coverage[0].seq_text in coverage_chain, vertex_candidate_pool))
 					vertex_candidate_pool -= initial_vertex
 					covered_vertex_pool.update(initial_vertex)
 
@@ -268,7 +294,8 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 		for location in search_range:
 			start_location = 2 * head_operation
 			end_location = 2 * head_operation + location
-			head_cover_candidate = next(iter(filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
+			head_cover_candidate = next(iter(
+				filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
 			if isinstance(head_cover_candidate, Sequence):
 				head_cover_candidates.append((head_cover_candidate, head_operation))
 				break
@@ -279,13 +306,15 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 		head_cover_text = candidate.seq_text
 		# if there's read operation that follows the head_cover candidate, the cover is harmless, since the head cover
 		# will be detected instantly
-		if head_decorated_content.find(head_cover_text) == head_decorated_content.find(head_cover_text + 'r' + head_cover_text[-1]):
+		if head_decorated_content.find(head_cover_text) == head_decorated_content.find(
+				head_cover_text + 'r' + head_cover_text[-1]):
 			continue
 		expected_locations.append(chain.find(head_cover_text + 'r' + head_cover_text[-1]))
 		for location in search_range:
 			start_location = 2 * index + location - 1
 			end_location = 2 * (index + location) - 1
-			victim = next(iter(filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
+			victim = next(iter(
+				filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
 			if isinstance(victim, Sequence):
 				victims.append(victim)
 				break
@@ -332,7 +361,8 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 			transition_me.tied_element = [precedent]
 			precedent = transition_me
 	else:
-		# if there's no precedent restriction, choose the main ME that final state equals to the initial state of head decorated ME
+		# if there's no precedent restriction (which means that there's no odd-sensitization MEs),
+		# choose the main ME that final state equals to the initial state of head decorated ME
 		precedent = next(iter(filter(lambda m: not m.head_tag, main_elements.values())))
 
 	max_range = max(set(map(lambda s: len(s[0].seq_text), head_cover))) - 2
@@ -379,18 +409,40 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 
 
 def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_pool, original_sequence_pool):
-	ass_elements = {'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}
+	ass_elements = {'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''),
+					'odd_sensitization_me': MarchElement('')}
 
 	# check and build the ME for tail-cover first, it may be used in constructing odd-sensitization MEs
 	tail_decorated_me = next(iter(filter(lambda m: m.tail_tag, main_elements.values())), MarchElement(''))
 	tail_cover = check_tail_cover(tail_decorated_me, original_sequence_pool)
-	get_tail_cover_priority(tail_cover, tail_decorated_me)
-	tail_cover_me_text = construct_tail_cover_elements(tail_cover)
+	tail_requirements = get_tail_cover_priority(tail_cover, tail_decorated_me)
+	tail_cover_me_texts = construct_tail_cover_elements(tail_requirements[0], tail_requirements[1],
+														original_sequence_pool)
 
-	if isinstance(tail_cover_me_text, str):
-		tail_cover_me = MarchElement(tail_cover_me_text)
-		tail_cover_me.ass_tag = True
-		ass_elements['tail_cover_me'] = tail_cover_me
+	# get the transition ME for multiple tail-cover MEs
+	match tail_decorated_me.final_state:
+		case '0':
+			transition_me_text = 'r0w1'
+		case '1':
+			transition_me_text = 'r1w0'
+		case _:
+			transition_me_text = ''
+	if len(tail_cover_me_texts) > 1:
+		for index in range(1, 2 * len(tail_cover_me_texts) - 1, 2):
+			tail_cover_me_texts.insert(index, transition_me_text)
+	tail_cover_mes = []
+
+	if isinstance(tail_cover_me_texts, list):
+		for tail_cover_me_text in tail_cover_me_texts:
+			tail_cover_me = MarchElement(tail_cover_me_text)
+			tail_cover_me.ass_tag = True
+			tail_cover_mes.append(tail_cover_me)
+
+		tail_cover_mes.reverse()
+		if len(tail_cover_mes) > 1:
+			tail_cover_mes[0].tied_element = []
+			tail_cover_mes[0].tied_element.extend(tail_cover_mes[1:])
+		ass_elements['tail_cover_me'] = tail_cover_mes[0]
 
 	# check and build the ME for odd sensitization violation
 	odd_violation = check_odd_sensitization(main_elements, original_sequence_pool)
@@ -406,11 +458,14 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 			odd_sensitization_me.tied_element = []
 			odd_sensitization_mes.append(odd_sensitization_me)
 
+		# the odd sensitization MEs are in reversed order
 		odd_sensitization_mes.reverse()
+		# other odd sensitization MEs are tied on the last odd sensitization ME
 		odd_sensitization_mes[0].tied_element.extend(odd_sensitization_mes[1:])
-
+		# add the tied main MEs to the tied_element list
 		for tied_element_text in construct_result[1:]:
-			odd_sensitization_mes[0].tied_element.extend(list(filter(lambda m: m.content == tied_element_text, main_elements.values())))
+			odd_sensitization_mes[0].tied_element.extend(
+				list(filter(lambda m: m.content == tied_element_text, main_elements.values())))
 
 		ass_elements['odd_sensitization_me'] = odd_sensitization_mes[0]
 

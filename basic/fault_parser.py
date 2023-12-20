@@ -89,7 +89,7 @@ def arbit_nest_sensitization(Sen, CFdsFlag):
         else:
             return NEST
     elif operation_num > 1:
-        if Sen[:operation_num + 2] == Sen[operation_num - 1:]:
+        if Sen[:operation_num + 1] == Sen[operation_num - 1:]:
             return NOT_NEST
         else:
             return NEST
