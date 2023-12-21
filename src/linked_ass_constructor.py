@@ -37,6 +37,7 @@ def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElemen
 		priority_winner = ''
 		location_under_check = 0
 		location_offset = 1
+		# check which sequence is the last sensitized one
 		while True:
 			location_0 = element_text.find(sorted_text_couple[0], location_under_check + location_offset - 1)
 			location_1 = element_text.find(sorted_text_couple[1], location_under_check + location_offset - 1)
@@ -77,7 +78,13 @@ def construct_tail_cover_elements(target_tail_requirements, tail_requirements, s
 	# for each sequence object in tail_cover, it should be regarded as a CFds, since it just violates the
 	# no-swap condition for CFds
 	tail_cover_mes = []
+	covered_tail_text = []
+	target_tail_requirements.reverse()
 	for tail_text in target_tail_requirements:
+		# skip the target sequences that covered by MEs for longer target sequences
+		if tail_text in covered_tail_text:
+			continue
+
 		tail_cover_seq = copy.deepcopy(next(iter(filter(lambda s: s.seq_text == tail_text, sequence_pool))))
 		# tail cover is for CFds
 		tail_cover_seq.detect_tag = False
@@ -101,12 +108,29 @@ def construct_tail_cover_elements(target_tail_requirements, tail_requirements, s
 				else:
 					me_text = coverage_chain[1:]
 
+		# consider the 2cF <1r1w0;0/1/->*<0w1r1w0;1/0/-> under tail-cover ME "down,r1,w0,w1,r1,w0". Assume that the target
+		# sequence of this ME is 1r1w0, it should be sensitized at the end of the ME. However, the state decoration operations
+		# "r1,w0" at the beginning of the ME sensitizes the <1r1w0;0/1/-> at first, and causes <0w1r1w0;1/0/-> sensitize afterward.
+
+		# Consider another case: <1r1w0;0/1/->*<1w1r1w0;1/0/->, the tail-cover ME "down,r1,w1,r1,w0" is able to sensitize
+		# the target sequence 1r1w0 independently, even though it is included in the sequence 1w1r1w0 (the initial state of
+		# 1w1r1w0 is wrong at the beginning). As a result, as long as the state of v-cell is not changed by other sequences
+		# before the target sequence, the target sequence can be sensitized normally, even though it is not independent
+		# and is included in a longer sequence (which cannot be sensitized first, because the initial state of v-cell only
+		# matches the target sequence at the beginning)
+		texts_under_check = list(filter(lambda t: len(t) < len(tail_text), target_tail_requirements))
+		me_under_check = me_text[1] + me_text
+		for text in texts_under_check:
+			# as long as the location of target sequence first appear is the end of the ME, the sequence can be sensitized
+			if me_under_check.find(tail_text) < me_under_check.find(text):
+				covered_tail_text.append(text)
+
 		# check if the me_text includes sequences that longer than the target sequence
 		max_range = max(map(lambda t: len(t), tail_requirements))
 		requirements_under_check = set(filter(lambda r: len(r) > len(tail_text), tail_requirements))
 		while True:
-			check_range = min(max_range, len(me_text[1] + me_text))
-			segment_under_check = (me_text[1] + me_text)[-check_range:]
+			check_range = min(max_range, len(me_under_check))
+			segment_under_check = me_under_check[-check_range:]
 			if len(set(filter(lambda r: r in segment_under_check, requirements_under_check))) == 0:
 				break
 			# if so, add the target sequence at the end of current me_text, check the inclusion repeatedly
