@@ -77,6 +77,7 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 	me_dict = {'00': [], '01': [], '10': [], '11': []}
 	precedent_list = []
 	assign_start_me = MarchElement('')
+	substitute_me = MarchElement('')
 
 	# the visit priority of MEs in the same state_key is unlinked_ME (because of no transition) > linked_ME > sf_ME(because it has candidates)
 	for me in unlinked_2cF_me.values():
@@ -121,10 +122,19 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 		state = linked_me['ass_me']['head_cover_me'].initial_state + linked_me['ass_me']['head_cover_me'].final_state
 		me_dict[state].append(linked_me['ass_me']['head_cover_me'])
 		tied_element = next(iter(linked_me['ass_me']['head_cover_me'].tied_element))
-		tied_element.address_order = linked_me['ass_me']['head_cover_me'].address_order
-		tied_state = tied_element.initial_state + tied_element.final_state
-		if tied_element in me_dict[tied_state]:
-			me_dict[tied_state].remove(tied_element)
+		# if the tied element is the transition ME, the transition ME not exist in me_dict,
+		# so continue to check the tied element of the transition ME
+		if tied_element.transition_flag:
+			tied_element.address_order = linked_me['ass_me']['head_cover_me'].address_order
+			sub_tied_element = next(iter(tied_element.tied_element))
+			sub_tied_state = sub_tied_element.initial_state + sub_tied_element.final_state
+			if sub_tied_element in me_dict[sub_tied_state]:
+				me_dict[sub_tied_state].remove(sub_tied_element)
+		# if not, just check the tied element itself
+		else:
+			tied_state = tied_element.initial_state + tied_element.final_state
+			if tied_element in me_dict[tied_state]:
+				me_dict[tied_state].remove(tied_element)
 
 	for me in sf_me:
 		# there are 2 candidate MEs in sf_me, just use one of them
@@ -149,7 +159,7 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 		if len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
 			assign_start_me = linked_me['ass_me']['odd_sensitization_me']
 		else:
-			assign_start_me = linked_me['ass_me']['odd_sensitization_me'].tied_element[0]
+			assign_start_me = substitute_me
 		# if odd-sensitization ME is chosen to start, it should be removed from me_dict first, since it is added before
 		me_dict[assign_start_me.initial_state + assign_start_me.final_state].remove(assign_start_me)
 		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
@@ -179,7 +189,7 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 	precedent_list += [assign_start_me]
 
 	initial_me = MarchElement('w' + precedent_list[0].content[1])
-	initial_me.address_order = precedent_list[0].address_order
+	initial_me.address_order = 'any'
 	final_me = MarchElement('r' + precedent_list[-1].content[-1])
 	final_me.address_order = precedent_list[-1].address_order
 

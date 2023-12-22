@@ -382,7 +382,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 			precedent = odd_element.tied_element[0]
 
 		if precedent.content[-1] != head_decorated_me.content[1]:
-			transition_me_dict = {'1': MarchElement('r0,w1'), '0': MarchElement('r1,w0')}
+			transition_me_dict = {'1': MarchElement('r0w1'), '0': MarchElement('r1w0')}
 			transition_me = transition_me_dict[head_decorated_me.content[1]]
 			transition_me.transition_flag = True
 			transition_me.tied_element = [precedent]
