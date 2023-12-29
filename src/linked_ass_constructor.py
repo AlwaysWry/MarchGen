@@ -310,8 +310,7 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 	# which can result in the damage to the initial state of the following normal sequence in MP.
 	head_cover = []
 	head_cover_candidates = []
-	victims = []
-	expected_locations = []
+	head_information = []
 	head_decorated_me = next(iter(filter(lambda m: m.head_tag is True, main_elements.values())))
 	head_decorated_content = head_decorated_me.content[1] + head_decorated_me.content
 
@@ -330,30 +329,35 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 		return NOT_FOUND
 
 	for candidate, index in head_cover_candidates:
+		candidate_information = {'seq': '', 'victim': '', 'expected_location': ''}
 		head_cover_text = candidate.seq_text
 		# if there's read operation that follows the head_cover candidate, the cover is harmless, since the head cover
 		# will be detected instantly
-		if head_decorated_content.find(head_cover_text) == head_decorated_content.find(
-				head_cover_text + 'r' + head_cover_text[-1]):
+		if head_decorated_content.find(head_cover_text) == head_decorated_content.find(head_cover_text + 'r' + head_cover_text[-1]):
 			continue
-		expected_locations.append(chain.find(head_cover_text + 'r' + head_cover_text[-1]))
+
+		candidate_information['seq'] = candidate
+		# check if the victim is in the sequence pool
 		for location in search_range:
 			start_location = 2 * index + location - 1
 			end_location = 2 * (index + location) - 1
 			victim = next(iter(
 				filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
 			if isinstance(victim, Sequence):
-				victims.append(victim)
+				candidate_information['victim'] = victim
 				break
-	if len(victims) < 1:
+
+		candidate_information['expected_location'] = chain.find(head_cover_text + 'r' + head_cover_text[-1])
+		if len(candidate_information.values()) == 3:
+			head_information.append(candidate_information)
+
+	if len(head_information) < 1:
 		return NOT_FOUND
 
-	head_information = list(zip(head_cover_candidates, victims, expected_locations))
-
 	for information in head_information:
-		victim_text = information[1].seq_text
-		if chain[information[2] + 1 - len(victim_text):information[2] + 1] == victim_text:
-			head_cover.append((information[0][0], information[1]))
+		victim_text = information['victim'].seq_text
+		if chain[information['expected_location'] + 1 - len(victim_text):information['expected_location'] + 1] == victim_text:
+			head_cover.append((information['seq'], information['victim']))
 
 	if len(head_cover) > 0:
 		return head_cover
@@ -380,7 +384,8 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 			precedent = odd_element
 		else:
 			precedent = odd_element.tied_element[0]
-
+		# since the initial/final states of head-cover ME has to be consistent with the head_decorated main ME,
+		# use the initial/final states to check if the transition ME is needed
 		if precedent.content[-1] != head_decorated_me.content[1]:
 			transition_me_dict = {'1': MarchElement('r0w1'), '0': MarchElement('r1w0')}
 			transition_me = transition_me_dict[head_decorated_me.content[1]]
@@ -393,7 +398,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 		precedent = next(iter(filter(lambda m: not m.head_tag, main_elements.values())))
 
 	max_range = max(set(map(lambda s: len(s[0].seq_text), head_cover))) - 2
-	precedent_text = precedent.content
+	precedent_text = precedent.content[1] + precedent.content
 	search_range = min(max_range, len(precedent_text))
 
 	chain_candidate = []
@@ -417,7 +422,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 				head_cover_chain += 'r' + head_cover_chain[-1]
 				continue
 			else:
-				head_cover_chain += segment[1:]
+				head_cover_chain += segment[-diff:]
 
 		return head_cover_chain
 
@@ -436,8 +441,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 
 
 def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_pool, original_sequence_pool):
-	ass_elements = {'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''),
-					'odd_sensitization_me': MarchElement('')}
+	ass_elements = {'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}
 
 	# check and build the ME for tail-cover first, it may be used in constructing odd-sensitization MEs
 	tail_decorated_me = next(iter(filter(lambda m: m.tail_tag, main_elements.values())), MarchElement(''))
