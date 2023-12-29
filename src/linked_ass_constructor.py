@@ -320,6 +320,7 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 		for location in search_range:
 			start_location = 2 * head_operation
 			end_location = 2 * head_operation + location
+			# check if the cover seq in the sequence pool
 			head_cover_candidate = next(iter(
 				filter(lambda s: s.seq_text == head_decorated_content[start_location:end_location], sequence_pool)), '')
 			if isinstance(head_cover_candidate, Sequence):
@@ -337,7 +338,7 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 			continue
 
 		candidate_information['seq'] = candidate
-		# check if the victim is in the sequence pool
+		# check if the victim seq is in the sequence pool
 		for location in search_range:
 			start_location = 2 * index + location - 1
 			end_location = 2 * (index + location) - 1
@@ -370,12 +371,16 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 		return NO_ELEMENT
 	# the head cover element should follow the odd_sensitization elements. If there's no odd elements, follow main elements
 	vertex_candidate_pool = set()
-	for seq_obj in map(lambda h: h[0], head_cover):
-		head_cover_seq = Sequence(seq_obj.__dict__.copy())
-		# head cover is for nonCFds
+	vertex_candidates = []
+	for cover_seq_obj, victim_seq_obj in head_cover:
+		head_cover_seq = Sequence(cover_seq_obj.__dict__.copy())
+		victim_seq = Sequence(victim_seq_obj.__dict__.copy())
+		# head cover ME is for nonCFds
 		head_cover_seq.detect_tag = True
 		head_cover_vertex = CoverageVertex({'diff': -1, 'coverage': [head_cover_seq]})
-		vertex_candidate_pool.add(head_cover_vertex)
+		victim_seq.detect_tag = True
+		victim_vertex = CoverageVertex({'diff': -1, 'coverage': [victim_seq]})
+		vertex_candidates.append((head_cover_vertex, victim_vertex))
 
 	# determine the precedent element
 	head_decorated_me = next(iter(filter(lambda m: m.head_tag, main_elements.values())))
@@ -405,30 +410,26 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 	# The initial state of the head_cover ME should be consistent with the initial state of the head-decorated main ME.
 	# see the explanation in tail_cover part
 	coverage_chain = precedent_text[-search_range:] + 'r' + precedent_text[-1]
-	vertex_candidate_list = list(vertex_candidate_pool)
 
 	def build_head_cover_chain(candidate_list, chain):
 		head_cover_chain = chain
 		max_check_range = max(set(map(lambda s: len(s[0].seq_text), head_cover)))
-		check_range = min(max_check_range, len(chain))
-		for vertex in candidate_list:
-			diff = calculate_diff_value(head_cover_chain, vertex)
-			segment = vertex.get_march_sequence()
-			if diff == len(segment):
-				head_cover_chain += 'w' + segment[0]
 
-			victim = next(iter(set(filter(lambda i: i[0].seq_text == vertex.coverage[0].seq_text, head_cover))))[1]
-			if victim.seq_text == head_cover_chain[-check_range:]:
-				head_cover_chain += 'r' + head_cover_chain[-1]
-				continue
-			else:
-				head_cover_chain += segment[-diff:]
+		for candidate_tuple in candidate_list:
+			candidate_tuple[0].diff = calculate_diff_value(head_cover_chain, candidate_tuple[0])
+			candidate_tuple[1].diff = calculate_diff_value(head_cover_chain, candidate_tuple[1])
+			candidate_winner = min(candidate_tuple, key=lambda v: v.diff)
+			segment = candidate_winner.get_march_sequence()
+			if candidate_winner.diff == len(segment):
+				head_cover_chain += 'w' + segment[0]
+			head_cover_chain += segment[-candidate_winner.diff:]
 
 		return head_cover_chain
 
-	chain_candidate.append(build_head_cover_chain(vertex_candidate_list, coverage_chain)[search_range:])
-	vertex_candidate_list.reverse()
-	chain_candidate.append(build_head_cover_chain(vertex_candidate_list, coverage_chain)[search_range:])
+	chain_candidate.append(build_head_cover_chain(vertex_candidates, coverage_chain)[search_range:])
+	if len(vertex_candidates) > 1:
+		vertex_candidates.reverse()
+		chain_candidate.append(build_head_cover_chain(vertex_candidates, coverage_chain)[search_range:])
 
 	chain_winner = min(chain_candidate, key=lambda c: len(c))
 	if chain_winner[-1] != head_decorated_me.content[-1]:
@@ -543,8 +544,7 @@ if __name__ == '__main__':
 	sys.path.append("src/")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'],
-											 classified_pool['2cF_CFds']['unlinked'])
+	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_2cF_pool)
 	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
 
