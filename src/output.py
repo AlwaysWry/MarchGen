@@ -31,7 +31,7 @@ def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
 						transition_text = 'r1w0'
 						transition = MarchElement(transition_text)
 						transition.address_order = precedent.address_order
-						transition.transition_flag = True
+						transition.transition_tag = True
 						precedent_list.extend([transition])
 
 					precedent_list.extend([precedent])
@@ -61,7 +61,7 @@ def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
 						transition_text = 'r0w1'
 						transition = MarchElement(transition_text)
 						transition.address_order = precedent.address_order
-						transition.transition_flag = True
+						transition.transition_tag = True
 						precedent_list.extend([transition])
 
 					precedent_list.extend([precedent])
@@ -124,7 +124,7 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 		tied_element = next(iter(linked_me['ass_me']['head_cover_me'].tied_element))
 		# if the tied element is the transition ME, the transition ME not exist in me_dict,
 		# so continue to check the tied element of the transition ME
-		if tied_element.transition_flag:
+		if tied_element.transition_tag:
 			tied_element.address_order = linked_me['ass_me']['head_cover_me'].address_order
 			sub_tied_element = next(iter(tied_element.tied_element))
 			sub_tied_state = sub_tied_element.initial_state + sub_tied_element.final_state
@@ -181,7 +181,7 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 	# only the CFds-detected ME, like main ME and odd-sensitization MEs, need to add a single read operation before the
 	# tail-cover ME
 	if ((len(precedent_list) > 0) and (precedent_list[-1] not in sf_me) and (precedent_list[-1] is not linked_me['ass_me']['head_cover_me'])
-			and (precedent_list[-1].transition_flag is False) and (assign_start_me.address_order != precedent_list[-1].address_order)):
+			and (precedent_list[-1].transition_tag is False) and (assign_start_me.address_order != precedent_list[-1].address_order)):
 		address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
 		address_order_me.address_order = precedent_list[-1].address_order
 		precedent_list.append(address_order_me)

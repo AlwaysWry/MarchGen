@@ -123,12 +123,14 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
 		edges.append(edge_info)
 		edges.sort()
 
-	if sys.platform.startswith('linux'):
-		graph_file = output_graph_file_QUICK_VC(vertices, edges)
+	if (len(edges) > 0) and (len(vertices) > 0):
+		if sys.platform.startswith('linux'):
+			graph_file = output_graph_file_QUICK_VC(vertices, edges)
+		else:
+			graph_file = output_graph_file_DYNWVC2(vertices, edges)
+		return graph_file
 	else:
-		graph_file = output_graph_file_DYNWVC2(vertices, edges)
-
-	return graph_file
+		return False
 
 
 def remove_unlinked_2cF_by_MWVC(graph_file):
@@ -378,13 +380,15 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 		CFdr_map = []
 		print("Building unlinked 2cF graph...")
 		graph_file = build_unlinked_2cF_graph(unlinked_2cF_pool, vertices_map, CFdr_map)
-		print("Invoking MWVC solver...")
-		remove_unlinked_2cF_by_MWVC(graph_file)
 
-		with open("results/mwvclog", "r") as result:
-			for vertex in result.readlines():
-				vertex.strip()
-				unlinked_2cF_cover.add(vertices_map[int(vertex) - 1])
+		if isinstance(graph_file, str):
+			print("Invoking MWVC solver...")
+			remove_unlinked_2cF_by_MWVC(graph_file)
+
+			with open("results/mwvclog", "r") as result:
+				for vertex in result.readlines():
+					vertex.strip()
+					unlinked_2cF_cover.add(vertices_map[int(vertex) - 1])
 
 		for CFdr in CFdr_map:
 			if CFdr.aInit == '-':

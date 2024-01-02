@@ -11,7 +11,7 @@ import evaluator as ev
 
 # re-define if necessary
 
-# fault_list_file = '../resources/fault_lists/' + 'complete'
+# fault_list_file = '../resources/fault_lists/' + '2_complete'
 # fault_model_name = '2cF_3'
 
 

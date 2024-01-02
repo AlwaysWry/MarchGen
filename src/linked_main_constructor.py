@@ -56,7 +56,7 @@ class MarchElement:
 		self.head_tag = False
 		self.tail_tag = False
 		self.ass_tag = False
-		self.transition_flag = False
+		self.transition_tag = False
 
 		self.content = element_text
 		if len(element_text) > 0:
@@ -73,7 +73,7 @@ class MarchElement:
 
 class LinkedMainElementsBuilder:
 	@staticmethod
-	def get_vertex_winner(vertex_candidates: set, aux_pool: set, last_winner: CoverageVertex, init: str):
+	def get_vertex_winner(vertex_candidates: set, aux_pool=None, last_winner=None, init='Init_-1'):
 		donor_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'donor', vertex_candidates))
 
 		def check_transition(vertex):
@@ -204,7 +204,7 @@ def calculate_diff_value(chain, vertex):
 	match_target = vertex.get_march_sequence()
 	# each operation appended to chain may cover a new sequence, search from appending 1 operation, and 2 and 3...
 	# find how many operations needed at least to cover the target sequence
-	search_range = min(len(chain[2:]), len(match_target[:-2]))
+	search_range = min(len(chain), len(match_target[:-2]))
 	for location in range(-search_range, 1, 2):
 		if chain[location:] == match_target[:-location]:
 			diff = len(match_target[-location:])
@@ -212,8 +212,7 @@ def calculate_diff_value(chain, vertex):
 	return len(match_target)
 
 
-def build_coverage_chain(chain: str, seq_check_range: int, vertex_pool: set, aux_vertex_pool: set, last_winner: CoverageVertex, init: str,
-						 builder: type.__name__):
+def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_vertex_pool=None, last_winner=None, init='Init_-1'):
 	# a set records the covered vertices by this build process
 	covered_vertices = set()
 	for v_obj in vertex_pool:
@@ -235,8 +234,9 @@ def build_coverage_chain(chain: str, seq_check_range: int, vertex_pool: set, aux
 	if vertex_winner.coverage[0].nest_tag == 'donor':
 		chain_check_range = len(chain) - (len(vertex_winner.get_march_sequence()) - vertex_winner.diff) + 1
 
-		# if the number of operations before the current nest sequence, it cannot be known if mis-sensitization
-		# sequences exist, since the former ME is not decided yet, as a result, not allowed nest sequence in this case
+		# if the operations before the current nest sequence is less than the longest sequence, it cannot be known
+		# if mis-sensitization sequences exist, since the former ME is not decided yet, as a result, not allowed nest
+		# sequence in this case
 		if chain_check_range >= seq_check_range:
 			receiver = find_nest_match(vertex_winner, vertex_pool)
 			if isinstance(receiver, CoverageVertex):
@@ -266,17 +266,14 @@ def build_coverage_chain(chain: str, seq_check_range: int, vertex_pool: set, aux
 def construct_main_elements(vertex_pool: set):
 	vertex_candidate_pool = copy.deepcopy(vertex_pool)
 	covered_vertex_pool = set()
-	initial_vertex = LinkedMainElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(),
-																 CoverageVertex({'coverage': [], 'diff': -1}),
-																 'Init_-1')
+	initial_vertex = LinkedMainElementsBuilder.get_vertex_winner(vertex_candidate_pool)
 	vertex_candidate_pool -= {initial_vertex}
 	coverage_chain = initial_vertex.get_march_sequence()
 
 	nest_check_range = max(map(lambda v: len(v.coverage[0].seq_text), vertex_pool))
 
 	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, nest_check_range, vertex_candidate_pool, set(), initial_vertex, 'Init_-1',
-											LinkedMainElementsBuilder)
+		build_result = build_coverage_chain(coverage_chain, nest_check_range, vertex_candidate_pool, LinkedMainElementsBuilder)
 		vertex_candidate_pool -= build_result[0]
 		covered_vertex_pool.update(build_result[0])
 		coverage_chain += build_result[1]
