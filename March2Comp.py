@@ -84,7 +84,7 @@ if __name__ == '__main__':
 	march_test_file = 'results/march.m2c'
 	test_logs_file_2cF3 = 'results/testlog_2cF3'
 	test_logs_file_2cF_2aa = 'results/testlog_2cF_2aa'
-	# fault_list_file = 'resources/fault_lists/' + 'complete_with_novel'
+	# fault_list_file = 'resources/fault_lists/' + '2_complete_with_novel'
 	fault_list_file = sys.argv[1]
 
 	with open("results/generation_report.txt", 'w') as report:

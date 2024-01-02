@@ -270,8 +270,7 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 
 			while len(vertex_candidate_pool) > 0:
 
-				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool,
-																covered_vertex_pool)
+				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool, covered_vertex_pool)
 				if len(build_result[0]) > 0:
 					# if there is sequence that satisfy the single-sensitization, append it normally
 					covered_vertices = build_result[0].union(
@@ -315,7 +314,7 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 	head_decorated_content = head_decorated_me.content[1] + head_decorated_me.content
 
 	search_range = sorted(set(map(lambda s: len(s.seq_text), sequence_pool)), reverse=True)
-	# only two possible head cover sequences, since the head consists of 2 operations
+	# only two possible head cover sequences (the long one covers shorter ones), since the head consists of 2 operations
 	for head_operation in range(2):
 		for location in search_range:
 			start_location = 2 * head_operation
@@ -360,6 +359,9 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 		if chain[information['expected_location'] + 1 - len(victim_text):information['expected_location'] + 1] == victim_text:
 			head_cover.append((information['seq'], information['victim']))
 
+	# head_cover sequences may be detected in odd_sensitization MEs, but I decide not to realize this extra filter.
+	# just not elegant...
+
 	if len(head_cover) > 0:
 		return head_cover
 	else:
@@ -370,7 +372,6 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 	if not isinstance(head_cover, list):
 		return NO_ELEMENT
 	# the head cover element should follow the odd_sensitization elements. If there's no odd elements, follow main elements
-	vertex_candidate_pool = set()
 	vertex_candidates = []
 	for cover_seq_obj, victim_seq_obj in head_cover:
 		head_cover_seq = Sequence(cover_seq_obj.__dict__.copy())
@@ -394,7 +395,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 		if precedent.content[-1] != head_decorated_me.content[1]:
 			transition_me_dict = {'1': MarchElement('r0w1'), '0': MarchElement('r1w0')}
 			transition_me = transition_me_dict[head_decorated_me.content[1]]
-			transition_me.transition_flag = True
+			transition_me.transition_tag = True
 			transition_me.tied_element = [precedent]
 			precedent = transition_me
 	else:
@@ -404,16 +405,36 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 
 	max_range = max(set(map(lambda s: len(s[0].seq_text), head_cover))) - 2
 	precedent_text = precedent.content[1] + precedent.content
-	search_range = min(max_range, len(precedent_text))
+
+	# extend the check range to make sure that the head-cover sequence (aggressor or victim) that first appears can be detected
+	if len(precedent_text) < max_range:
+		# if the length of precedent_text is less than the max_range, it means that the odd-sensitization MEs or the transition
+		# ME must exist. Both of the situations allow the iterator of the tied_element
+		precedent_temp_list = []
+		if precedent.transition_tag:
+			# if the precedent is a transition ME, check the prior ME
+			precedent_temp = next(iter(precedent.tied_element))
+			precedent_temp_list.append(precedent_temp)
+			# if the prior ME is an odd-sensitization ME, still needs to add its tied_element, otherwise the prior ME is a
+			# main ME, it is longer than max_range for sure
+			if precedent_temp.ass_tag:
+				precedent_temp_list.extend(precedent_temp.tied_element)
+		else:
+			# if the precedent is an odd-sensitization ME, add its tied_element directly
+			precedent_temp_list.extend(precedent.tied_element)
+
+		precedent_temp_iter = iter(precedent_temp_list)
+		while len(precedent_text) < max_range:
+			temp = next(precedent_temp_iter)
+			precedent_text = temp.content[1] + temp.content[:-1] + precedent_text
 
 	chain_candidate = []
-	# The initial state of the head_cover ME should be consistent with the initial state of the head-decorated main ME.
-	# see the explanation in tail_cover part
-	coverage_chain = precedent_text[-search_range:] + 'r' + precedent_text[-1]
+	# The head-cover ME should start with read operation, and the initial state of the head_cover ME should be consistent
+	# with the initial state of the head-decorated main ME. See the explanation in tail_cover part.
+	coverage_chain = precedent_text[-max_range:] + 'r' + precedent_text[-1]
 
 	def build_head_cover_chain(candidate_list, chain):
 		head_cover_chain = chain
-		max_check_range = max(set(map(lambda s: len(s[0].seq_text), head_cover)))
 
 		for candidate_tuple in candidate_list:
 			candidate_tuple[0].diff = calculate_diff_value(head_cover_chain, candidate_tuple[0])
@@ -426,10 +447,10 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 
 		return head_cover_chain
 
-	chain_candidate.append(build_head_cover_chain(vertex_candidates, coverage_chain)[search_range:])
+	chain_candidate.append(build_head_cover_chain(vertex_candidates, coverage_chain)[max_range:])
 	if len(vertex_candidates) > 1:
 		vertex_candidates.reverse()
-		chain_candidate.append(build_head_cover_chain(vertex_candidates, coverage_chain)[search_range:])
+		chain_candidate.append(build_head_cover_chain(vertex_candidates, coverage_chain)[max_range:])
 
 	chain_winner = min(chain_candidate, key=lambda c: len(c))
 	if chain_winner[-1] != head_decorated_me.content[-1]:
@@ -481,7 +502,7 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 	odd_sensitization_me_texts = construct_result[0]
 	odd_sensitization_mes = []
 	# if the odd_sensitization_me_texts is a list, it means that the odd-sensitization ME exists, or not exist only under
-	# one specific order of main MEs (the tied elements need to be arranged)
+	# one specific order of main MEs (the tied elements still need to be arranged)
 	if isinstance(odd_sensitization_me_texts, list):
 		for odd_sensitization_me_text in odd_sensitization_me_texts:
 			odd_sensitization_me = MarchElement(odd_sensitization_me_text)
