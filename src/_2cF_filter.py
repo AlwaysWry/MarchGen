@@ -121,7 +121,8 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
 			continue
 		edge_info.sort()
 		edges.append(edge_info)
-		edges.sort()
+
+	edges.sort()
 
 	if (len(edges) > 0) and (len(vertices) > 0):
 		if sys.platform.startswith('linux'):
@@ -327,26 +328,24 @@ def check_CFds_redundancy(fault, candidate_dict, init):
 	return NOT_REDUNDANT
 
 
-def remove_inclusive_unlinked_2cF(_2cF_pool):
+def remove_inclusive_unlinked_2cF(_2cF_cover):
 	# the 2cFs can be filtered according to the inclusive rule
 	redundant_fault_pool = set()
-	filtered_fault_pool = copy.deepcopy(_2cF_pool)
+	filtered_fault_pool = set()
 
-	def generate_2cF_2cF_set_dict(_2cF_pool):
-		flat_2cF_pool = set()
+	def generate_2cF_2cF_set_dict(sf_set, _2cF_set):
 		inner_sf_pool = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
 		inner_sf = TwoComposite()
-		for _2cF_obj in _2cF_pool:
-			for comp_obj in _2cF_obj.comps.values():
-				inner_sf.get_Comp_objects(comp_obj, comp_obj)
-				flat_2cF_pool.add(copy.deepcopy(inner_sf))
+		for sf_obj in sf_set:
+			inner_sf.get_Comp_objects(sf_obj, sf_obj)
+			_2cF_set.add(copy.deepcopy(inner_sf))
 
-		for inner_obj in flat_2cF_pool:
+		for inner_obj in _2cF_set:
 			classify_SF(inner_sf_pool, inner_obj)
 
 		return generate_inclusive_search_set(inner_sf_pool)
 
-	candidate_set_dict = generate_2cF_2cF_set_dict(filtered_fault_pool)
+	candidate_set_dict = generate_2cF_2cF_set_dict(_2cF_cover, filtered_fault_pool)
 
 	for fault in filtered_fault_pool:
 		comp = fault.comps['comp1']
@@ -363,7 +362,7 @@ def remove_inclusive_unlinked_2cF(_2cF_pool):
 		if redundancy:
 			redundant_fault_pool.add(fault)
 
-	return filtered_fault_pool - redundant_fault_pool
+	return set(map(lambda f: f.comps['comp1'], filtered_fault_pool - redundant_fault_pool))
 
 
 def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
@@ -371,9 +370,6 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 
 	unlinked_2cF_pool = _2cF_nonCFds_pool | unlinked_2cF_CFds_pool
 	unlinked_2cF_cover = set()
-
-	# filter the 2cF pool by itself first, according to inclusive rule
-	unlinked_2cF_pool = remove_inclusive_unlinked_2cF(unlinked_2cF_pool)
 
 	if len(unlinked_2cF_pool) > 1:
 		vertices_map = []
@@ -401,6 +397,9 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 		# if there is only 1 2cF, use its 2 vertices as the final cover directly
 		for unlinked_2cF in unlinked_2cF_pool:
 			unlinked_2cF_cover.update(set(unlinked_2cF.comps.values()))
+
+	# filter the 2cF cover after MWVC, according to inclusive rule
+	unlinked_2cF_cover = remove_inclusive_unlinked_2cF(unlinked_2cF_cover)
 
 	return unlinked_2cF_cover
 

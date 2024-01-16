@@ -523,7 +523,7 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 
 	# check and build the ME for head-cover
 	head_cover = check_head_cover(main_elements, main_middle_part, filtered_sequence_pool)
-	head_cover_me = construct_head_cover_element(odd_sensitization_mes[0], main_elements, head_cover)
+	head_cover_me = construct_head_cover_element(ass_elements['odd_sensitization_me'], main_elements, head_cover)
 	if isinstance(head_cover_me, MarchElement):
 		ass_elements['head_cover_me'] = head_cover_me
 
