@@ -139,11 +139,11 @@ def unlinked_2cF_constructor(unlinked_pool):
 	return {'00_me': unlinked_me_00, '11_me': unlinked_me_11}
 
 
-def sf_constructor(unlinked_pool):
+def scf_constructor(unlinked_pool):
 	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
 	sf_me_candidates = set()
 
-	def get_sf_me_candidates(init, vertex_candidate_pool):
+	def get_scf_me_candidates(init, vertex_candidate_pool):
 		initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), init)
 		vertex_candidate_pool -= {initial_vertex}
 		coverage_chain = initial_vertex.get_march_sequence()
@@ -158,8 +158,8 @@ def sf_constructor(unlinked_pool):
 
 		return MarchElement(coverage_chain[1:])
 
-	sf_me_candidates.add(get_sf_me_candidates('Init_0', copy.deepcopy(vertex_sf_pool)))
-	sf_me_candidates.add(get_sf_me_candidates('Init_1', copy.deepcopy(vertex_sf_pool)))
+	sf_me_candidates.add(get_scf_me_candidates('Init_0', copy.deepcopy(vertex_sf_pool)))
+	sf_me_candidates.add(get_scf_me_candidates('Init_1', copy.deepcopy(vertex_sf_pool)))
 
 	return sf_me_candidates
 
@@ -177,5 +177,5 @@ if __name__ == '__main__':
 	if len(seq_pool['unlinked']['Init_0']) + len(seq_pool['unlinked']['Init_1']) > 0:
 		unlinked_2cF_constructor(seq_pool['unlinked'])
 	elif len(seq_pool['unlinked']['Init_-1']) > 0:
-		sf_constructor(seq_pool['unlinked'])
+		scf_constructor(seq_pool['unlinked'])
 	pass

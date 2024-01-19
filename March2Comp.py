@@ -46,7 +46,7 @@ def March2Comp(fault_list, fault_model, fp):
 	print("***Building march elements...\n")
 	me_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
 		{'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
-				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'sf_ME': {MarchElement('')}}
+				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'scf_ME': {MarchElement('')}}
 
 	if len(sequence_pool['linked']['Init_0']) + len(sequence_pool['linked']['Init_1']) > 0:
 		print("Building linked CFds*CFds ME...")
@@ -57,13 +57,13 @@ def March2Comp(fault_list, fault_model, fp):
 		me_dict['unlinked_2cF_ME'] = unlinked_2cF_constructor(sequence_pool['unlinked'])
 
 	if len(sequence_pool['unlinked']['Init_-1']) > 0:
-		print("Building SF ME...")
-		me_dict['sf_ME'] = sf_constructor(sequence_pool['unlinked'])
+		print("Building SCF ME...")
+		me_dict['scf_ME'] = scf_constructor(sequence_pool['unlinked'])
 
 	# print("All elements are built.\n")
 
 	print("\n***Implementing element rearrangement...\n")
-	march_element_list = element_assigner(me_dict['linked_ME'], me_dict['unlinked_2cF_ME'], me_dict['sf_ME'])
+	march_element_list = element_assigner(me_dict['linked_ME'], me_dict['unlinked_2cF_ME'], me_dict['scf_ME'])
 	print("***March test are successfully generated:\n")
 
 	result = output(march_element_list)
