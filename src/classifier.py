@@ -5,7 +5,7 @@ import sys
 
 sys.path.append("../")
 
-from basic.fault_parser import *
+from common.fault_parser import *
 
 # MACRO definitions
 CLASSIFY_ERROR = -1

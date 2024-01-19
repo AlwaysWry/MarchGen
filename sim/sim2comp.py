@@ -6,7 +6,7 @@ import os
 import sys
 sys.path.append("../")
 
-from basic import fault_parser as ps
+from common import fault_parser as ps
 import evaluator as ev
 
 # re-define if necessary

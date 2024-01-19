@@ -20,7 +20,7 @@ def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
 				else:
 					if (len(me_dict[key]) > 1) and (precedent in linked_me['main_me'].values()):
 						precedent = next(iter_key)
-					# if an ME for SFs are visited, the other sf_me candidate can be discarded
+					# if an ME for SFs are visited, the other scf_me candidate can be discarded
 					if precedent in sf_me:
 						useless_me = next(iter(sf_me - {precedent}))
 						me_dict[useless_me.initial_state + useless_me.final_state].remove(useless_me)
@@ -47,7 +47,7 @@ def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
 				if not isinstance(precedent, MarchElement):
 					continue
 				else:
-					# if an ME for SFs are visited, the other sf_me candidate can be discarded
+					# if an ME for SFs are visited, the other scf_me candidate can be discarded
 					if precedent in sf_me:
 						sf_me -= {precedent}
 						useless_me = next(iter(sf_me))
@@ -73,13 +73,13 @@ def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
 			return
 
 
-def element_assigner(linked_me, unlinked_2cF_me, sf_me):
+def element_assigner(linked_me, unlinked_2cF_me, scf_me):
 	me_dict = {'00': [], '01': [], '10': [], '11': []}
 	precedent_list = []
 	assign_start_me = MarchElement('')
 	substitute_me = MarchElement('')
 
-	# the visit priority of MEs in the same state_key is unlinked_ME (because of no transition) > linked_ME > sf_ME(because it has candidates)
+	# the visit priority of MEs in the same state_key is unlinked_ME (because of no transition) > linked_ME > scf_ME(because it has candidates)
 	for me in unlinked_2cF_me.values():
 		if len(me.content) > 0:
 			state = me.initial_state + me.final_state
@@ -136,8 +136,8 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 			if tied_element in me_dict[tied_state]:
 				me_dict[tied_state].remove(tied_element)
 
-	for me in sf_me:
-		# there are 2 candidate MEs in sf_me, just use one of them
+	for me in scf_me:
+		# there are 2 candidate MEs in scf_me, just use one of them
 		if len(me.content) > 0:
 			state = me.initial_state + me.final_state
 			me.address_order = 'up'
@@ -150,11 +150,11 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 		assign_start_me.address_order = 'down'
 		for element in assign_start_me.tied_element:
 			element.address_order = assign_start_me.address_order
-		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
+		initial_based_assign(linked_me, scf_me, me_dict, precedent_list, assign_start_me)
 	elif len(linked_me['ass_me']['head_cover_me'].content) > 0:
 		assign_start_me = linked_me['ass_me']['head_cover_me']
 		me_dict[assign_start_me.initial_state + assign_start_me.final_state].remove(assign_start_me)
-		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
+		initial_based_assign(linked_me, scf_me, me_dict, precedent_list, assign_start_me)
 	elif isinstance(linked_me['ass_me']['odd_sensitization_me'].tied_element, list):
 		if len(linked_me['ass_me']['odd_sensitization_me'].content) > 0:
 			assign_start_me = linked_me['ass_me']['odd_sensitization_me']
@@ -162,25 +162,25 @@ def element_assigner(linked_me, unlinked_2cF_me, sf_me):
 			assign_start_me = substitute_me
 		# if odd-sensitization ME is chosen to start, it should be removed from me_dict first, since it is added before
 		me_dict[assign_start_me.initial_state + assign_start_me.final_state].remove(assign_start_me)
-		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
+		initial_based_assign(linked_me, scf_me, me_dict, precedent_list, assign_start_me)
 	else:
 		for state_key in ['00', '11', '01', '10']:
 			if len(me_dict[state_key]) > 0:
 				assign_start_me = next(iter(me_dict[state_key]))
 				me_dict[state_key].remove(assign_start_me)
-				if assign_start_me in sf_me:
-					# if a sf_me candidate is chosen as the start_me, directly discard the other candidate
-					useless_me = next(iter(sf_me - {assign_start_me}))
+				if assign_start_me in scf_me:
+					# if a scf_me candidate is chosen as the start_me, directly discard the other candidate
+					useless_me = next(iter(scf_me - {assign_start_me}))
 					me_dict[useless_me.initial_state + useless_me.final_state].remove(useless_me)
 				break
 
-		initial_based_assign(linked_me, sf_me, me_dict, precedent_list, assign_start_me)
+		initial_based_assign(linked_me, scf_me, me_dict, precedent_list, assign_start_me)
 
 	precedent_list.reverse()
 
 	# only the CFds-detected ME, like main ME and odd-sensitization MEs, need to add a single read operation before the
 	# tail-cover ME
-	if ((len(precedent_list) > 0) and (precedent_list[-1] not in sf_me) and (precedent_list[-1] is not linked_me['ass_me']['head_cover_me'])
+	if ((len(precedent_list) > 0) and (precedent_list[-1] not in scf_me) and (precedent_list[-1] is not linked_me['ass_me']['head_cover_me'])
 			and (precedent_list[-1].transition_tag is False) and (assign_start_me.address_order != precedent_list[-1].address_order)):
 		address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
 		address_order_me.address_order = precedent_list[-1].address_order
@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
 	ME_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
 		{'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
-				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'sf_ME': MarchElement('')}
+				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'scf_ME': MarchElement('')}
 
 	if len(seq_pool['linked']['Init_0']) + len(seq_pool['linked']['Init_1']) > 0:
 		ME_dict['linked_ME'] = linked_CFds_constructor(seq_pool['linked'], classified_pool['2cF_CFds']['linked'])
@@ -230,6 +230,6 @@ if __name__ == '__main__':
 	if len(seq_pool['unlinked']['Init_0']) + len(seq_pool['unlinked']['Init_1']) > 0:
 		ME_dict['unlinked_2cF_ME'] = unlinked_2cF_constructor(seq_pool['unlinked'])
 	elif len(seq_pool['unlinked']['Init_-1']) > 0:
-		ME_dict['sf_ME'] = sf_constructor(seq_pool['unlinked'])
+		ME_dict['scf_ME'] = scf_constructor(seq_pool['unlinked'])
 
-	output(element_assigner(ME_dict['linked_ME'], ME_dict['unlinked_2cF_ME'], ME_dict['sf_ME']))
+	output(element_assigner(ME_dict['linked_ME'], ME_dict['unlinked_2cF_ME'], ME_dict['scf_ME']))
