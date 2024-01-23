@@ -90,19 +90,12 @@ def output_graph_file_DYNWVC2(vertices, edges):
 	return filename
 
 
-def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
+def build_degenerate_2cF_graph(_2cF_unlinked_pool, vertices_map):
 	vertices = []
 	edges = []
 	for _2cF_obj in _2cF_unlinked_pool:
 		edge_info = []
-		CFdr_flag = 0
 		for comp in _2cF_obj.comps.values():
-			# if a composite is a CFdr, it must be detected, so the 2cF can't be involved
-			if (comp.rdFlag == -1) and (comp.CFdsFlag == 0):
-				CFdr_map.append(comp)
-				CFdr_flag = 1
-				break
-
 			if comp.aInit == '-':
 				ignore_keys = {'aInit', 'aCell'}
 			else:
@@ -116,9 +109,6 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
 			else:
 				edge_info.append(vertices_map.index(find_result))
 
-		# if a composite is a CFdr, it must be detected, so the 2cF can't be involved
-		if CFdr_flag:
-			continue
 		edge_info.sort()
 		edges.append(edge_info)
 
@@ -134,7 +124,7 @@ def build_unlinked_2cF_graph(_2cF_unlinked_pool, vertices_map, CFdr_map):
 		return False
 
 
-def remove_unlinked_2cF_by_MWVC(graph_file):
+def remove_degenerate_2cF_by_MWVC(graph_file):
 	if sys.platform.startswith('linux'):
 		quickVC_solver.quickVC_solver(graph_file)
 	else:
@@ -189,8 +179,10 @@ def generate_inclusive_search_set(classified_fault_pool):
 			candidate_CFds_list = generate_CFds_search_candidates(search_seq)
 			candidate_nonCFds_list = generate_nonCFds_search_candidates(search_seq)
 		else:
-			# the possible search sequence for nonCFds also includes a detect operation
-			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen + 'r' + c_obj.comps['comp1'].Sen[-1]
+			# the possible search sequence for nonCFds should also include a detect operation, but it should be emitted
+			# because the nest sensitization can eliminate the intermediate read operation, and the nest information cannot be
+			# known until the ME is generated. As a result, the search sequence keeps the sensitization sequence itself.
+			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen
 			candidate_CFds_list = generate_CFds_search_candidates(search_seq)
 			candidate_nonCFds_list = generate_nonCFds_search_candidates(search_seq)
 
@@ -204,7 +196,7 @@ def generate_inclusive_search_set(classified_fault_pool):
 			candidate_nonCFds_list = []
 		else:
 			# a nonCFds with single operation can only include CFds, the only nonCFds it can include is itself
-			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen + 'r' + c_obj.comps['comp1'].Sen[-1]
+			search_seq = c_obj.comps['comp1'].vInit + c_obj.comps['comp1'].Sen
 			candidate_CFds_list = generate_CFds_search_candidates(search_seq)
 			candidate_nonCFds_list = []
 
@@ -328,23 +320,23 @@ def check_CFds_redundancy(fault, candidate_dict, init):
 	return NOT_REDUNDANT
 
 
-def remove_inclusive_unlinked_2cF(_2cF_cover):
+def generate_2cF_2cF_set_dict(sf_set, _2cF_set):
+	inner_sf_pool = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
+	inner_sf = TwoComposite()
+	for sf_obj in sf_set:
+		inner_sf.get_Comp_objects(sf_obj, sf_obj)
+		_2cF_set.add(copy.deepcopy(inner_sf))
+
+	for inner_obj in _2cF_set:
+		classify_SF(inner_sf_pool, inner_obj)
+
+	return generate_inclusive_search_set(inner_sf_pool)
+
+
+def self_filter(_2cF_cover):
 	# the 2cFs can be filtered according to the inclusive rule
 	redundant_fault_pool = set()
 	filtered_fault_pool = set()
-
-	def generate_2cF_2cF_set_dict(sf_set, _2cF_set):
-		inner_sf_pool = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
-		inner_sf = TwoComposite()
-		for sf_obj in sf_set:
-			inner_sf.get_Comp_objects(sf_obj, sf_obj)
-			_2cF_set.add(copy.deepcopy(inner_sf))
-
-		for inner_obj in _2cF_set:
-			classify_SF(inner_sf_pool, inner_obj)
-
-		return generate_inclusive_search_set(inner_sf_pool)
-
 	candidate_set_dict = generate_2cF_2cF_set_dict(_2cF_cover, filtered_fault_pool)
 
 	for fault in filtered_fault_pool:
@@ -368,40 +360,52 @@ def remove_inclusive_unlinked_2cF(_2cF_cover):
 def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 	print("***Filtering redundant 2-composite faults...\n")
 
-	unlinked_2cF_pool = _2cF_nonCFds_pool | unlinked_2cF_CFds_pool
-	unlinked_2cF_cover = set()
+	# all nonCFds*nonCFds faults cannot be degenerated, since the discarded nonCFds FP can be mis-sensitized if it is
+	# out of the diff-based search range. For the nonCFds*nonCFds with different a-cell requirements (such as <1;...>*<0;...>),
+	# both of the FPs can be sensitized under [a1, v, a2] or [a2, v, a1]. and for the faults with identical a-cell requirements,
+	# the FPs can be sensitized under [a1, a2, v] etc.
+	degenerate_2cF_pool = _2cF_nonCFds_pool['nonCFds_CFds'] | unlinked_2cF_CFds_pool
+	degenerate_2cF_cover = set()
 
-	if len(unlinked_2cF_pool) > 1:
+	if len(degenerate_2cF_pool) > 1:
 		vertices_map = []
-		CFdr_map = []
 		print("Building unlinked 2cF graph...")
-		graph_file = build_unlinked_2cF_graph(unlinked_2cF_pool, vertices_map, CFdr_map)
+		graph_file = build_degenerate_2cF_graph(degenerate_2cF_pool, vertices_map)
 
 		if isinstance(graph_file, str):
 			print("Invoking MWVC solver...")
-			remove_unlinked_2cF_by_MWVC(graph_file)
+			remove_degenerate_2cF_by_MWVC(graph_file)
 
 			with open("results/mwvclog", "r") as result:
 				for vertex in result.readlines():
 					vertex.strip()
-					unlinked_2cF_cover.add(vertices_map[int(vertex) - 1])
-
-		for CFdr in CFdr_map:
-			if CFdr.aInit == '-':
-				ignore_keys = {'aInit', 'aCell'}
-			else:
-				ignore_keys = {'aCell'}
-			if isinstance(find_identical_objs(CFdr, unlinked_2cF_cover, ignore_keys), int):
-				unlinked_2cF_cover.add(CFdr)
+					degenerate_2cF_cover.add(vertices_map[int(vertex) - 1])
 	else:
 		# if there is only 1 2cF, use its 2 vertices as the final cover directly
-		for unlinked_2cF in unlinked_2cF_pool:
-			unlinked_2cF_cover.update(set(unlinked_2cF.comps.values()))
+		for degenerated_2cF in degenerate_2cF_pool:
+			degenerate_2cF_cover.update(set(degenerated_2cF.comps.values()))
 
 	# filter the 2cF cover after MWVC, according to inclusive rule
-	unlinked_2cF_cover = remove_inclusive_unlinked_2cF(unlinked_2cF_cover)
+	if len(degenerate_2cF_cover) > 1:
+		degenerate_2cF_cover = self_filter(degenerate_2cF_cover)
 
-	return unlinked_2cF_cover
+	# the nonCFds*nonCFds faults can only carry out self-filter
+	# TODO: really can carry out self-filter?
+	undetermined_2cF_pool = _2cF_nonCFds_pool['nonCFds_nonCFds']
+	undetermined_2cF_cover = set()
+
+	for _2cF_obj in undetermined_2cF_pool:
+		for comp in _2cF_obj.comps.values():
+			ignore_keys = {'aCell'}
+
+			find_result = find_identical_objs(comp, undetermined_2cF_cover, ignore_keys)
+			if find_result == DIFFERENT:
+				undetermined_2cF_cover.add(comp)
+
+	if len(undetermined_2cF_cover) > 1:
+		undetermined_2cF_cover = self_filter(undetermined_2cF_cover)
+
+	return degenerate_2cF_cover, undetermined_2cF_cover
 
 
 if __name__ == '__main__':
@@ -409,7 +413,8 @@ if __name__ == '__main__':
 	try:
 		parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 		classified_pool = classify(parsed_pool)
-		filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
+		filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])[0]
+
 	except TypeError:
 		print("fail")
 		traceback.print_exc()

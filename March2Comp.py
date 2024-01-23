@@ -31,15 +31,15 @@ def March2Comp(fault_list, fault_model, fp):
 	# print("Classification finished.\n")
 
 	# filter 2cF pool
-	filtered_2cFs = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'], classified_faults['2cF_CFds']['unlinked'])
+	_2cF_filter_result = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'], classified_faults['2cF_CFds']['unlinked'])
 
 	# filter SF pool
-	filtered_SFs = filter_redundant_SF(classified_faults['SF'], filtered_2cFs)
+	filtered_SFs = filter_redundant_SF(classified_faults['SF'], _2cF_filter_result[0])
 	flat_SFs = flatten_sf_pool(filtered_SFs)
 
 	# create sequence objects
 	print("***Generating sensitization units...\n")
-	sequence_pool = create_sequence_pool(flat_SFs, filtered_2cFs, classified_faults['2cF_CFds']['linked'])
+	sequence_pool = create_sequence_pool(flat_SFs, _2cF_filter_result[0], classified_faults['2cF_nonCFds_included']['nonCFds_nonCFds']['same_init'], classified_faults['2cF_CFds']['linked'])
 	# print("Sensitization units are generated.\n")
 
 	# build MEs for linked CFds

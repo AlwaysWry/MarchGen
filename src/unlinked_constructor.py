@@ -53,47 +53,49 @@ class UnlinkedElementsBuilder:
 			if isinstance(secondary_result, CoverageVertex):
 				return secondary_result
 
-			return next(iter(secondary_result))
+			return next(iter(secondary_result), CoverageVertex({'coverage': [], 'diff': -1}))
 
 	@staticmethod
 	def terminal_decorator(chain: str, init: str):
 		main_element = MarchElement('')
-		terminal_feature = chain[0] + chain[-1]
-		match terminal_feature:
-			case '00':
-				if init == 'Init_0':
-					main_element = MarchElement(chain[1:])
-				else:
-					main_element = MarchElement('r1w0' + chain[1:] + 'w1')
-					main_element.head_tag = True
-					main_element.tail_tag = True
-			case '01':
-				if init == 'Init_0':
-					main_element = MarchElement(chain[1:] + 'w0')
-					main_element.tail_tag = True
-				else:
-					main_element = MarchElement('r1w0' + chain[1:])
-					main_element.head_tag = True
-			case '10':
-				if init == 'Init_1':
-					main_element = MarchElement(chain[1:] + 'w1')
-					main_element.tail_tag = True
-				else:
-					main_element = MarchElement('r0w1' + chain[1:])
-					main_element.head_tag = True
-			case '11':
-				if init == 'Init_1':
-					main_element = MarchElement(chain[1:])
-				else:
-					main_element = MarchElement('r0w1' + chain[1:] + 'w0')
-					main_element.head_tag = True
-					main_element.tail_tag = True
-			case _:
-				pass
 
-		if chain[1] != 'r':
-			main_element.content = 'r' + chain[0] + main_element.content
-			main_element.update_states()
+		if len(chain) > 0:
+			terminal_feature = chain[0] + chain[-1]
+			match terminal_feature:
+				case '00':
+					if init == 'Init_0':
+						main_element = MarchElement(chain[1:])
+					else:
+						main_element = MarchElement('r1w0' + chain[1:] + 'w1')
+						main_element.head_tag = True
+						main_element.tail_tag = True
+				case '01':
+					if init == 'Init_0':
+						main_element = MarchElement(chain[1:] + 'w0')
+						main_element.tail_tag = True
+					else:
+						main_element = MarchElement('r1w0' + chain[1:])
+						main_element.head_tag = True
+				case '10':
+					if init == 'Init_1':
+						main_element = MarchElement(chain[1:] + 'w1')
+						main_element.tail_tag = True
+					else:
+						main_element = MarchElement('r0w1' + chain[1:])
+						main_element.head_tag = True
+				case '11':
+					if init == 'Init_1':
+						main_element = MarchElement(chain[1:])
+					else:
+						main_element = MarchElement('r0w1' + chain[1:] + 'w0')
+						main_element.head_tag = True
+						main_element.tail_tag = True
+				case _:
+					pass
+
+			if chain[1] != 'r':
+				main_element.content = 'r' + chain[0] + main_element.content
+				main_element.update_states()
 
 		return main_element
 
@@ -141,7 +143,7 @@ def unlinked_2cF_constructor(unlinked_pool):
 
 def scf_constructor(unlinked_pool):
 	vertex_sf_pool = define_vertices(unlinked_pool['Init_-1'])
-	sf_me_candidates = set()
+	scf_me_candidates = set()
 
 	def get_scf_me_candidates(init, vertex_candidate_pool):
 		initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), init)
@@ -158,18 +160,20 @@ def scf_constructor(unlinked_pool):
 
 		return MarchElement(coverage_chain[1:])
 
-	sf_me_candidates.add(get_scf_me_candidates('Init_0', copy.deepcopy(vertex_sf_pool)))
-	sf_me_candidates.add(get_scf_me_candidates('Init_1', copy.deepcopy(vertex_sf_pool)))
+	scf_me_candidates.add(get_scf_me_candidates('Init_0', copy.deepcopy(vertex_sf_pool)))
+	scf_me_candidates.add(get_scf_me_candidates('Init_1', copy.deepcopy(vertex_sf_pool)))
 
-	return sf_me_candidates
+	return scf_me_candidates
 
 
 if __name__ == '__main__':
 	os.chdir("../")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
-	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], filtered_2cF_pool)
+	filter_result = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
+	degenerated_2cFs = filter_result[0]
+	undetermined_2cFs = filter_result[1]
+	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], degenerated_2cFs)
 	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
 
 	seq_pool = create_sequence_pool(flat_SF_pool, filtered_2cF_pool, classified_pool['2cF_CFds']['linked'])

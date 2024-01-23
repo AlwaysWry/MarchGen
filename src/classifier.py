@@ -13,8 +13,10 @@ IS_SF = True
 NOT_SF = False
 IS_SF_CFDS = True
 NOT_SF_CFDS = False
-IS_NONCFDS_INCLUDED = True
-NOT_NONCFDS_INCLUDED = False
+IS_NONCFDS_CFDS = True
+NOT_NONCFDS_CFDS = False
+IS_NONCFDS_NONCFDS = True
+NOT_NONCFDS_NONCFDS = False
 
 
 class TwoComposite:
@@ -53,8 +55,7 @@ class TwoComposite:
 				self.link_flag = 0
 			elif (self.comps['comp1'].rdFlag == 2) or (self.comps['comp2'].rdFlag == 2):
 				self.link_flag = 0
-			elif (self.comps['comp1'].vFault != self.comps['comp2'].vInit) and \
-					(self.comps['comp2'].vFault != self.comps['comp1'].vInit):
+			elif (self.comps['comp1'].vFault != self.comps['comp2'].vInit) and (self.comps['comp2'].vFault != self.comps['comp1'].vInit):
 				self.link_flag = 0
 			else:
 				self.link_flag = 1
@@ -91,11 +92,18 @@ def arbit_SF_CFds(comp_obj):
 		return NOT_SF_CFDS
 
 
-def arbit_2cF_nonCFds_included(comp_obj):
-	if comp_obj.comps['comp1'].CFdsFlag & comp_obj.comps['comp2'].CFdsFlag:
-		return NOT_NONCFDS_INCLUDED
+def arbit_2cF_nonCFds_CFds(comp_obj):
+	if comp_obj.comps['comp1'].CFdsFlag ^ comp_obj.comps['comp2'].CFdsFlag:
+		return IS_NONCFDS_CFDS
 	else:
-		return IS_NONCFDS_INCLUDED
+		return NOT_NONCFDS_CFDS
+
+
+def arbit_2cF_nonCFds_nonCFds(comp_obj):
+	if not comp_obj.comps['comp1'].CFdsFlag | comp_obj.comps['comp2'].CFdsFlag:
+		return IS_NONCFDS_NONCFDS
+	else:
+		return NOT_NONCFDS_NONCFDS
 
 
 def arbit_linked_2cF_CFds(comp_obj):
@@ -116,7 +124,7 @@ def classify_based_on_Init(comp_obj):
 			return vInit_dict.get(comp_obj.comps['comp1'].vInit, CLASSIFY_ERROR)
 		else:
 			return aInit_dict.get(comp_obj.comps['comp1'].aInit, CLASSIFY_ERROR)
-	elif arbit_2cF_nonCFds_included(comp_obj):
+	elif arbit_2cF_nonCFds_CFds(comp_obj):
 		# classify method for filter 2cF by SF
 		init_result = tuple()
 		for comp_key in comp_obj.comps.keys():
@@ -147,8 +155,13 @@ def classify_SF(sf_pool, comp_obj):
 	return
 
 
-def classify_2cF_nonCFds_included(_2cF_nonCFds_pool, comp_obj):
-	_2cF_nonCFds_pool.add(comp_obj)
+def classify_2cF_nonCFds_CFds(_2cF_nonCFds_CFds_pool, comp_obj):
+	_2cF_nonCFds_CFds_pool.add(comp_obj)
+	return
+
+
+def classify_2cF_nonCFds_nonCFds(_2cF_nonCFds_nonCFds_pool, comp_obj):
+	_2cF_nonCFds_nonCFds_pool.add(comp_obj)
 	return
 
 
@@ -164,13 +177,15 @@ def classify_2cF_CFds(_2cF_CFds_pool, comp_obj):
 def classify(unclassified_fault_pool):
 	print("***Implementing fault classification...\n")
 	sf_pool = {'Init_0': {}, 'Init_1': {}, 'Init_-1': {}}
-	_2cF_nonCFds_pool = set()
+	_2cF_nonCFds_pool = {'nonCFds_CFds': set(), 'nonCFds_nonCFds': set()}
 	_2cF_CFds_pool = {'linked': set(), 'unlinked': set()}
 	for comp_obj in unclassified_fault_pool:
 		if arbit_SF(comp_obj):
 			classify_SF(sf_pool, comp_obj)
-		elif arbit_2cF_nonCFds_included(comp_obj):
-			classify_2cF_nonCFds_included(_2cF_nonCFds_pool, comp_obj)
+		elif arbit_2cF_nonCFds_CFds(comp_obj):
+			classify_2cF_nonCFds_CFds(_2cF_nonCFds_pool['nonCFds_CFds'], comp_obj)
+		elif arbit_2cF_nonCFds_nonCFds(comp_obj):
+			classify_2cF_nonCFds_nonCFds(_2cF_nonCFds_pool['nonCFds_nonCFds'], comp_obj)
 		else:
 			classify_2cF_CFds(_2cF_CFds_pool, comp_obj)
 
