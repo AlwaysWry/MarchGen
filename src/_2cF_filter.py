@@ -360,10 +360,10 @@ def self_filter(_2cF_cover):
 def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 	print("***Filtering redundant 2-composite faults...\n")
 
-	# all nonCFds*nonCFds faults cannot be degenerated, since the discarded nonCFds FP can be mis-sensitized if it is
-	# out of the diff-based search range. For the nonCFds*nonCFds with different a-cell requirements (such as <1;...>*<0;...>),
-	# both of the FPs can be sensitized under [a1, v, a2] or [a2, v, a1]. and for the faults with identical a-cell requirements,
-	# the FPs can be sensitized under [a1, a2, v] etc.
+	# all nonCFds*nonCFds faults cannot be degenerated or self-filtered, since the discarded nonCFds FP can be
+	# mis-sensitized if it is out of the diff-based search range. For the nonCFds*nonCFds with different a-cell requirements
+	# (such as <1;...>*<0;...>), both of the FPs can be sensitized under [a1, v, a2] or [a2, v, a1]. and for the faults
+	# with identical a-cell requirements, both the FPs can be sensitized under [a1, a2, v], [a2, a1, v], etc.
 	degenerate_2cF_pool = _2cF_nonCFds_pool['nonCFds_CFds'] | unlinked_2cF_CFds_pool
 	degenerate_2cF_cover = set()
 
@@ -389,23 +389,7 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 	if len(degenerate_2cF_cover) > 1:
 		degenerate_2cF_cover = self_filter(degenerate_2cF_cover)
 
-	# the nonCFds*nonCFds faults can only carry out self-filter
-	# TODO: really can carry out self-filter?
-	undetermined_2cF_pool = _2cF_nonCFds_pool['nonCFds_nonCFds']
-	undetermined_2cF_cover = set()
-
-	for _2cF_obj in undetermined_2cF_pool:
-		for comp in _2cF_obj.comps.values():
-			ignore_keys = {'aCell'}
-
-			find_result = find_identical_objs(comp, undetermined_2cF_cover, ignore_keys)
-			if find_result == DIFFERENT:
-				undetermined_2cF_cover.add(comp)
-
-	if len(undetermined_2cF_cover) > 1:
-		undetermined_2cF_cover = self_filter(undetermined_2cF_cover)
-
-	return degenerate_2cF_cover, undetermined_2cF_cover
+	return degenerate_2cF_cover
 
 
 if __name__ == '__main__':
@@ -413,7 +397,7 @@ if __name__ == '__main__':
 	try:
 		parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 		classified_pool = classify(parsed_pool)
-		filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])[0]
+		filtered_2cF_pool = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 
 	except TypeError:
 		print("fail")

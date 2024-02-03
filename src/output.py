@@ -1,5 +1,5 @@
 # assign the obtained MEs and output them as standard format
-from unlinked_constructor import *
+from nonCFds_constructor import *
 
 
 def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):
@@ -214,13 +214,11 @@ if __name__ == '__main__':
 	sys.path.append("src/")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filter_result = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
-	degenerated_2cFs = filter_result[0]
-	undetermined_2cFs = filter_result[1]
+	degenerated_2cFs = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], degenerated_2cFs)
 	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
 
-	seq_pool = create_sequence_pool(flat_SF_pool, degenerated_2cFs, undetermined_2cFs, classified_pool['2cF_CFds']['linked'])
+	seq_pool = create_sequence_pool(flat_SF_pool, degenerated_2cFs, classified_pool['2cF_CFds']['linked'], classified_pool['2cF_nonCFds_included']['nonCFds_nonCFds'])
 
 	ME_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
 		{'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
@@ -230,7 +228,7 @@ if __name__ == '__main__':
 		ME_dict['linked_ME'] = linked_CFds_constructor(seq_pool['linked'], classified_pool['2cF_CFds']['linked'])
 
 	if len(seq_pool['unlinked']['Init_0']) + len(seq_pool['unlinked']['Init_1']) > 0:
-		ME_dict['unlinked_2cF_ME'] = unlinked_2cF_constructor(seq_pool['unlinked'])
+		ME_dict['unlinked_2cF_ME'] = nonCFds_constructor(seq_pool['unlinked'])
 	elif len(seq_pool['unlinked']['Init_-1']) > 0:
 		ME_dict['scf_ME'] = scf_constructor(seq_pool['unlinked'])
 

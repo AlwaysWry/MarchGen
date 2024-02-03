@@ -61,14 +61,15 @@ def find_inclusive_seq(target_seq, candidate_seq_pool, ignored_keys):
 	else:
 		detect_seq_text = target_seq.seq_text
 
-	candidate_seqs = set(filter(lambda s: (detect_seq_text in s.seq_text) or (s.seq_text == target_seq.seq_text), candidate_seq_pool))
+	candidate_seqs = set(
+		filter(lambda s: (detect_seq_text in s.seq_text) or (s.seq_text == target_seq.seq_text), candidate_seq_pool))
 	return find_identical_objs(target_seq, candidate_seqs, ignored_keys)
 
 
-def merge_undetermined_2cFs(_2cF_pool, _2cF_cover, linked_seq_pool, degenerated_seq_pool):
-	ignored_keys = {'detect_tag', 'dr_tag', 'nest_tag'}
+def merge_undetermined_2cFs(_2cF_pool, linked_seq_pool, degenerated_seq_pool):
+	linked_ignore_keys = {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'}
+	degenerated_ignore_keys = {'detect_tag', 'dr_tag', 'nest_tag'}
 	redundant_undetermined_2cFs = set()
-	redundant_undetermined_cover = set()
 	# for the nonCFds*nonCFds, the inclusive rule is not allowed, since the included sensitization sequence of the nonCFds
 	# fault cannot be ensured without overlapping by diff-based search. Since diff-based search only includes the sequences
 	# of linked CFds*CFds faults or the faults in degeneration set. The difference-based build method just for making sure that
@@ -76,26 +77,61 @@ def merge_undetermined_2cFs(_2cF_pool, _2cF_cover, linked_seq_pool, degenerated_
 	# be merged, still need other methods to detect.
 	for nonCFds_2cF in _2cF_pool:
 		find_result = {'linked_CFds': [], 'degenerated': []}
+		seq_temp = []
 		for comp_obj in nonCFds_2cF.comps.values():
 			target_seq = Sequence(get_sequence_properties(comp_obj))
+			seq_temp.append(target_seq)
+			# for linked CFds sequences, Init_0 and Init_1 will be merged before the main ME is generated, since all sequences
+			# in Init_0 and Init_1 need to be covered in the same middle part. As a result, the nonCFds can be merged without caring about ass_init
+			linked_result = DIFFERENT
+			for linked_init_key in linked_seq_pool.keys():
+				linked_result = find_identical_objs(target_seq, linked_seq_pool[linked_init_key], linked_ignore_keys)
+				if not isinstance(linked_result, type(DIFFERENT)):
+					break
+			find_result['linked_CFds'].append(linked_result)
+			# for degenerated sequences, the sequences in Init_0 and Init_1 are covered in different MEs, so the nonCFds
+			# should be merged according to the ass_init
 			init_key = 'Init_' + target_seq.ass_init
-			find_result['linked_CFds'].append(find_identical_objs(target_seq, linked_seq_pool[init_key], ignored_keys))
-			find_result['degenerated'].append(find_identical_objs(target_seq, degenerated_seq_pool[init_key], ignored_keys))
-		# only when the 2 FPs of the 2cF in the linked_seq_pool or the degeneration_seq_pool at the same time, i.e. no FP
-		# is discarded, the merging is successful.
-		if DIFFERENT not in find_result['linked_CFds'] or DIFFERENT not in find_result['degenerated']:
-			redundant_undetermined_2cFs.add(nonCFds_2cF)
+			find_result['degenerated'].append(find_identical_objs(target_seq, degenerated_seq_pool[init_key], degenerated_ignore_keys))
 
-	# remove the merged 2cFs from the fault pool, and remove the corresponding self-filtered composite from the fault cover set.
-	# Since once the
-	_2cF_pool -= redundant_undetermined_2cFs
-	for redundant_2cF in redundant_undetermined_2cFs:
-		for comp_obj in redundant_2cF.comps.values():
-			find_result = find_identical_objs(comp_obj, _2cF_cover, set())
-			if not isinstance(find_result, type(DIFFERENT)):
-				redundant_undetermined_cover.add(find_result)
-	_2cF_cover -= redundant_undetermined_cover
-	return
+		# only when the 2 FPs of the 2cF in the linked_seq_pool at the same time, i.e. no FP is discarded, the merging is successful.
+		if DIFFERENT not in find_result['linked_CFds']:
+			for found_seq, temp in zip(find_result['linked_CFds'], seq_temp):
+				found_seq.detect_tag |= temp.detect_tag
+				found_seq.dr_tag |= temp.dr_tag
+				found_seq.nest_tag = temp.nest_tag
+
+			redundant_undetermined_2cFs.add(nonCFds_2cF)
+			continue
+		# if the nonCFds cannot be merged into the linked_seq_pool, try degenerated_seq_pool
+		aInit_comp1 = nonCFds_2cF.comps['comp1'].aInit
+		aInit_comp2 = nonCFds_2cF.comps['comp2'].aInit
+		# if the aInits of 2 FPs in nonCFds*nonCFds are the same (or be don't care state '-'), both FPs can be sensitized
+		# in once application on v-cell, so the merging is successful unless both FPs are covered by the degenerated sequences
+		if (aInit_comp1 == '-') or (aInit_comp2 == '-') or (aInit_comp1 == aInit_comp2):
+			if DIFFERENT not in find_result['degenerated']:
+				for found_seq, temp in zip(find_result['degenerated'], seq_temp):
+					found_seq.detect_tag |= temp.detect_tag
+					found_seq.dr_tag |= temp.dr_tag
+					found_seq.nest_tag = temp.nest_tag
+				redundant_undetermined_2cFs.add(nonCFds_2cF)
+		# if the aInits are different, since degenerated ME are 00/11 type, the states of a-cells cannot change during
+		# the ME applications, so the 2 FPs cannot be sensitized in one application. As long as one of FPs is covered by the
+		# degenerated_seq_pool, the nonCFds*nonCFds can be determined as redundant.
+		else:
+			degenerated_result = filter(lambda r: isinstance(r, Sequence), find_result['degenerated'])
+			if len(degenerated_result) > 0:
+				redundant_undetermined_2cFs.add(nonCFds_2cF)
+			for found_seq, temp in zip(find_result['degenerated'], seq_temp):
+				if isinstance(found_seq, Sequence):
+					found_seq.detect_tag |= temp.detect_tag
+					found_seq.dr_tag |= temp.dr_tag
+					found_seq.nest_tag = temp.nest_tag
+					redundant_undetermined_2cFs.add(nonCFds_2cF)
+					# one of the find results has to be DIFFERENT in this case, no need to carry on when a sequence is found
+					break
+
+	return _2cF_pool - redundant_undetermined_2cFs
 
 
 def filter_redundant_degenerated_sequences(composite, target_seq, candidate_seq_pool, ignored_properties):
@@ -146,69 +182,70 @@ def filter_redundant_linked_CFds_sequences(linked_seq_pool):
 	return
 
 
-def create_sequence_pool(sf_pool, degenerated_2cF_pool, linked_CFds_pool, undetermined_2cF_pool, undetermined_2cF_cover ):
-	linked_seq_pool = {'Init_0': set(), 'Init_1': set()}
+def create_sequence_pool(sf_pool, degenerated_2cF_pool, linked_CFds_pool, undetermined_2cF_pool):
+	linked_CFds_seq_pool = {'Init_0': set(), 'Init_1': set()}
 	# the 'Init_-1' class is for the not redundant nonCFs, it can be transformed into either of main MEs
 	degenerated_seq_pool = {'Init_0': set(), 'Init_1': set(), 'Init_-1': set()}
 	degenerated_CF_pool = set(filter(lambda f: f.aInit != '-', degenerated_2cF_pool))
 	degenerated_nonCF_pool = degenerated_2cF_pool - degenerated_CF_pool
+
+	sf_seq_pool = {'Init_0': set(), 'Init_1': set(), 'Init_-1': set()}
+	sf_CF_pool = set(filter(lambda f: f.aInit != '-', sf_pool))
+	sf_nonCF_pool = sf_pool - sf_CF_pool
+
+	def create_sequences(fault_pool, merged_seq_pool, target_seq_pool, ignored_properties):
+		for fault_obj in fault_pool:
+			target_seq = Sequence(get_sequence_properties(fault_obj))
+
+			# compare with the linked CFds pool. if the same sequence or the sequence that includes the composite's sequence
+			# exists, merge into linked CFds pool by merging the detect_tag, dr_tag and the nest_tag of nonCFds into CFds-sequence objects.
+			# For nonCFs, besides the 3 tags, the ass_init also needs to be ignored, since the nonCFs are allowed to be
+			# merged into any of the init class.
+			if filter_redundant_degenerated_sequences(fault_obj, target_seq, merged_seq_pool, ignored_properties):
+				continue
+			# if the filter failed in linked CFds pool, compare with current unlinked sequence pool. Similarly,
+			# the detect_tag, dr_tag and the nest_tag should be merged, and for nonCFs, the ass_init also needs to be ignored
+			if filter_redundant_degenerated_sequences(fault_obj, target_seq, target_seq_pool, ignored_properties):
+				target_seq_pool['Init_' + target_seq.ass_init].add(copy.deepcopy(target_seq))
+
+		return
 
 	# generate sequence objects for linked CFds*CFds faults
 	for linked_CFds in linked_CFds_pool:
 		for comp_obj in linked_CFds.comps.values():
 			target_sequence = Sequence(get_sequence_properties(comp_obj))
 			init_key = 'Init_' + target_sequence.ass_init
-			if isinstance(find_identical_objs(target_sequence, linked_seq_pool[init_key], {}), type(DIFFERENT)):
-				linked_seq_pool[init_key].add(copy.deepcopy(target_sequence))
+			if isinstance(find_identical_objs(target_sequence, linked_CFds_seq_pool[init_key], {}), type(DIFFERENT)):
+				linked_CFds_seq_pool[init_key].add(copy.deepcopy(target_sequence))
 
-	for comp_obj in degenerated_CF_pool:
-		target_sequence = Sequence(get_sequence_properties(comp_obj))
-		init_key = 'Init_' + target_sequence.ass_init
+	ignored_props_CF = {'detect_tag', 'dr_tag', 'nest_tag'}
+	ignored_props_nonCF = {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'}
+	# create and filter redundant sequences from the degenerated and simple fault pool
+	create_sequences(degenerated_CF_pool, linked_CFds_seq_pool, degenerated_seq_pool, ignored_props_CF)
+	create_sequences(degenerated_nonCF_pool, linked_CFds_seq_pool, degenerated_seq_pool, ignored_props_nonCF)
+	create_sequences(sf_CF_pool, linked_CFds_seq_pool, sf_seq_pool, ignored_props_CF)
+	create_sequences(sf_nonCF_pool, linked_CFds_seq_pool, sf_seq_pool, ignored_props_nonCF)
 
-		# compare with the linked CFds pool. if the same sequence or the sequence that includes the composite's sequence
-		# exists, merge into linked CFds pool by merging the detect_tag, dr_tag and the nest_tag of nonCFds into CFds-sequence objects
-		if filter_redundant_degenerated_sequences(comp_obj, target_sequence, linked_seq_pool,
-												  {'detect_tag', 'dr_tag', 'nest_tag'}):
-			continue
+	# merge a part of the nonCFds*nonCFds faults
+	undetermined_remainder = merge_undetermined_2cFs(undetermined_2cF_pool, linked_CFds_seq_pool, degenerated_seq_pool)
 
-		# if the filter failed in linked CFds pool, compare with current unlinked sequence pool. Similarly,
-		# the detect_tag, dr_tag and the nest_tag should be merged
-		if not filter_redundant_degenerated_sequences(comp_obj, target_sequence, degenerated_seq_pool,
-													  {'detect_tag', 'dr_tag', 'nest_tag'}):
-			degenerated_seq_pool[init_key].add(copy.deepcopy(target_sequence))
+	# self-filter the linked CFds*CFds sequences finally, after all filters for degenerated and SF sequences that based
+	# on the linked CFds sequences finish
+	filter_redundant_linked_CFds_sequences(linked_CFds_seq_pool)
 
-	# check the redundancy of nonCFs after the check of CFs
-	for comp_obj in degenerated_nonCF_pool:
-		target_sequence = Sequence(get_sequence_properties(comp_obj))
-		init_key = 'Init_' + target_sequence.ass_init
-
-		if filter_redundant_degenerated_sequences(comp_obj, target_sequence, linked_seq_pool,
-												  {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'}):
-			continue
-		if not filter_redundant_degenerated_sequences(comp_obj, target_sequence, degenerated_seq_pool,
-													  {'ass_init', 'detect_tag', 'dr_tag', 'nest_tag'}):
-			degenerated_seq_pool[init_key].add(copy.deepcopy(target_sequence))
-
-	# check the same_init nonCFds*nonCFds faults
-
-	filter_redundant_linked_CFds_sequences(linked_seq_pool)
-
-	return {'linked': linked_seq_pool, 'unlinked': degenerated_seq_pool}
+	return {'linked_CFds_seq': linked_CFds_seq_pool, 'degenerated_seq': degenerated_seq_pool, 'undetermined_fault': undetermined_remainder, 'sf_remainder_seq': sf_seq_pool}
 
 
 if __name__ == '__main__':
 	os.chdir("../")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filter_result = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'],
-										 classified_pool['2cF_CFds']['unlinked'])
-	degenerated_2cFs = filter_result[0]
-	undetermined_2cFs = filter_result[1]
+	degenerated_2cFs = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'],
+											classified_pool['2cF_CFds']['unlinked'])
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], degenerated_2cFs)
 
-	for pool in create_sequence_pool(flatten_sf_pool(filtered_SF_pool), degenerated_2cFs,
-									 classified_pool['2cF_nonCFds_included']['nonCFds_nonCFds']['same_init'],
-									 classified_pool['2cF_CFds']['linked']).values():
+	for pool in create_sequence_pool(flatten_sf_pool(filtered_SF_pool), degenerated_2cFs, classified_pool['2cF_CFds']['linked'],
+									 classified_pool['2cF_nonCFds_included']['nonCFds_nonCFds']).values():
 		for sub_pool in pool.values():
 			for sequence in sub_pool:
 				print([sequence.nest_tag, sequence.seq_text])

@@ -61,6 +61,5 @@ if __name__ == '__main__':
 	os.chdir("../")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filter_result = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
-	degenerated_2cFs = filter_result[0]
+	degenerated_2cFs = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 	filter_redundant_SF(copy.deepcopy(classified_pool['SF']), degenerated_2cFs)

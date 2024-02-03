@@ -31,15 +31,15 @@ def March2Comp(fault_list, fault_model, fp):
 	# print("Classification finished.\n")
 
 	# filter 2cF pool
-	_2cF_filter_result = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'], classified_faults['2cF_CFds']['unlinked'])
+	degeneration_result = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'], classified_faults['2cF_CFds']['unlinked'])
 
 	# filter SF pool
-	filtered_SFs = filter_redundant_SF(classified_faults['SF'], _2cF_filter_result[0])
+	filtered_SFs = filter_redundant_SF(classified_faults['SF'], degeneration_result)
 	flat_SFs = flatten_sf_pool(filtered_SFs)
 
 	# create sequence objects
 	print("***Generating sensitization units...\n")
-	sequence_pool = create_sequence_pool(flat_SFs, _2cF_filter_result[0], classified_faults['2cF_nonCFds_included']['nonCFds_nonCFds']['same_init'], classified_faults['2cF_CFds']['linked'])
+	sequence_pool = create_sequence_pool(flat_SFs, degeneration_result, classified_faults['2cF_CFds']['linked'], classified_faults['2cF_nonCFds_included']['nonCFds_nonCFds'])
 	# print("Sensitization units are generated.\n")
 
 	# build MEs for linked CFds
@@ -48,13 +48,13 @@ def March2Comp(fault_list, fault_model, fp):
 		{'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
 				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'scf_ME': {MarchElement('')}}
 
-	if len(sequence_pool['linked']['Init_0']) + len(sequence_pool['linked']['Init_1']) > 0:
+	if len(sequence_pool['linked_CFds_seq']['Init_0']) + len(sequence_pool['linked_CFds_seq']['Init_1']) > 0:
 		print("Building linked CFds*CFds ME...")
-		me_dict['linked_ME'] = linked_CFds_constructor(sequence_pool['linked'], classified_faults['2cF_CFds']['linked'])
+		me_dict['linked_ME'] = linked_CFds_constructor(sequence_pool['linked_CFds_seq'], classified_faults['2cF_CFds']['linked'])
 
 	if len(sequence_pool['unlinked']['Init_0']) + len(sequence_pool['unlinked']['Init_1']) > 0:
 		print("Building unlinked 2cF ME...")
-		me_dict['unlinked_2cF_ME'] = unlinked_2cF_constructor(sequence_pool['unlinked'])
+		me_dict['unlinked_2cF_ME'] = nonCFds_constructor(sequence_pool['unlinked'])
 
 	if len(sequence_pool['unlinked']['Init_-1']) > 0:
 		print("Building SCF ME...")

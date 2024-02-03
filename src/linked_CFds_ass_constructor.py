@@ -1,4 +1,4 @@
-from linked_main_constructor import *
+from linked_CFds_main_constructor import *
 import itertools as it
 
 
@@ -565,15 +565,13 @@ if __name__ == '__main__':
 	sys.path.append("src/")
 	parsed_pool = parse_fault_pool(fault_list_file, fault_model_name)
 	classified_pool = classify(parsed_pool)
-	filter_result = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
-	degenerated_2cFs = filter_result[0]
-	undetermined_2cFs = filter_result[1]
+	degenerated_2cFs = filter_redundant_2cF(classified_pool['2cF_nonCFds_included'], classified_pool['2cF_CFds']['unlinked'])
 	filtered_SF_pool = filter_redundant_SF(classified_pool['SF'], degenerated_2cFs)
 	flat_SF_pool = flatten_sf_pool(filtered_SF_pool)
 
-	seq_pool = create_sequence_pool(flat_SF_pool, degenerated_2cFs, undetermined_2cFs, classified_pool['2cF_CFds']['linked'])
+	seq_pool = create_sequence_pool(flat_SF_pool, degenerated_2cFs, classified_pool['2cF_CFds']['linked'], classified_pool['2cF_nonCFds_included']['nonCFds_nonCFds'])
 
-	if len(seq_pool['linked']['Init_0']) + len(seq_pool['linked']['Init_1']) > 0:
-		linked_CFds_constructor(seq_pool['linked'], classified_pool['2cF_CFds']['linked'])
+	if len(seq_pool['linked_CFds_seq']['Init_0']) + len(seq_pool['linked_CFds_seq']['Init_1']) > 0:
+		linked_CFds_constructor(seq_pool['linked_CFds_seq'], classified_pool['2cF_CFds']['linked'])
 
 	pass
