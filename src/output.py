@@ -227,9 +227,9 @@ if __name__ == '__main__':
 	if len(seq_pool['linked']['Init_0']) + len(seq_pool['linked']['Init_1']) > 0:
 		ME_dict['linked_ME'] = linked_CFds_constructor(seq_pool['linked'], classified_pool['2cF_CFds']['linked'])
 
-	if len(seq_pool['unlinked']['Init_0']) + len(seq_pool['unlinked']['Init_1']) > 0:
-		ME_dict['unlinked_2cF_ME'] = nonCFds_constructor(seq_pool['unlinked'])
-	elif len(seq_pool['unlinked']['Init_-1']) > 0:
-		ME_dict['scf_ME'] = scf_constructor(seq_pool['unlinked'])
+	if len(seq_pool['undetermined_faults']) + sum(map(lambda p: len(seq_pool['sf_seq'][p]), seq_pool['sf_seq'].keys())) + sum(map(lambda p: len(seq_pool['degenerated_seq'][p]), seq_pool['degenerated_seq'].keys())) > 0:
+		nonCFds_result = nonCFds_constructor(seq_pool['degenerated_seq'], seq_pool['undetermined_faults'], seq_pool['sf_seq'])
+	if len(nonCFds_result[1]) > 0:
+		scf_constructor(seq_pool['unlinked']['Init_-1'])
 
 	output(element_assigner(ME_dict['linked_ME'], ME_dict['unlinked_2cF_ME'], ME_dict['scf_ME']))

@@ -25,7 +25,7 @@ def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElemen
 
 	tail_cover_texts = set(map(lambda s: s.seq_text, tail_cover))
 	if len(tail_cover_texts) < 2:
-		return [next(iter(tail_cover_texts))], [next(iter(tail_cover_texts))]
+		return [next(iter(tail_cover_texts))], set()
 
 	# get priority of all possible couples of tail cover sequences
 	seq_text_couples = it.combinations(tail_cover_texts, 2)
@@ -55,32 +55,28 @@ def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElemen
 				location_offset = len(sorted_text_couple[0])
 				priority_winner = sorted_text_couple[0]
 
-		couple_priority.append([next(iter(filter(lambda s: s != priority_winner, text_couple))), priority_winner])
+		couple_priority.append((next(iter(filter(lambda s: s != priority_winner, text_couple))), priority_winner))
 
-	# get segments in each tail-cover MEs
-	tail_requirements = sorted(set(map(lambda p: p[-1], couple_priority)), key=lambda p: len(p))
-	filtered_tail_requirements = tail_requirements.copy()
+	# Remember adding the longest segment to the list. The longest is also the original, to avoid the sensitization order between the
+	# longest tail cover (and its inclusions) and the other sequences. While check to the inclusions is for solving the problem
+	# inside the tail cover set.
+	tails = set(map(lambda p: p[-1], couple_priority))
+	tails.add(max(tail_cover_texts, key=lambda t: len(t)))
 
-	for index in range(0, len(tail_requirements) - 1):
-		segment_under_check = tail_requirements[index]
-		adjacent_segment = tail_requirements[index + 1]
-		requirement = next(
-			iter(filter(lambda s: (segment_under_check in s) and (adjacent_segment in s), couple_priority)))
-		if tail_requirements[index] == requirement[0]:
-			filtered_tail_requirements.remove(tail_requirements[index])
-
-	return filtered_tail_requirements, tail_requirements
+	return sorted(tails, key=lambda r: len(r)), set(couple_priority)
 
 
-def construct_tail_cover_elements(target_tail_requirements, tail_requirements, sequence_pool):
-	if not isinstance(target_tail_requirements, list):
+def construct_tail_cover_elements(target_tails: list, tail_requirements: set, sequence_pool):
+	if not isinstance(target_tails, list):
 		return NO_ELEMENT
 	# for each sequence object in tail_cover, it should be regarded as a CFds, since it just violates the
 	# no-swap condition for CFds
 	tail_cover_mes = []
 	covered_tail_text = []
-	target_tail_requirements.reverse()
-	for tail_text in target_tail_requirements:
+	# reverse the list, build the longest segment first to avoid unnecessary MEs
+	# (only 1 ME if the longest segment covers the shorter segments)
+	target_tails.reverse()
+	for tail_text in target_tails:
 		# skip the target sequences that covered by MEs for longer target sequences
 		if tail_text in covered_tail_text:
 			continue
@@ -89,7 +85,7 @@ def construct_tail_cover_elements(target_tail_requirements, tail_requirements, s
 		# tail cover is for CFds
 		tail_cover_seq.detect_tag = False
 		tail_cover_vertex = CoverageVertex({'diff': -1, 'coverage': [tail_cover_seq]})
-		coverage_chain = tail_cover_vertex.get_march_sequence()
+		coverage_chain = tail_cover_vertex.get_march_segment()
 
 		# the terminal of tail-cover ME need to be decorated to match the original terminal states of the ME where
 		# tail-cover seq in. The initial state of the v-cell needs to be consistent with the original ME, since the AO is reversed.
@@ -108,43 +104,38 @@ def construct_tail_cover_elements(target_tail_requirements, tail_requirements, s
 				else:
 					me_text = coverage_chain[1:]
 
-		# consider the 2cF <1r1w0;0/1/->*<0w1r1w0;1/0/-> under tail-cover ME "down,r1,w0,w1,r1,w0". Assume that the target
+		# Case 1: Consider the 2cF <1r1w0;0/1/->*<0w1r1w0;1/0/-> under tail-cover ME "down,r1,w0,w1,r1,w0". Assume that the target
 		# sequence of this ME is 1r1w0, it should be sensitized at the end of the ME. However, the state decoration operations
 		# "r1,w0" at the beginning of the ME sensitizes the <1r1w0;0/1/-> at first, and causes <0w1r1w0;1/0/-> sensitize afterward.
 
-		# Consider another case: <1r1w0;0/1/->*<1w1r1w0;1/0/->, the tail-cover ME "down,r1,w1,r1,w0" is able to sensitize
+		# Case 2: <1r1w0;0/1/->*<1w1r1w0;1/0/->, the tail-cover ME "down,r1,w1,r1,w0" is able to sensitize
 		# the target sequence 1r1w0 independently, even though it is included in the sequence 1w1r1w0 (the initial state of
 		# 1w1r1w0 is wrong at the beginning). As a result, as long as the state of v-cell is not changed by other sequences
 		# before the target sequence, the target sequence can be sensitized normally, even though it is not independent
 		# and is included in a longer sequence (which cannot be sensitized first, because the initial state of v-cell only
 		# matches the target sequence at the beginning)
-		texts_under_check = list(filter(lambda t: len(t) < len(tail_text), target_tail_requirements))
-		me_under_check = me_text[1] + me_text
-		for text in texts_under_check:
-			# as long as the location of target sequence first appear is the end of the ME, the sequence can be sensitized
-			if me_under_check.find(tail_text) < me_under_check.find(text):
-				covered_tail_text.append(text)
 
-		# check if the me_text includes sequences that longer than the target sequence
-		max_range = max(map(lambda t: len(t), tail_requirements))
-		requirements_under_check = set(filter(lambda r: len(r) > len(tail_text), tail_requirements))
-		while True:
-			check_range = min(max_range, len(me_under_check))
-			segment_under_check = me_under_check[-check_range:]
-			if len(set(filter(lambda r: r in segment_under_check, requirements_under_check))) == 0:
+		# all priority couples that end with current tail text can be covered, including the case 1: shorter tail is sensitized earlier
+		# than current tail.
+		tail_requirements -= set(filter(lambda r: r[-1] == tail_text, tail_requirements))
+
+		# check the shorter tails, since longer tails cannot appear later than the current one. The shorter tails are
+		# sorted in descending order.
+		texts_under_check = sorted(filter(lambda t: len(t) < len(tail_text), target_tails), key=lambda tt: len(tt), reverse=True)
+		me_under_check = me_text[1] + me_text
+		# check if the shorter tails appear later than current tail in the current ME (can be covered as case 2). If a tail is found appears earlier than current
+		# tail, it means that the successive even shorter tails also cannot be covered by the ME (cannot be sensitized at the end of the ME),
+		# while need a new ME.
+		for text in texts_under_check:
+			if me_under_check.find(tail_text) < me_under_check.find(text):
+				requirement_coverage = set(filter(lambda r: r[-1] == text, tail_requirements))
+				tail_requirements -= requirement_coverage
+			else:
 				break
-			# if so, add the target sequence at the end of current me_text, check the inclusion repeatedly
-			match coverage_chain[0] + coverage_chain[-1]:
-				case '00' | '11':
-					me_text += coverage_chain[1:]
-				case '01':
-					me_text += 'w0' + coverage_chain[1:]
-				case '10':
-					me_text += 'w1' + coverage_chain[1:]
-				case _:
-					pass
 
 		tail_cover_mes.append(me_text)
+		if len(tail_requirements) == 0:
+			break
 
 	return tail_cover_mes
 
@@ -199,14 +190,14 @@ def build_single_sensitization_chain(chain: str, vertex_pool: set, covered_verte
 	vertex_candidates = sorted(vertex_pool, key=lambda v: v.diff)
 
 	for vertex_candidate in vertex_candidates:
-		candidate_segment = vertex_candidate.get_march_sequence()
+		candidate_segment = vertex_candidate.get_march_segment()
 		if vertex_candidate.diff < len(candidate_segment):
 			candidate_appendix = candidate_segment[-vertex_candidate.diff:]
 		else:
 			candidate_appendix = 'w' + candidate_segment
 
 		for covered_vertex in covered_vertex_pool:
-			segment_under_check = covered_vertex.get_march_sequence()
+			segment_under_check = covered_vertex.get_march_segment()
 			search_range = min(len(segment_under_check) - 2, len(chain))
 			chain_under_check = chain[-search_range:] + candidate_appendix
 			if segment_under_check in chain_under_check:
@@ -220,7 +211,7 @@ def build_single_sensitization_chain(chain: str, vertex_pool: set, covered_verte
 def check_vertices_covered_by_appendix(chain: str, appendix: str, vertex_pool: set):
 	covered_vertices = set()
 	for vertex in vertex_pool:
-		segment_under_check = vertex.get_march_sequence()
+		segment_under_check = vertex.get_march_segment()
 		search_range = min(len(segment_under_check) - 2, len(chain))
 		chain_under_check = chain[-search_range:] + appendix
 		if segment_under_check in chain_under_check:
@@ -283,7 +274,7 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 					odd_mes.append(coverage_chain[search_range:])
 					covered_vertex_pool.clear()
 					# initialize the coverage chain for next ME
-					max_range = max(set(map(lambda v: len(v.get_march_sequence()), vertex_candidate_pool))) - 2
+					max_range = max(set(map(lambda v: len(v.get_march_segment()), vertex_candidate_pool))) - 2
 					search_range = min(max_range, len(odd_mes[-1]))
 					coverage_chain = odd_mes[-1][-search_range:] + 'r' + odd_mes[-1][-1]
 
@@ -440,7 +431,7 @@ def construct_head_cover_element(odd_element, main_elements, head_cover):
 			candidate_tuple[0].diff = calculate_diff_value(head_cover_chain, candidate_tuple[0])
 			candidate_tuple[1].diff = calculate_diff_value(head_cover_chain, candidate_tuple[1])
 			candidate_winner = min(candidate_tuple, key=lambda v: v.diff)
-			segment = candidate_winner.get_march_sequence()
+			segment = candidate_winner.get_march_segment()
 			if candidate_winner.diff == len(segment):
 				head_cover_chain += 'w' + segment[0]
 			head_cover_chain += segment[-candidate_winner.diff:]
@@ -557,7 +548,7 @@ def linked_CFds_constructor(filtered_linked_seq_pool, original_linked_fault_pool
 	original_union_pool = get_linked_CFds_union(original_linked_seq_pool['Init_0'], original_linked_seq_pool['Init_1'])
 	ass_mes = construct_ass_elements(main_mes, main_coverage_chain, filtered_union_pool, original_union_pool)
 
-	return {'main_me': main_mes, 'ass_me': ass_mes}
+	return {'main_me': main_mes, 'main_me_middle_part': main_coverage_chain, 'ass_me': ass_mes}
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ class CoverageVertex:
 		self.diff = -1
 		self.__dict__.update(prop_dict)
 
-	def get_march_sequence(self):
+	def get_march_segment(self):
 		if len(self.__dict__['coverage']) > 1:
 			init_seq = self.__dict__['coverage'][0].seq_text[0]
 			for seq in self.__dict__['coverage']:
@@ -77,7 +77,7 @@ class LinkedMainElementsBuilder:
 		donor_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'donor', vertex_candidates))
 
 		def check_transition(vertex):
-			seq = vertex.get_march_sequence()
+			seq = vertex.get_march_segment()
 			return seq[0] == seq[-1]
 
 		# priority level 1: donor nest sequences get higher priority
@@ -148,9 +148,13 @@ def get_linked_CFds_union(init_0_pool, init_1_pool):
 	seq_union.update(init_1_pool)
 
 	for seq in init_0_pool:
-		find_result = find_identical_objs(seq, seq_union, {'ass_init'})
+		find_result = find_identical_objs(seq, seq_union, {'detect_tag', 'dr_tag', 'ass_init', 'nest_tag'})
 		if isinstance(find_result, type(DIFFERENT)):
 			seq_union.add(seq)
+		elif seq.detect_tag:
+			find_result.detect_tag |= seq.detect_tag
+			find_result.dr_tag |= seq.dr_tag
+			find_result.nest_tag = seq.nest_tag
 
 	for seq in seq_union:
 		seq.ass_init = -1
@@ -161,7 +165,7 @@ def get_linked_CFds_union(init_0_pool, init_1_pool):
 def define_vertices(sequence_pool: set):
 	vertex_pool = set()
 	for seq in sequence_pool:
-		vertex_dict = {'coverage': [copy.deepcopy(seq)], 'diff': -1}
+		vertex_dict = {'coverage': [seq], 'diff': -1}
 		vertex_pool.add(CoverageVertex(vertex_dict))
 
 	return vertex_pool
@@ -186,12 +190,12 @@ def find_nest_match(nest_vertex, vertex_pool):
 
 
 def check_vertices_covered_by_nest(nest_vertex, vertex_pool):
-	nest_text = nest_vertex.get_march_sequence()
+	nest_text = nest_vertex.get_march_segment()
 	nest_seq_text = set(map(lambda s: s.seq_text, nest_vertex.coverage))
 	redundant_vertices = set()
 	for v_obj in vertex_pool:
 		# sensitized and also detected, seen as covered
-		if v_obj.get_march_sequence() in nest_text:
+		if v_obj.get_march_segment() in nest_text:
 			redundant_vertices.add(v_obj)
 		# if just sensitized but not detected, the current nest sequence is not allowed
 		elif (v_obj.coverage[0].seq_text in nest_text[:-2]) and (v_obj.coverage[0].seq_text not in nest_seq_text):
@@ -201,7 +205,7 @@ def check_vertices_covered_by_nest(nest_vertex, vertex_pool):
 
 
 def calculate_diff_value(chain, vertex):
-	match_target = vertex.get_march_sequence()
+	match_target = vertex.get_march_segment()
 	# each operation appended to chain may cover a new sequence, search from appending 1 operation, and 2 and 3...
 	# find how many operations needed at least to cover the target sequence
 	search_range = min(len(chain), len(match_target[:-2]))
@@ -214,7 +218,7 @@ def calculate_diff_value(chain, vertex):
 
 def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_vertex_pool=None, last_winner=None, init='Init_-1'):
 	# a set records the covered vertices by this build process
-	covered_vertices = set()
+	covered_vertices = []
 	for v_obj in vertex_pool:
 		v_obj.diff = calculate_diff_value(chain, v_obj)
 
@@ -228,11 +232,11 @@ def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_verte
 		vertex_winner = next(iter(vertex_candidates))
 
 	# the winner is apparently covered, record it
-	covered_vertices.add(vertex_winner)
+	covered_vertices.append(vertex_winner)
 	vertex_for_chain = copy.deepcopy(vertex_winner)
 
 	if vertex_winner.coverage[0].nest_tag == 'donor':
-		chain_check_range = len(chain) - (len(vertex_winner.get_march_sequence()) - vertex_winner.diff) + 1
+		chain_check_range = len(chain) - (len(vertex_winner.get_march_segment()) - vertex_winner.diff) + 1
 
 		# if the operations before the current nest sequence is less than the longest sequence, it cannot be known
 		# if mis-sensitization sequences exist, since the former ME is not decided yet, as a result, not allowed nest
@@ -246,15 +250,15 @@ def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_verte
 				check_result = check_vertices_covered_by_nest(vertex_for_chain, vertex_pool)
 				if isinstance(check_result, set):
 					# if the receiver also exists in the pool, it is covered too
-					covered_vertices.add(receiver)
+					covered_vertices.append(receiver)
 					# the corresponding march sequence of vertex gets longer after merging, calculate diff value again
-					vertex_for_chain.diff += (len(receiver.get_march_sequence()) - 3)
-					covered_vertices.update(check_result)
+					vertex_for_chain.diff += (len(receiver.get_march_segment()) - 3)
+					covered_vertices.extend(list(check_result))
 				else:
 					# if there are sequences just sensitized but not detected, the nest sequence is not allowed
 					del vertex_for_chain.coverage[-1]
 
-	chain_segment = vertex_for_chain.get_march_sequence()
+	chain_segment = vertex_for_chain.get_march_segment()
 	if vertex_for_chain.diff < len(chain_segment):
 		chain_appendix = chain_segment[-vertex_for_chain.diff:]
 	else:
@@ -268,13 +272,13 @@ def construct_main_elements(vertex_pool: set):
 	covered_vertex_pool = set()
 	initial_vertex = LinkedMainElementsBuilder.get_vertex_winner(vertex_candidate_pool)
 	vertex_candidate_pool -= {initial_vertex}
-	coverage_chain = initial_vertex.get_march_sequence()
+	coverage_chain = initial_vertex.get_march_segment()
 
 	nest_check_range = max(map(lambda v: len(v.coverage[0].seq_text), vertex_pool))
 
 	while len(vertex_candidate_pool) > 0:
 		build_result = build_coverage_chain(coverage_chain, nest_check_range, vertex_candidate_pool, LinkedMainElementsBuilder)
-		vertex_candidate_pool -= build_result[0]
+		vertex_candidate_pool -= set(build_result[0])
 		covered_vertex_pool.update(build_result[0])
 		coverage_chain += build_result[1]
 

@@ -44,26 +44,37 @@ def March2Comp(fault_list, fault_model, fp):
 
 	# build MEs for linked CFds
 	print("***Building march elements...\n")
-	me_dict = {'linked_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
-		{'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'unlinked_2cF_ME':
+	me_dict = {'linked_CFds_ME': {'main_me': {'01_me': MarchElement(''), '10_me': MarchElement('')}, 'ass_me':
+		{'head_cover_me': MarchElement(''), 'tail_cover_me': MarchElement(''), 'odd_sensitization_me': MarchElement('')}}, 'nonCFds_ME':
 				   {'00_me': MarchElement(''), '11_me': MarchElement('')}, 'scf_ME': {MarchElement('')}}
+	scf_vertex_pool = set()
 
 	if len(sequence_pool['linked_CFds_seq']['Init_0']) + len(sequence_pool['linked_CFds_seq']['Init_1']) > 0:
-		print("Building linked CFds*CFds ME...")
-		me_dict['linked_ME'] = linked_CFds_constructor(sequence_pool['linked_CFds_seq'], classified_faults['2cF_CFds']['linked'])
+		print("Building linked CFds ME...")
+		main_construct_result = linked_CFds_constructor(sequence_pool['linked_CFds_seq'], classified_faults['2cF_CFds']['linked'])
+		me_dict['linked_CFds_ME'] = {'main_me': main_construct_result['main_me'], 'ass_me': main_construct_result['ass_me']}
+		# if main MEs exist, try to carry out inter ME filter to remove the faults/sequences covered by the main MEs
+		unlinked_sequence_pool = inter_ME_filter(me_dict['linked_CFds_ME']['main_me'], main_construct_result['main_me_middle_part'], sequence_pool['degenerated_seq'], sequence_pool['sf_seq'], sequence_pool['undetermined_faults'])
+		sequence_pool['degenerated_seq'] = unlinked_sequence_pool['degenerated_seq']
+		sequence_pool['sf_seq'] = unlinked_sequence_pool['sf_seq']
+		sequence_pool['undetermined_faults'] = unlinked_sequence_pool['undetermined_faults']
 
-	if len(sequence_pool['unlinked']['Init_0']) + len(sequence_pool['unlinked']['Init_1']) > 0:
-		print("Building unlinked 2cF ME...")
-		me_dict['unlinked_2cF_ME'] = nonCFds_constructor(sequence_pool['unlinked'])
+	degenerated_size = sum(map(lambda k: len(sequence_pool['degenerated_seq'][k]), sequence_pool['degenerated_seq'].keys()))
+	sf_size = sum(map(lambda k: len(sequence_pool['sf_seq'][k]), sequence_pool['sf_seq'].keys()))
+	if degenerated_size + len(sequence_pool['undetermined_faults']) + sf_size > 0:
+		print("Building nonCFds 2cF ME...")
+		nonCFds_construct_result = nonCFds_constructor(sequence_pool['degenerated_seq'], sequence_pool['undetermined_faults'], sequence_pool['sf_seq'])
+		me_dict['nonCFds_ME'] = nonCFds_construct_result[0]
+		scf_vertex_pool = nonCFds_construct_result[1]
 
-	if len(sequence_pool['unlinked']['Init_-1']) > 0:
+	if len(scf_vertex_pool) > 0:
 		print("Building SCF ME...")
-		me_dict['scf_ME'] = scf_constructor(sequence_pool['unlinked'])
+		me_dict['scf_ME'] = scf_constructor(scf_vertex_pool)
 
 	# print("All elements are built.\n")
 
 	print("\n***Implementing element rearrangement...\n")
-	march_element_list = element_assigner(me_dict['linked_ME'], me_dict['unlinked_2cF_ME'], me_dict['scf_ME'])
+	march_element_list = element_assigner(me_dict['linked_CFds_ME'], me_dict['nonCFds_ME'], me_dict['scf_ME'])
 	print("***March test are successfully generated:\n")
 
 	result = output(march_element_list)
