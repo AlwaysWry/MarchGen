@@ -21,7 +21,7 @@ def check_tail_cover(tail_decorated_element, sequence_pool):
 
 def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElement):
 	if not isinstance(tail_cover, set):
-		return NOT_FOUND
+		return NOT_FOUND, set()
 
 	tail_cover_texts = set(map(lambda s: s.seq_text, tail_cover))
 	if len(tail_cover_texts) < 2:
@@ -237,9 +237,9 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 				continue
 
 			violation_pool.clear()
-			# if an odd violation has been in tail-cover ME, it will be sensitized individually,
-			# so no need to add it in this ME
-			odd_case[0] -= tail_cover
+			# if an odd violation has been in tail-cover ME, it will be sensitized individually, so no need to add it in this ME
+			if isinstance(tail_cover, set):
+				odd_case[0] -= tail_cover
 
 			for seq_obj in odd_case[0]:
 				violation_seq = Sequence(seq_obj.__dict__.copy())
@@ -346,6 +346,8 @@ def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
 		return NOT_FOUND
 
 	for information in head_information:
+		if not isinstance(information['victim'], Sequence):
+			continue
 		victim_text = information['victim'].seq_text
 		if chain[information['expected_location'] + 1 - len(victim_text):information['expected_location'] + 1] == victim_text:
 			head_cover.append((information['seq'], information['victim']))
@@ -470,7 +472,7 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 			transition_me_text = 'r1w0'
 		case _:
 			transition_me_text = ''
-	if len(tail_cover_me_texts) > 1:
+	if (isinstance(tail_cover_me_texts, list)) and (len(tail_cover_me_texts) > 1):
 		for index in range(1, 2 * len(tail_cover_me_texts) - 1, 2):
 			tail_cover_me_texts.insert(index, transition_me_text)
 	tail_cover_mes = []

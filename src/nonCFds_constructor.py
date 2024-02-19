@@ -150,7 +150,7 @@ def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool,
 		target_vertex = build_result[0][0]
 
 		# skip the vertex only comes from undetermined seq pool after all undetermined faults are covered
-		if undetermined_finish_flag and target_vertex.coverage[0].undetermined_tag:
+		if undetermined_finish_flag and getattr(target_vertex.coverage[0], 'undetermined_tag', False):
 			degenerated_vertex_pool.remove(target_vertex)
 			continue
 
