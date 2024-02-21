@@ -2,7 +2,7 @@
 
   March2Comp is an automatic March test generator, aiming to generate March tests for 2-composite faults with arbitrary number of sensitization operations. It also integrates Sim2Comp, a fault simulator to check the fault coverage of a given March test under different 2-composite fault models.
     
-  File dictionary structure:
+  File directory structure:
 
   March2Comp
 <br>    ├── basic // basic modules, includes fault list parser, fault list generator, etc.
