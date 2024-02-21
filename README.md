@@ -34,7 +34,7 @@ Commands for using fault simulator independently:
 <br>    ```March2Comp sim <march test filename> <fault list filename>```
 
 ### Compile and run on Windows
-You can use your own compiler and python intepreter to compile and run March2Comp. What follows is an example using CMake and MinGW:
+You can use your own compiler and python interpreter to compile and run March2Comp. What follows is an example using CMake and MinGW:
 <br>    ```cmake -G "MinGW makefiles"```
 <br>    ```mingw32-make```
 
