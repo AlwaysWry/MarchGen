@@ -1,5 +1,5 @@
 # assign the obtained MEs and output them as standard format
-from nonCFds_constructor import *
+from nonCFds_builder import *
 
 
 def initial_based_assign(linked_me, sf_me, me_dict, precedent_list, element):

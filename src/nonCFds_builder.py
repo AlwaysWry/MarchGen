@@ -1,4 +1,4 @@
-from linked_CFds_ass_constructor import *
+from linked_CFds_ass_builder import *
 
 OVERLAP = True
 NO_OVERLAP = False
