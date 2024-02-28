@@ -54,7 +54,7 @@ def get_vertex_weight(fault_obj):
 
 
 def output_graph_file_QUICK_VC(vertices, edges):
-	filename = 'results/unlinked_2cF_graph.m2c'
+	filename = 'results/degenerated_2cF_graph.m2c'
 	with open(filename, 'w') as graph:
 		graph.write(str(len(edges)) + ' ' + str(len(vertices)) + '\n')
 		for vertex in vertices[:-1]:
@@ -73,7 +73,7 @@ def output_graph_file_QUICK_VC(vertices, edges):
 
 
 def output_graph_file_DYNWVC2(vertices, edges):
-	filename = 'results/unlinked_2cF_graph.m2c'
+	filename = 'results/degenerated_2cF_graph.m2c'
 	with open(filename, 'w') as graph:
 		graph.write('p edge ' + str(len(vertices)) + ' ' + str(len(edges)) + '\n')
 		for vertex in vertices:
@@ -369,7 +369,7 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 
 	if len(degenerate_2cF_pool) > 1:
 		vertices_map = []
-		print("Building unlinked 2cF graph...")
+		print("Building degenerated 2cF graph...")
 		graph_file = build_degenerate_2cF_graph(degenerate_2cF_pool, vertices_map)
 
 		if isinstance(graph_file, str):

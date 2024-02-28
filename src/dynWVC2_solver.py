@@ -17,4 +17,4 @@ def dynWVC2_solver(graph_file):
 
 if __name__ == '__main__':
 	os.chdir("../")
-	dynWVC2_solver('results/unlinked_2cF_graph.m2c')
+	dynWVC2_solver('results/degenerated_2cF_graph.m2c')

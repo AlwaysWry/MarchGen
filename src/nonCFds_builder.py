@@ -243,7 +243,7 @@ def construct_nonCFds_element(vertex_pool, vertex_aux_pool, sf_init_vertex_pool,
 		elif initial_vertex in sf_aux_vertex_pool:
 			sf_aux_vertex_pool.remove(initial_vertex)
 
-	# build from sf pool
+	# build from sf pool. No pre-built needed for SFs
 	while len(sf_init_vertex_pool) > 0:
 		build_result = build_coverage_chain(coverage_chain, -1, sf_init_vertex_pool, UnlinkedElementsBuilder, sf_aux_vertex_pool, target_vertex, init)
 		for vertex in build_result[0]:
@@ -321,37 +321,39 @@ def inter_ME_filter(main_elements, main_middle_part, degenerated_seq_pool, sf_se
 		fp2 = undetermined_2cF.comps['comp2']
 		sen_text_FP1 = fp1.aInit if fp1.CFdsFlag == 1 else fp1.vInit + undetermined_2cF.comps['comp1'].Sen
 		sen_text_FP2 = fp2.aInit if fp2.CFdsFlag == 1 else fp2.vInit + undetermined_2cF.comps['comp2'].Sen
-		check_result = {'FP1+FP2': sen_text_FP2 not in main_middle_part, 'FP2+FP1': sen_text_FP1 not in main_middle_part}
-		if (sen_text_FP1 in main_middle_part) or (sen_text_FP2 in main_middle_part):
-			# check the FP1+FP2 type overlapping
-			if sen_text_FP2[0] == sen_text_FP1[-1]:
-				undetermined_texts = [sen_text_FP2 + 'r' + sen_text_FP2[-1]]
-				# consider the nest sensitization cases. If the FP is a donor, the sensitization sequence in main MEs can be
-				# the nest style. Check them both.
-				if fp2.nestSenFlag == 'donor':
-					undetermined_texts.append(sen_text_FP2 + sen_text_FP2[1:] + 'r' + sen_text_FP2[-1])
-				for undetermined_text in undetermined_texts:
-					overlap_text = sen_text_FP1[:-1] + undetermined_text
-					temp_result = check_overlapping(overlap_text, undetermined_text)
-					check_result['FP1+FP2'] = temp_result
-					# the check finishes as long as any of the check result is NO_OVERLAP
-					if not temp_result:
-						break
-			# check the FP2+FP1 type overlapping
-			if sen_text_FP1[0] == sen_text_FP2[-1]:
-				undetermined_texts = [sen_text_FP1 + 'r' + sen_text_FP1[-1]]
-				if fp1.nestSenFlag == 'donor':
-					undetermined_texts.append(sen_text_FP1 + sen_text_FP1[1:] + 'r' + sen_text_FP1[-1])
-				for undetermined_text in undetermined_texts:
-					overlap_text = sen_text_FP2[:-1] + undetermined_text
-					temp_result = check_overlapping(overlap_text, undetermined_text)
-					check_result['FP2+FP1'] = temp_result
-					if not temp_result:
-						break
-			# if the initial and final states of FP1 and FP2 are not consistent, the overlapping cannot realize.
-			# The 2cF is redundant as long as one of the FPs is included in the main MEs' middle part.
-			if NO_OVERLAP in check_result.values():
-				undetermined_redundancy_pool.add(undetermined_2cF)
+		check_result = {'FP1+FP2': sen_text_FP2 + 'r' + sen_text_FP2[-1] not in main_middle_part, 'FP2+FP1': sen_text_FP1 + 'r' + sen_text_FP1[-1] not in main_middle_part}
+
+		# check the FP1+FP2 type overlapping
+		if (not check_result['FP1+FP2']) and (sen_text_FP2[0] == sen_text_FP1[-1]):
+			undetermined_texts = [sen_text_FP2 + 'r' + sen_text_FP2[-1]]
+			# consider the nest sensitization cases. If the FP is a donor, the sensitization sequence in main MEs can be
+			# the nest style. Check them both.
+			if fp2.nestSenFlag == 'donor':
+				undetermined_texts.append(sen_text_FP2 + sen_text_FP2[1:] + 'r' + sen_text_FP2[-1])
+			for undetermined_text in undetermined_texts:
+				overlap_text = sen_text_FP1[:-1] + undetermined_text
+				temp_result = check_overlapping(overlap_text, undetermined_text)
+				check_result['FP1+FP2'] = temp_result
+				# the check finishes as long as any of the check result is NO_OVERLAP
+				if not temp_result:
+					break
+
+		# check the FP2+FP1 type overlapping
+		if (not check_result['FP2+FP1']) and (sen_text_FP1[0] == sen_text_FP2[-1]):
+			undetermined_texts = [sen_text_FP1 + 'r' + sen_text_FP1[-1]]
+			if fp1.nestSenFlag == 'donor':
+				undetermined_texts.append(sen_text_FP1 + sen_text_FP1[1:] + 'r' + sen_text_FP1[-1])
+			for undetermined_text in undetermined_texts:
+				overlap_text = sen_text_FP2[:-1] + undetermined_text
+				temp_result = check_overlapping(overlap_text, undetermined_text)
+				check_result['FP2+FP1'] = temp_result
+				if not temp_result:
+					break
+
+		# if the initial and final states of FP1 and FP2 are not consistent, the overlapping cannot realize.
+		# The 2cF is redundant as long as one of the FPs is included in the main MEs' middle part.
+		if NO_OVERLAP in check_result.values():
+			undetermined_redundancy_pool.add(undetermined_2cF)
 
 	filter_result = {'degenerated_seq': {}, 'sf_seq': {}, 'undetermined_faults': {}}
 	for init_key in {'Init_0', 'Init_1', 'Init_-1'}:

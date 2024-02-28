@@ -121,7 +121,8 @@ def construct_tail_cover_elements(target_tails: list, tail_requirements: set, se
 
 		# check the shorter tails, since longer tails cannot appear later than the current one. The shorter tails are
 		# sorted in descending order.
-		texts_under_check = sorted(filter(lambda t: len(t) < len(tail_text), target_tails), key=lambda tt: len(tt), reverse=True)
+		texts_under_check = sorted(filter(lambda t: len(t) < len(tail_text), target_tails), key=lambda tt: len(tt),
+								   reverse=True)
 		me_under_check = me_text[1] + me_text
 		# check if the shorter tails appear later than current tail in the current ME (can be covered as case 2). If a tail is found appears earlier than current
 		# tail, it means that the successive even shorter tails also cannot be covered by the ME (cannot be sensitized at the end of the ME),
@@ -261,7 +262,8 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 
 			while len(vertex_candidate_pool) > 0:
 
-				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool, covered_vertex_pool)
+				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool,
+																covered_vertex_pool)
 				if len(build_result[0]) > 0:
 					# if there is sequence that satisfy the single-sensitization, append it normally
 					covered_vertices = build_result[0].union(
@@ -295,7 +297,7 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 
 
 def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
-	# check whether the head of the ME destroys the sensitization of the first nonCF of middle part. The head operation
+	# check whether the head of the ME destroys the sensitization of the first nonCF of middle part. The head operations
 	# "r1,w0" or "r0,w1" may introduce new mis-sensitization sequences (sequences that are just sensitized but not detected),
 	# which can result in the damage to the initial state of the following normal sequence in MP.
 	head_cover = []
@@ -514,11 +516,15 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 
 		ass_elements['odd_sensitization_me'] = odd_sensitization_mes[0]
 
+	# 20240228: no need for head-cover, since the main MEs have used the build method with protection head.
+	"""
 	# check and build the ME for head-cover
+	
 	head_cover = check_head_cover(main_elements, main_middle_part, filtered_sequence_pool)
 	head_cover_me = construct_head_cover_element(ass_elements['odd_sensitization_me'], main_elements, head_cover)
 	if isinstance(head_cover_me, MarchElement):
 		ass_elements['head_cover_me'] = head_cover_me
+	"""
 
 	return ass_elements
 

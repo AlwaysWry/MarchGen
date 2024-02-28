@@ -13,4 +13,4 @@ def quickVC_solver(graph_file):
 
 if __name__ == '__main__':
 	os.chdir("../")
-	quickVC_solver('results/unlinked_2cF_graph.m2c')
+	quickVC_solver('results/degenerated_2cF_graph.m2c')

@@ -101,9 +101,12 @@ class LinkedMainElementsBuilder:
 	def terminal_decorator(chain: str):
 		main_elements = {'01_me': MarchElement(''), '10_me': MarchElement('')}
 		terminal_feature = chain[0] + chain[-1]
+		head_text_01 = 'r0w'
+		head_text_10 = 'r1w'
+
 		match terminal_feature:
 			case '00':
-				main_elements['10_me'] = MarchElement('r1w' + chain)
+				main_elements['10_me'] = MarchElement(head_text_10 + chain)
 				main_elements['10_me'].head_tag = True
 				main_elements['01_me'] = MarchElement(chain[1:] + 'w1')
 				main_elements['01_me'].tail_tag = True
@@ -111,7 +114,7 @@ class LinkedMainElementsBuilder:
 					main_elements['01_me'].content = 'r' + chain[0] + main_elements['01_me'].content
 					main_elements['01_me'].update_states()
 			case '01':
-				main_elements['10_me'] = MarchElement('r1w' + chain + 'w0')
+				main_elements['10_me'] = MarchElement(head_text_10 + chain + 'w0')
 				main_elements['10_me'].head_tag = True
 				main_elements['10_me'].tail_tag = True
 				main_elements['01_me'] = MarchElement(chain[1:])
@@ -119,7 +122,7 @@ class LinkedMainElementsBuilder:
 					main_elements['01_me'].content = 'r' + chain[0] + main_elements['01_me'].content
 					main_elements['01_me'].update_states()
 			case '10':
-				main_elements['01_me'] = MarchElement('r0w' + chain + 'w1')
+				main_elements['01_me'] = MarchElement(head_text_01 + chain + 'w1')
 				main_elements['01_me'].head_tag = True
 				main_elements['01_me'].tail_tag = True
 				main_elements['10_me'] = MarchElement(chain[1:])
@@ -127,7 +130,7 @@ class LinkedMainElementsBuilder:
 					main_elements['10_me'].content = 'r' + chain[0] + main_elements['10_me'].content
 					main_elements['10_me'].update_states()
 			case '11':
-				main_elements['01_me'] = MarchElement('r0w' + chain)
+				main_elements['01_me'] = MarchElement(head_text_01 + chain)
 				main_elements['01_me'].head_tag = True
 				main_elements['10_me'] = MarchElement(chain[1:] + 'w0')
 				main_elements['10_me'].tail_tag = True
@@ -270,16 +273,25 @@ def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_verte
 def construct_main_elements(vertex_pool: set):
 	vertex_candidate_pool = copy.deepcopy(vertex_pool)
 	covered_vertex_pool = set()
+
+	# the diff-based search method with head protection. The chosen vertices are not allowed to be removed until the length
+	# of MP exceeds the length of the longest Sequence in the pool.
 	initial_vertex = LinkedMainElementsBuilder.get_vertex_winner(vertex_candidate_pool)
-	vertex_candidate_pool -= {initial_vertex}
+	# vertex_candidate_pool -= {initial_vertex}
 	coverage_chain = initial_vertex.get_march_segment()
 
-	nest_check_range = max(map(lambda v: len(v.coverage[0].seq_text), vertex_pool))
+	max_check_range = max(map(lambda v: len(v.coverage[0].seq_text), vertex_pool))
 
 	while len(vertex_candidate_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, nest_check_range, vertex_candidate_pool, LinkedMainElementsBuilder)
-		vertex_candidate_pool -= set(build_result[0])
-		covered_vertex_pool.update(build_result[0])
+		build_result = build_coverage_chain(coverage_chain, max_check_range, vertex_candidate_pool, LinkedMainElementsBuilder)
+		target_vertex = build_result[0][0]
+		chain_check_range = len(coverage_chain) - (len(target_vertex.get_march_segment()) - target_vertex.diff) + 1
+
+		# check the length of MP to decide if the vertices can be removed
+		if chain_check_range >= max_check_range:
+			vertex_candidate_pool -= set(build_result[0])
+			covered_vertex_pool.update(build_result[0])
+
 		coverage_chain += build_result[1]
 
 	return LinkedMainElementsBuilder.terminal_decorator(coverage_chain), coverage_chain
