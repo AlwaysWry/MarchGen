@@ -151,13 +151,15 @@ def get_linked_CFds_union(init_0_pool, init_1_pool):
 	seq_union.update(init_1_pool)
 
 	for seq in init_0_pool:
-		find_result = find_identical_objs(seq, seq_union, {'detect_tag', 'dr_tag', 'ass_init', 'nest_tag'})
+		find_result = find_identical_objs(seq, seq_union, {'detect_tag', 'dr_tag', 'ass_init', 'nest_tag', 'odd_sensitization_tag'})
 		if isinstance(find_result, type(DIFFERENT)):
 			seq_union.add(seq)
 		elif seq.detect_tag:
 			find_result.detect_tag |= seq.detect_tag
 			find_result.dr_tag |= seq.dr_tag
 			find_result.nest_tag = seq.nest_tag
+		else:
+			find_result.odd_sensitization_tag |= seq.odd_sensitization_tag
 
 	for seq in seq_union:
 		seq.ass_init = -1

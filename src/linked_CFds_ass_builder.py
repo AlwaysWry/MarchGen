@@ -491,8 +491,9 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 			tail_cover_mes[0].tied_element.extend(tail_cover_mes[1:])
 		ass_elements['tail_cover_me'] = tail_cover_mes[0]
 
-	# check and build the ME for odd sensitization violation
-	odd_violation = check_odd_sensitization(main_elements, original_sequence_pool)
+	# check and build the ME for odd sensitization violation. Filter those linked CFds*CFds faults whose odd_sensitization_tag is True
+	odd_violation_candidate_pool = set(filter(lambda ss: ss.odd_sensitization_tag, original_sequence_pool))
+	odd_violation = check_odd_sensitization(main_elements, odd_violation_candidate_pool)
 	construct_result = construct_odd_sensitization_elements(odd_violation, tail_cover)
 	odd_sensitization_me_texts = construct_result[0]
 	odd_sensitization_mes = []
@@ -547,11 +548,23 @@ def linked_CFds_constructor(filtered_linked_seq_pool, original_linked_fault_pool
 	# cannot make sure that a shorter sequence is only included once in longer sequence, so even the longer sequence is
 	# included odd times, it does not mean that included shorter sequences are also included odd times.
 	for linked_CFds in linked_CFds_pool:
+		# check the faults whose form is <S;x/F/R1>*<S;~x/~F/R2>. Only these faults are necessary to be checked for odd-sensitization
+		if ((linked_CFds.comps['comp1'].CFdsFlag == 1) and (linked_CFds.comps['comp2'].CFdsFlag == 1) and
+				(linked_CFds.comps['comp1'].aInit == linked_CFds.comps['comp2'].aInit) and (linked_CFds.comps['comp1'].Sen == linked_CFds.comps['comp2'].Sen)):
+			odd_sensitization_flag = True
+		else:
+			odd_sensitization_flag = False
+
 		for comp_obj in linked_CFds.comps.values():
 			fault_sequence = Sequence(get_sequence_properties(comp_obj))
+			setattr(fault_sequence, 'odd_sensitization_tag', odd_sensitization_flag)
 			init_key = 'Init_' + fault_sequence.ass_init
-			if isinstance(find_identical_objs(fault_sequence, original_linked_seq_pool[init_key], {}), type(DIFFERENT)):
+			find_result = find_identical_objs(fault_sequence, original_linked_seq_pool[init_key], {'odd_sensitization_tag'})
+			if isinstance(find_result, type(DIFFERENT)):
 				original_linked_seq_pool[init_key].add(copy.deepcopy(fault_sequence))
+			else:
+				# for the identical sequences, the odd sensitization tag should be merged
+				find_result.odd_sensitization_tag |= fault_sequence.odd_sensitization_tag
 
 	original_union_pool = get_linked_CFds_union(original_linked_seq_pool['Init_0'], original_linked_seq_pool['Init_1'])
 	ass_mes = construct_ass_elements(main_mes, main_coverage_chain, filtered_union_pool, original_union_pool)
