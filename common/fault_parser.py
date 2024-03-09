@@ -202,7 +202,7 @@ def get_fault_primitive(filename, modelname):
     try:
         fobj = open(filename, 'r')
     except OSError:
-        print("Open fault list file failed. Make sure the file path and name is correct.\n")
+        print("Open fault list file failed. Make sure the file path and name are correct.\n")
         return
 
     all_lines = fobj.readlines()

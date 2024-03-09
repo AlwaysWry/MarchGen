@@ -5,7 +5,7 @@
   File directory structure:
 
   March2Comp
-<br>    ├── basic // basic modules, includes fault list parser, fault list generator, etc.
+<br>    ├── common // basic modules, includes fault list parser, fault list generator, etc.
 <br>    ├── mwvc_solver // solver of minimum weight vertex coverage (MWVC) problem
 <br>    ├── resources // example fault lists and march tests
 <br>    ├── sim // fault simulator

@@ -18,11 +18,11 @@ def March2Comp(fault_list, fault_model, fp):
 
 	# parse the input fault list
 	parsed_faults = parse_fault_pool(fault_list, fault_model)
-	if len(parsed_faults) == 0:
-		print("Fault list is empty!\n")
+	if not isinstance(parsed_faults, list):
 		return
-	else:
-		pass
+	elif len(parsed_faults) == 0:
+		print("Fault list is empty! No March test is generated.\n")
+		return
 	# print("Fault list is successfully loaded.\n")
 	fp.write("Total fault number: %d\n" % len(parsed_faults))
 
@@ -51,19 +51,26 @@ def March2Comp(fault_list, fault_model, fp):
 
 	if len(sequence_pool['linked_CFds_seq']['Init_0']) + len(sequence_pool['linked_CFds_seq']['Init_1']) > 0:
 		print("Building linked CFds ME...")
-		main_construct_result = linked_CFds_constructor(sequence_pool['linked_CFds_seq'], classified_faults['2cF_CFds']['linked'])
-		me_dict['linked_CFds_ME'] = {'main_me': main_construct_result['main_me'], 'ass_me': main_construct_result['ass_me']}
+		main_construct_result = linked_CFds_constructor(sequence_pool['linked_CFds_seq'],
+														classified_faults['2cF_CFds']['linked'])
+		me_dict['linked_CFds_ME'] = {'main_me': main_construct_result['main_me'],
+									 'ass_me': main_construct_result['ass_me']}
 		# if main MEs exist, try to carry out inter ME filter to remove the faults/sequences covered by the main MEs
-		unlinked_sequence_pool = inter_ME_filter(me_dict['linked_CFds_ME']['main_me'], main_construct_result['main_me_middle_part'], sequence_pool['degenerated_seq'], sequence_pool['sf_seq'], sequence_pool['undetermined_faults'])
+		unlinked_sequence_pool = inter_ME_filter(me_dict['linked_CFds_ME']['main_me'],
+												 main_construct_result['main_me_middle_part'],
+												 sequence_pool['degenerated_seq'], sequence_pool['sf_seq'],
+												 sequence_pool['undetermined_faults'])
 		sequence_pool['degenerated_seq'] = unlinked_sequence_pool['degenerated_seq']
 		sequence_pool['sf_seq'] = unlinked_sequence_pool['sf_seq']
 		sequence_pool['undetermined_faults'] = unlinked_sequence_pool['undetermined_faults']
 
-	degenerated_size = sum(map(lambda k: len(sequence_pool['degenerated_seq'][k]), sequence_pool['degenerated_seq'].keys()))
+	degenerated_size = sum(
+		map(lambda k: len(sequence_pool['degenerated_seq'][k]), sequence_pool['degenerated_seq'].keys()))
 	sf_size = sum(map(lambda k: len(sequence_pool['sf_seq'][k]), sequence_pool['sf_seq'].keys()))
 	if degenerated_size + len(sequence_pool['undetermined_faults']) + sf_size > 0:
 		print("Building nonCFds 2cF ME...")
-		nonCFds_construct_result = nonCFds_constructor(sequence_pool['degenerated_seq'], sequence_pool['undetermined_faults'], sequence_pool['sf_seq'])
+		nonCFds_construct_result = nonCFds_constructor(sequence_pool['degenerated_seq'],
+													   sequence_pool['undetermined_faults'], sequence_pool['sf_seq'])
 		me_dict['nonCFds_ME'] = nonCFds_construct_result[0]
 		scf_vertex_pool = nonCFds_construct_result[1]
 
@@ -109,6 +116,9 @@ if __name__ == '__main__':
 		report.write("Fault list file: " + fault_list_file + "\n")
 
 		generation_result = March2Comp(fault_list_file, fault_model_name, report)
+		if generation_result is None:
+			sys.exit()
+
 		march_test = generation_result[0]
 
 		print("\n***Calculating fault coverage...\n")
@@ -183,7 +193,8 @@ if __name__ == '__main__':
 					table_2f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
 										  "%", ""))
 		report.write("|--------------------------------------------------------------------------------|\n")
-		report.write("*a 2-composite fault are regarded as detected only when it can be detected under all possible cell orders.\n")
+		report.write(
+			"*a 2-composite fault are regarded as detected only when it can be detected under all possible cell orders.\n")
 
 		if len(_2cF_3_undetected) > 0:
 			report.write("\nUndetected faults in 2cF_3 model:\n")

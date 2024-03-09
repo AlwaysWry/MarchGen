@@ -68,6 +68,8 @@ class TwoComposite:
 def parse_fault_pool(fault_pool, fault_model):
 	print("\n***Parsing fault list...\n")
 	fault_obj_list = get_fault_primitive(fault_pool, fault_model)
+	if not isinstance(fault_obj_list, list):
+		return
 	parsed_pool = []
 	fault_comps = TwoComposite()
 	for obj in fault_obj_list:
