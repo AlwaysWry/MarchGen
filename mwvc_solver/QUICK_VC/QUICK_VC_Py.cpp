@@ -307,7 +307,8 @@ int MWVC(int narg, char **arg) {
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 PYBIND11_MODULE(QUICK_VC_Py, m){
-	m.doc() = "QUICK_VC: an embedded MWVC solver";
+	m.doc() = "QUICK_VC: an embedded MWVC solver by Kenneth Langedal";
+    m.attr("doc") = "\n***QUICK_VC: an embedded MWVC solver***";
 	m.def("MWVC", [](std::vector<std::string> args){
 	std::vector<char*> arg_vec;
 	arg_vec.reserve(args.size());

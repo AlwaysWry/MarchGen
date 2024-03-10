@@ -7,7 +7,8 @@ import QUICK_VC_Py
 
 
 def quickVC_solver(graph_file):
-	arg_list = [graph_file, 'results/mwvclog', '10', '0', '0']
+	arg_list = [graph_file, 'results/mwvclog', '10', '0', '1']
+	print(QUICK_VC_Py.doc + '\n')
 	QUICK_VC_Py.MWVC(arg_list)
 
 
