@@ -11,8 +11,10 @@ ss_dyn = ps.get_fault_primitive("../resources/fault_lists/ss_dynamic", model_nam
 s_stat = ps.get_fault_primitive("../resources/fault_lists/simple_static", model_name)
 ss_stat = ps.get_fault_primitive("../resources/fault_lists/ss_static", model_name)
 s_3dyn = ps.get_fault_primitive("../resources/fault_lists/simple_3dynamic", model_name)
+s_4dyn = ps.get_fault_primitive("../resources/fault_lists/simple_4dynamic", model_name)
 ss_3dyn = ps.get_fault_primitive("../resources/fault_lists/ss_3dynamic", model_name)
 s_max2 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max2", model_name)
+s_max3 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max3", model_name)
 # test = ps.get_fault_primitive("test_fault_list")
 
 
@@ -32,7 +34,7 @@ def generate_combinations(fp_obj_list1, fp_obj_list2):
 
 def remove_unrealistic_tuples(full_combs):
     unrealistic_faults = []
-    remove_result = full_combs.copy()
+    removed_result = full_combs.copy()
 
     for fobj_tup_index, fobj_tup_item in enumerate(full_combs):
         if (fobj_tup_item[0][1] is not fobj_tup_item[0][2]) or (fobj_tup_item[1][1] is not fobj_tup_item[1][2]):
@@ -58,17 +60,18 @@ def remove_unrealistic_tuples(full_combs):
     print("\nRemoved %d unrealistic faults." % len(unrealistic_faults))
 
     for fobj_tup in unrealistic_faults:
-        remove_result.remove(fobj_tup)
+        removed_result.remove(fobj_tup)
 
-    return remove_result
+    return removed_result
 
 
 if __name__ == '__main__':
-    fp_combs_obj_list = generate_combinations(s_3dyn, s_max2)
+    fp_combs_obj_list = generate_combinations(s_4dyn, s_max3)
     realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
 
-    file = open("../resources/fault_lists/3_complete", 'w')
+    file = open("../resources/fault_lists/4_complete", 'w')
     for tup in realistic_faults:
         lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
         file.write(lf)
     print("fault list is generated.")
+    file.close()
