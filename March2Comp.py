@@ -29,6 +29,7 @@ def March2Comp(fault_list, fault_model, fp):
 	# classify
 	classified_faults = classify(parsed_faults)
 	# print("Classification finished.\n")
+	classification_time = time.time()
 
 	# filter 2cF pool
 	degeneration_result = filter_redundant_2cF(classified_faults['2cF_nonCFds_included'], classified_faults['2cF_CFds']['unlinked'])
@@ -36,11 +37,13 @@ def March2Comp(fault_list, fault_model, fp):
 	# filter SF pool
 	filtered_SFs = filter_redundant_SF(classified_faults['SF'], degeneration_result)
 	flat_SFs = flatten_sf_pool(filtered_SFs)
+	degeneration_time = time.time()
 
 	# create sequence objects
 	print("***Generating sensitization units...\n")
 	sequence_pool = create_sequence_pool(flat_SFs, degeneration_result, classified_faults['2cF_CFds']['linked'], classified_faults['2cF_nonCFds_included']['nonCFds_nonCFds'])
 	# print("Sensitization units are generated.\n")
+	bundle_create_time = time.time()
 
 	# build MEs for linked CFds
 	print("***Building march elements...\n")
@@ -86,6 +89,10 @@ def March2Comp(fault_list, fault_model, fp):
 
 	result = output(march_element_list)
 	end_time = time.time()
+
+	print("\nClassification spends %lf s." % (classification_time - start_time))
+	print("Degeneration spends %lf s." % (degeneration_time - start_time))
+	print("Total elapsed generation time is %lf s.\n" % (end_time - start_time))
 
 	fp.write("\nGenerated March test:\n")
 	for me in result:
