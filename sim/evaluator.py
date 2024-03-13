@@ -328,7 +328,6 @@ def eval_2comp(FP1, FP2, march, mode):
             else:
                 traverse_cell_order = cell_order[order_index]['up']
 
-            # logfile.write("  evaluating element \"%s\" under %s\n" % (element, str(traverse_cell_order)))
             eval_record[order_key][element] = []
             ops = element.split(',')
 
@@ -340,11 +339,9 @@ def eval_2comp(FP1, FP2, march, mode):
             elif apply_flag == DETECTED:
                 eval_flag.append('success')
                 eval_record[order_key][element].extend(['success', apply_result[1]])
-                # logfile.write("    current fault is detected.\n")
                 break
             else:
                 eval_record[order_key][element].extend(['fail', -1])
-                # logfile.write("    current fault is NOT detected.\n")
                 pass
 
     if eval_flag.count('success') == len(cell_order):

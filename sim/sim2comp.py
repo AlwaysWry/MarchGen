@@ -5,8 +5,8 @@ import copy
 import datetime
 import os
 import sys
+import multiprocessing as mp
 import concurrent.futures as cf
-from functools import partial
 
 sys.path.append("../")
 
@@ -20,18 +20,7 @@ import evaluator as ev
 
 
 def atomic_sim(sim_info):
-    # logfile.write("\n********\nDetecting fault %s:\n" % lf)
     return ev.eval_2comp(sim_info[0][1], sim_info[0][2], sim_info[1], ev.PROFOUND)
-    # sim_flag = result[0]
-    # if sim_flag == ev.ERROR:
-    #     return ev.ERROR
-    # elif sim_flag == ev.UNDETECTED:
-    #     return ev.UNDETECTED
-    #     # logfile.write("!!! %s is NOT detected !!!\n" % lf)
-    #     # undetected_fault.append(lf)
-    # else:
-    #     return ev.DETECTED
-    #     # logfile.write("%s is detected.\n" % lf)
 
 
 def sim2Comp(test_file, logs_file, fault_list, fault_model):
@@ -54,7 +43,9 @@ def sim2Comp(test_file, logs_file, fault_list, fault_model):
 
     # multi-processor program to accelerate simulation
     sim_info_list = [(f, march) for f in fobj_list]
-    with cf.ProcessPoolExecutor() as ppe:
+    max_thread_num = mp.cpu_count()
+
+    with cf.ProcessPoolExecutor(max_workers=max_thread_num) as ppe:
         eval_results = ppe.map(atomic_sim, sim_info_list)
 
     for fault_obj, eval_result in zip(fobj_list, eval_results):
