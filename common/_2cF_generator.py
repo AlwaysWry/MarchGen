@@ -4,17 +4,18 @@
 import fault_parser as ps
 import itertools as it
 
-model_name = '2cF_3'
+model_name_2cF3 = '2cF_3'
+model_name_2cF2aa = '2cF2aa'
 
-s_dyn = ps.get_fault_primitive("../resources/fault_lists/simple_dynamic", model_name)
-ss_dyn = ps.get_fault_primitive("../resources/fault_lists/ss_dynamic", model_name)
-s_stat = ps.get_fault_primitive("../resources/fault_lists/simple_static", model_name)
-ss_stat = ps.get_fault_primitive("../resources/fault_lists/ss_static", model_name)
-s_3dyn = ps.get_fault_primitive("../resources/fault_lists/simple_3dynamic", model_name)
-s_4dyn = ps.get_fault_primitive("../resources/fault_lists/simple_4dynamic", model_name)
-ss_3dyn = ps.get_fault_primitive("../resources/fault_lists/ss_3dynamic", model_name)
-s_max2 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max2", model_name)
-s_max3 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max3", model_name)
+s_dyn = ps.get_fault_primitive("../resources/fault_lists/simple_dynamic", model_name_2cF3)
+ss_dyn = ps.get_fault_primitive("../resources/fault_lists/ss_dynamic", model_name_2cF3)
+s_stat = ps.get_fault_primitive("../resources/fault_lists/simple_static", model_name_2cF3)
+ss_stat = ps.get_fault_primitive("../resources/fault_lists/ss_static", model_name_2cF3)
+s_3dyn = ps.get_fault_primitive("../resources/fault_lists/simple_3dynamic", model_name_2cF3)
+s_4dyn = ps.get_fault_primitive("../resources/fault_lists/simple_4dynamic", model_name_2cF3)
+ss_3dyn = ps.get_fault_primitive("../resources/fault_lists/ss_3dynamic", model_name_2cF3)
+s_max2 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max2", model_name_2cF3)
+s_max3 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max3", model_name_2cF3)
 # test = ps.get_fault_primitive("test_fault_list")
 
 
@@ -32,7 +33,7 @@ def generate_combinations(fp_obj_list1, fp_obj_list2):
     return full_combs
 
 
-def remove_unrealistic_tuples(full_combs):
+def remove_unrealistic_tuples(full_combs, modelname):
     unrealistic_faults = []
     removed_result = full_combs.copy()
 
@@ -42,7 +43,7 @@ def remove_unrealistic_tuples(full_combs):
             break
         else:
             seq_section = 2 * min(fobj_tup_item[0][1].SenOpsNum, fobj_tup_item[1][1].SenOpsNum)
-            # no CFds contained. proof see paper
+            # Cannot sensitize simultaneously if CFds contained. proof see paper [TCAD'12]
             if (fobj_tup_item[0][1].CFdsFlag == 1) or (fobj_tup_item[1][1].CFdsFlag == 1):
                 continue
             elif (fobj_tup_item[0][1].Sen[-2] != 'r') or (fobj_tup_item[1][1].Sen[-2] != 'r'):
@@ -53,9 +54,12 @@ def remove_unrealistic_tuples(full_combs):
             elif (fobj_tup_item[0][1].vFault == fobj_tup_item[1][1].vFault) and \
                     (fobj_tup_item[0][1].rdFlag == fobj_tup_item[1][1].rdFlag):
                 continue
+            # for 2cF2aa fault model, the <x1;y...rz/F/R>*<x2;y...rz/F/R> (x1 != x2) is realistic. See [TCAD'12]
+            elif (modelname == '2cF2aa') and (fobj_tup_item[0][1].aInit != fobj_tup_item[1][1].aInit):
+                continue
 
             unrealistic_faults.append((fobj_tup_item[0], fobj_tup_item[1]))
-            print("%s" % str((fobj_tup_item[0][0], fobj_tup_item[1][0])))
+            # print("%s" % str((fobj_tup_item[0][0], fobj_tup_item[1][0])))
 
     print("\nRemoved %d unrealistic faults." % len(unrealistic_faults))
 
@@ -67,11 +71,17 @@ def remove_unrealistic_tuples(full_combs):
 
 if __name__ == '__main__':
     fp_combs_obj_list = generate_combinations(s_4dyn, s_max3)
-    realistic_faults = remove_unrealistic_tuples(fp_combs_obj_list)
+    realistic_faults_2cF3 = remove_unrealistic_tuples(fp_combs_obj_list, model_name_2cF3)
+    realistic_faults_2cF2aa = remove_unrealistic_tuples(fp_combs_obj_list, model_name_2cF2aa)
 
-    file = open("../resources/fault_lists/4_complete", 'w')
-    for tup in realistic_faults:
-        lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
-        file.write(lf)
+    with open("../resources/fault_lists/2cF3/4_complete", 'w') as file:
+        for tup in realistic_faults_2cF3:
+            lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
+            file.write(lf)
+
+    with open("../resources/fault_lists/2cF2aa/4_complete", 'w') as file:
+        for tup in realistic_faults_2cF2aa:
+            lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
+            file.write(lf)
+
     print("fault list is generated.")
-    file.close()

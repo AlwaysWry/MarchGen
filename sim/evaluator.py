@@ -166,7 +166,7 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
         # clear op_seq_history at the beginning of a March element apply
         op_seq_history = ['', '']
 
-        for op in ops:
+        for op_index, op in enumerate(ops):
             # cell_state_temp is a copy of cell_state, it accepts the value updates during operations,
             # and update the final result to cell_state after an operation is applied.
             cell_state_temp = copy.deepcopy(cell_state)
@@ -202,14 +202,14 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                 # read operation case
                 elif 'r' in op:
                     if cell_state[visiting_cell] != op[1]:
-                        return DETECTED
+                        return DETECTED, op_index
                     else:
                         if op_snapshot[visiting_cell]['op_counter'] >= FP1.SenOpsNum:
                             op_seq = get_relevant_seq(FP1.SenOpsNum, op_snapshot, visiting_cell)
                             update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                                 visiting_cell, op_seq, op)
                             if update_flag[0] == DETECTED:
-                                return DETECTED
+                                return DETECTED, op_index
 
                         if FP2 is not FP1:
                             if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
@@ -217,7 +217,7 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                                 update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
                                                                     visiting_cell, op_seq, op)
                                 if update_flag[1] == DETECTED:
-                                    return DETECTED
+                                    return DETECTED, op_index
 
                         cell_state.update(cell_state_temp)
                         update_cell_snapshot(cell_snapshot, cell_state, visiting_cell, update_flag, FP1, FP2)
@@ -225,7 +225,7 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                 else:
                     print("Illegal March operation found, program is terminated.\n")
                     print("Please check the March test file.\n")
-                    return ERROR
+                    return ERROR,
 
             # v-cell case
             else:
@@ -264,14 +264,14 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                                                             visiting_cell, op_seq, op)
 
                         if update_flag[0] == DETECTED:
-                            return DETECTED
+                            return DETECTED, op_index
                         # special case for drd
                         elif (FP1.rdFlag == -1) and (update_flag[0] == UPDATED) and (op_seq_history[0] == FP1.Sen) \
                                 and (cell_state_temp[visiting_cell] != op[1]):
-                            return DETECTED
+                            return DETECTED, op_index
 
                     elif cell_state_temp[visiting_cell] != op[1]:
-                        return DETECTED
+                        return DETECTED, op_index
 
                     if FP2 is not FP1:
                         if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
@@ -280,14 +280,14 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                                                                 visiting_cell, op_seq, op)
 
                             if update_flag[1] == DETECTED:
-                                return DETECTED
+                                return DETECTED, op_index
                             # special case for drd
                             elif (FP2.rdFlag == -1) and (update_flag[1] == UPDATED) and (op_seq_history[1] == FP2.Sen) \
                                     and (cell_state_temp[visiting_cell] != op[1]):
-                                return DETECTED
+                                return DETECTED, op_index
 
                         elif cell_state_temp[visiting_cell] != op[1]:
-                            return DETECTED
+                            return DETECTED, op_index
 
                     cell_state.update(cell_state_temp)
                     update_cell_snapshot(cell_snapshot, cell_state, visiting_cell, update_flag, FP1, FP2)
@@ -295,13 +295,14 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                 else:
                     print("Illegal March operation found, program is terminated.\n")
                     print("Please check the March test file.\n")
-                    return ERROR
+                    return ERROR,
 
-    return APPLIED
+    return APPLIED,
 
 
-def eval_2comp(FP1, FP2, march, mode, logfile):
+def eval_2comp(FP1, FP2, march, mode):
     eval_flag = []
+    eval_record = dict()
     cell_order = init_cell_order(mode)
     cell_state = {}
     cell_snapshot = {}
@@ -316,6 +317,9 @@ def eval_2comp(FP1, FP2, march, mode, logfile):
         init_cell_snapshot(cell_snapshot, cell_state, FP1, FP2)
         init_operation_snapshot(op_snapshot)
 
+        order_key = str(cell_order[order_index]['up'])
+        eval_record[order_key] = dict()
+
         # traverse march elements
         for m, element in enumerate(march[1:]):
             # set cell traverse order
@@ -324,22 +328,26 @@ def eval_2comp(FP1, FP2, march, mode, logfile):
             else:
                 traverse_cell_order = cell_order[order_index]['up']
 
-            logfile.write("  evaluating element \"%s\" under %s\n" % (element, str(traverse_cell_order)))
+            # logfile.write("  evaluating element \"%s\" under %s\n" % (element, str(traverse_cell_order)))
+            eval_record[order_key][element] = []
             ops = element.split(',')
 
-            apply_result = apply_March_element(cell_state, cell_snapshot, op_snapshot,
-                                               traverse_cell_order, ops, FP1, FP2)
-            if apply_result == ERROR:
+            apply_result = apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_order, ops, FP1, FP2)
+            apply_flag = apply_result[0]
+
+            if apply_flag == ERROR:
                 return ERROR
-            elif apply_result == DETECTED:
+            elif apply_flag == DETECTED:
                 eval_flag.append('success')
-                logfile.write("    current fault is detected.\n")
+                eval_record[order_key][element].extend(['success', apply_result[1]])
+                # logfile.write("    current fault is detected.\n")
                 break
             else:
-                logfile.write("    current fault is NOT detected.\n")
+                eval_record[order_key][element].extend(['fail', -1])
+                # logfile.write("    current fault is NOT detected.\n")
                 pass
 
     if eval_flag.count('success') == len(cell_order):
-        return DETECTED
+        return DETECTED, eval_record
     else:
-        return UNDETECTED
+        return UNDETECTED, eval_record
