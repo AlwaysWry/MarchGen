@@ -4,6 +4,7 @@
 import datetime
 import os
 import sys
+import multiprocessing as mp
 sys.path.append("../")
 
 from common import fault_parser as ps
@@ -13,6 +14,21 @@ import evaluator as ev
 
 # fault_list_file = '../resources/fault_lists/' + '2_complete'
 # fault_model_name = '2cF_3'
+
+
+def atomic_sim(fobj, march):
+    # logfile.write("\n********\nDetecting fault %s:\n" % lf)
+    return ev.eval_2comp(fobj[1], fobj[2], march, ev.PROFOUND)
+    # sim_flag = result[0]
+    # if sim_flag == ev.ERROR:
+    #     return ev.ERROR
+    # elif sim_flag == ev.UNDETECTED:
+    #     return ev.UNDETECTED
+    #     # logfile.write("!!! %s is NOT detected !!!\n" % lf)
+    #     # undetected_fault.append(lf)
+    # else:
+    #     return ev.DETECTED
+    #     # logfile.write("%s is detected.\n" % lf)
 
 
 def sim2Comp(test_file, logs_file, fault_list, fault_model):
@@ -32,21 +48,34 @@ def sim2Comp(test_file, logs_file, fault_list, fault_model):
     print("Applying March test...")
 
     undetected_fault = []
-    for fobj in fobj_list:
-        lf = fobj[0]
-        FP1 = fobj[1]
-        FP2 = fobj[2]
 
-        logfile.write("\n********\nDetecting fault %s:\n" % lf)
-        eval_result = ev.eval_2comp(FP1, FP2, march, ev.PROFOUND, logfile)
-        if eval_result == ev.ERROR:
-            return ev.ERROR
-        elif eval_result == ev.UNDETECTED:
-            logfile.write("!!! %s is NOT detected !!!\n" % lf)
-            undetected_fault.append(lf)
-        else:
-            pass
-            logfile.write("%s is detected.\n" % lf)
+    # multi-processor program to accelerate simulation
+    thread_pool = mp.Pool()
+    eval_results = [thread_pool.apply_async(atomic_sim, args=(fault_obj, march.copy())).get() for fault_obj in fobj_list]
+    thread_pool.close()
+    thread_pool.join()
+
+    for fault_obj, eval_result in zip(fobj_list, eval_results):
+        logfile.write(f"\n********\nDetecting fault {fault_obj[0]}:\n")
+        eval_flag, eval_record = eval_result
+
+        for order_key in eval_record.keys():
+            for me_key in eval_record[order_key].keys():
+                logfile.write(f"  evaluating element \"{me_key}\" under {order_key}\n")
+                match eval_record[order_key][me_key][0]:
+                    case 'success':
+                        logfile.write(f"    current fault is detected at operation {eval_record[order_key][me_key][1]}.\n")
+                    case 'fail':
+                        logfile.write("    current fault is NOT detected.\n")
+
+        match eval_flag:
+            case ev.ERROR:
+                return ev.ERROR
+            case ev.UNDETECTED:
+                logfile.write(f"!!! {fault_obj[0]} is NOT detected !!!\n")
+                undetected_fault.append(fault_obj[0])
+            case ev.DETECTED:
+                logfile.write(f"{fault_obj[0]} is detected.\n")
 
     if len(undetected_fault) > 0:
         print("%d linked faults cannot be detected by this March sequence: " % (len(undetected_fault)))
