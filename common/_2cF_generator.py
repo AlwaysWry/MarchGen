@@ -5,7 +5,7 @@ import fault_parser as ps
 import itertools as it
 
 model_name_2cF3 = '2cF_3'
-model_name_2cF2aa = '2cF2aa'
+model_name_2cF2aa = '2cF_2aa'
 
 s_dyn = ps.get_fault_primitive("../resources/fault_lists/simple_dynamic", model_name_2cF3)
 ss_dyn = ps.get_fault_primitive("../resources/fault_lists/ss_dynamic", model_name_2cF3)
@@ -55,7 +55,8 @@ def remove_unrealistic_tuples(full_combs, modelname):
                     (fobj_tup_item[0][1].rdFlag == fobj_tup_item[1][1].rdFlag):
                 continue
             # for 2cF2aa fault model, the <x1;y...rz/F/R>*<x2;y...rz/F/R> (x1 != x2) is realistic. See [TCAD'12]
-            elif (modelname == '2cF2aa') and (fobj_tup_item[0][1].aInit != fobj_tup_item[1][1].aInit):
+            elif ((modelname == '2cF_2aa') and (fobj_tup_item[0][1].aInit != '-' != fobj_tup_item[1][1].aInit)
+                  and (fobj_tup_item[0][1].aInit != fobj_tup_item[1][1].aInit)):
                 continue
 
             unrealistic_faults.append((fobj_tup_item[0], fobj_tup_item[1]))
