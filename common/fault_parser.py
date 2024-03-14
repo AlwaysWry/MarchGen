@@ -97,6 +97,25 @@ def arbit_nest_sensitization(Sen, CFdsFlag):
         return NEST
 
 
+def arbit_unrealistic_faults(fault_props):
+    REALISTIC = False
+    UNREALISTIC = True
+    seq_section = 2 * min(fault_props[0]['SenOpsNum'], fault_props[1]['SenOpsNum'])
+    if (fault_props[0]['CFdsFlag'] == 1) or (fault_props[1]['CFdsFlag'] == 1):
+        return REALISTIC
+    elif (fault_props[0]['aCell'] == '-') or (fault_props[1]['aCell'] == '-'):
+        return REALISTIC
+    elif (fault_props[0]['Sen'][-2] != 'r') or (fault_props[1]['Sen'][-2] != 'r'):
+        return REALISTIC
+    elif ((fault_props[0]['Sen'][-seq_section:] != fault_props[1]['Sen'][-seq_section:]) or
+          (fault_props[0]['vInit'] != fault_props[1]['vInit'])):
+        return REALISTIC
+    elif (fault_props[0]['vFault'] == fault_props[1]['vFault']) and (fault_props[0]['rdFlag'] == fault_props[1]['rdFlag']):
+        return REALISTIC
+
+    return UNREALISTIC
+
+
 def get_fault_properties(fault_comps, model):
     fault_props = []
     for fp_index, fp in enumerate(fault_comps, 1):
@@ -231,6 +250,9 @@ def get_fault_primitive(filename, modelname):
         FP1.__dict__.update(fault_props[0])
         FP1.fp_text = '<' + fault_comps[0] + '>'
         if len(fault_props) > 1:
+            # this branch will not influence fault generator
+            if arbit_unrealistic_faults(fault_props) and (modelname == '2cF_3'):
+                continue
             FP2 = SimpleFault()
             FP2.__dict__.update(fault_props[1])
             FP2.fp_text = '<' + fault_comps[1] + '>'
