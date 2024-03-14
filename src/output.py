@@ -180,11 +180,17 @@ def element_assigner(linked_CFds_me, nonCFds_me, scf_me):
 
 	# only the CFds-detected ME, like main ME and odd-sensitization MEs, need to add a single read operation before the
 	# tail-cover ME
-	if ((len(precedent_list) > 0) and (precedent_list[-1] not in scf_me) and (precedent_list[-1] is not linked_CFds_me['ass_me']['head_cover_me'])
-			and (precedent_list[-1].transition_tag is False) and (assign_start_me.address_order != precedent_list[-1].address_order)):
-		address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
-		address_order_me.address_order = precedent_list[-1].address_order
-		precedent_list.append(address_order_me)
+	if (len(precedent_list) > 0) and (precedent_list[-1] not in scf_me) and (precedent_list[-1].transition_tag is False):
+		if assign_start_me.address_order != precedent_list[0].address_order:
+			try:
+				insert_location = list(map(lambda o: o.address_order, precedent_list)).index(assign_start_me.address_order)
+			except ValueError:
+				# if no 'down' ME in precedent list, it means that the assign_start_me is the only 1 tail-cover ME, append it
+				insert_location = -1
+
+			address_order_me = MarchElement('r' + precedent_list[-1].content[-1])
+			address_order_me.address_order = assign_start_me.address_order
+			precedent_list.insert(insert_location, address_order_me)
 
 	precedent_list += [assign_start_me]
 
