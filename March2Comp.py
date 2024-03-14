@@ -111,6 +111,9 @@ if __name__ == '__main__':
 	test_logs_file_2cF_2aa = 'results/testlog_2cF_2aa'
 	# fault_list_file = 'resources/fault_lists/' + '2_complete_with_novel'
 	fault_list_file = sys.argv[1]
+	fault_model_name = default_fault_model_name
+	if len(sys.argv) > 2:
+		fault_model_name = sys.argv[2]
 
 	with open("results/generation_report.txt", 'w') as report:
 		report.write("***********************************************************************************\n")
@@ -129,14 +132,18 @@ if __name__ == '__main__':
 		march_test = generation_result[0]
 
 		print("\n***Calculating fault coverage...\n")
+		if fault_model_name == '2cF_2aa':
+			print("**Coverage result under 2cF_2aa model:")
+			_2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file,
+														  '2cF_2aa')
+		else:
+			_2cF_2aa_coverage = -1
+			_2cF_2aa_undetected = tuple()
+
 		print("**Coverage result under 2cF_3 model:")
-		fault_model_name = '2cF_3'
 		_2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF3, fault_list_file,
-													  fault_model_name)
-		print("**Coverage result under 2cF_2aa model:")
-		fault_model_name = '2cF_2aa'
-		_2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file,
-														  fault_model_name)
+													  '2cF_3')
+
 
 		table_t = '|{:^80s}|\n'
 		table = '|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'
@@ -148,9 +155,11 @@ if __name__ == '__main__':
 		table_2f_2_f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.1f}{:<1s}{:^10s}|{:^10s}{:^.2f}{:<1s}{:^10s}|\n'
 		table_2f_1_2f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.2f}{:<1s}{:^10s}|{:^10s}{:^.2f}{:<1s}{:^10s}|\n'
 		table_3f_1_f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.3f}{:<1s}{:^10s}|{:^10s}{:^.1f}{:<1s}{:^10s}|\n'
-		table_3f_2_f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.1f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n'
+		table_3f_2_f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.1f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n' if fault_model_name == '2cF_2aa' else \
+			'|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.1f}{:<1s}{:^10s}|{:^12s}{:d}{:<1s}{:^11s}|\n'
 		table_3f_1_2f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.3f}{:<1s}{:^10s}|{:^10s}{:^.2f}{:<1s}{:^10s}|\n'
-		table_3f_2_2f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.2f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n'
+		table_3f_2_2f_1 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.2f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n' if fault_model_name == '2cF_2aa' else \
+			'|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.2f}{:<1s}{:^10s}|{:^12s}{:^d}{:<1s}{:^11s}|\n'
 		table_3f_1_3f_2 = '|{:^4s}{:^18s}{:^4s}|{:^10s}{:^.3f}{:<1s}{:^10s}|{:^10s}{:^.3f}{:<1s}{:^10s}|\n'
 
 		report.write("\n|--------------------------------------------------------------------------------|\n")
@@ -161,7 +170,7 @@ if __name__ == '__main__':
 		report.write(table_h3.format("", "Items", "", "", ""))
 		report.write("|--------------------------|--------------------------|--------------------------|\n")
 		report.write(table.format("", "undetected faults*", "", "", str(len(_2cF_3_undetected)), "", "",
-								  str(len(_2cF_2aa_undetected)), ""))
+								  str(len(_2cF_2aa_undetected)) if fault_model_name == '2cF_2aa' else '-', ""))
 		report.write("|--------------------------|--------------------------|--------------------------|\n")
 
 		if (_2cF_3_coverage >= 100) and (_2cF_2aa_coverage >= 100):
@@ -171,34 +180,34 @@ if __name__ == '__main__':
 		elif (_2cF_3_coverage < 100) and (_2cF_2aa_coverage < 100):
 			if (_2cF_3_coverage < 10) and (_2cF_2aa_coverage < 10):
 				report.write(table_3f_1_3f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
-													_2cF_2aa_coverage, "%", ""))
+													_2cF_2aa_coverage, "%" if fault_model_name == '2cF_2aa' else '', ""))
 			elif _2cF_3_coverage < 10:
 				report.write(table_3f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
-													_2cF_2aa_coverage, "%", ""))
+													_2cF_2aa_coverage, "%" if fault_model_name == '2cF_2aa' else '', ""))
 			elif _2cF_2aa_coverage < 10:
 				report.write(table_3f_2_2f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
-													_2cF_2aa_coverage, "%", ""))
+													_2cF_2aa_coverage, "%" if fault_model_name == '2cF_2aa' else '', ""))
 			else:
 				report.write(table_2f_1_2f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "",
-													_2cF_2aa_coverage, "%", ""))
+													_2cF_2aa_coverage, "%" if fault_model_name == '2cF_2aa' else '', ""))
 		elif _2cF_3_coverage < 100:
 			if _2cF_3_coverage < 10:
 				report.write(
 					table_3f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
-										  "%", ""))
+										  "%" if fault_model_name == '2cF_2aa' else '', ""))
 			else:
 				report.write(
 					table_2f_1_f_2.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
-										  "%", ""))
+										  "%" if fault_model_name == '2cF_2aa' else '', ""))
 		else:
 			if _2cF_2aa_coverage < 10:
 				report.write(
 					table_3f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
-										  "%", ""))
+										  "%" if fault_model_name == '2cF_2aa' else '', ""))
 			else:
 				report.write(
 					table_2f_2_f_1.format("", "fault coverage", "", "", _2cF_3_coverage, "%", "", "", _2cF_2aa_coverage,
-										  "%", ""))
+										  "%" if fault_model_name == '2cF_2aa' else '', ""))
 		report.write("|--------------------------------------------------------------------------------|\n")
 		report.write(
 			"*a 2-composite fault are regarded as detected only when it can be detected under all possible cell orders.\n")
@@ -214,9 +223,13 @@ if __name__ == '__main__':
 			report.write("\nUndetected faults in 2cF_2aa model:\n")
 			for undetected in _2cF_2aa_undetected:
 				report.write(undetected + '\n')
-		else:
+		elif fault_model_name == '2cF_2aa':
 			report.write("\nAll faults in 2cF_2aa model are detected.\n")
 
 		print("\n***Check elaborate information in \"results/generation_report.txt\".\n")
-		report.write("\nSee elaborate test logs in file \"results/testlog_2cF3\" and \"results/testlog_2cF_2aa\".\n")
+		if fault_model_name == '2cF_3':
+			report.write("\nSee elaborate test logs in file \"results/testlog_2cF3\".\n")
+		else:
+			report.write("\nSee elaborate test logs in file \"results/testlog_2cF3\" and \"results/testlog_2cF_2aa\".\n")
+
 		report.write("\n-----------------------------------------------------------------------------------\n")

@@ -39,7 +39,9 @@ You can use your own compiler and python interpreter to compile and run March2Co
 <br>    ```mingw32-make```
 
 Using March test generator:
-<br>    ```python March2Comp.py <fault list file>```
+<br>    ```python March2Comp.py <fault list file> [fault model name=2cF_3, 2cF_2aa]```
+<br>    fault model name is optional, default value is '2cF_2aa'.
+<br>    Under 2cF_3 model, unrealistic faults (but realistic under 2cF_2aa model) will be removed from the list first.
 
 Using fault simulator independently:
 <br>    ```python ./sim/sim2comp.py <march test filename> <fault list filename>```

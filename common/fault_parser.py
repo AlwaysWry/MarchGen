@@ -3,7 +3,7 @@ import re
 
 # unparsed fault list definitions
 fault_list_file = 'resources/fault_lists/' + '2_complete'
-fault_model_name = '2cF_3'
+default_fault_model_name = '2cF_2aa'
 
 NEST = True
 NOT_NEST = False
