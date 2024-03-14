@@ -20,12 +20,12 @@ case $1 in
 	fi
 ;;
 "gen")
-	if [ $# -ne 2 ];then
+	if [ $# -gt 3 || $# -lt 2 ];then
 		echo "Compilation command: March2Comp compile"
-		echo "March generation command: March2Comp gen <fault list filename>"
+		echo "March generation command: March2Comp gen <fault list filename> [fault model name=2cF_3, 2cF_2aa]"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
-		conda_toggle && python3 March2Comp.py $2
+		conda_toggle && python3 March2Comp.py $2 $3
 		cat ./results/generation_report.txt
 	fi
 ;;

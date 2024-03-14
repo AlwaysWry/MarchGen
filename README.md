@@ -28,7 +28,7 @@ Commands for compilation:
 <br>    ```March2Comp compile```
 
 Commands for using March test generator:
-<br>    ```March2Comp gen <fault list name>```
+<br>    ```March2Comp gen <fault list name> [fault model name=2cF_3, 2cF_2aa]```
 
 Commands for using fault simulator independently:
 <br>    ```March2Comp sim <march test filename> <fault list filename>```
@@ -39,7 +39,9 @@ You can use your own compiler and python interpreter to compile and run March2Co
 <br>    ```mingw32-make```
 
 Using March test generator:
-<br>    ```python March2Comp.py <fault list file>```
+<br>    ```python March2Comp.py <fault list file> [fault model name=2cF_3, 2cF_2aa]```
+<br>    Fault model name is optional, default value is '2cF_2aa'.
+<br>    Under 2cF_3 model, unrealistic faults (but realistic under 2cF_2aa model) will be removed from the list first.
 
 Using fault simulator independently:
 <br>    ```python ./sim/sim2comp.py <march test filename> <fault list filename>```

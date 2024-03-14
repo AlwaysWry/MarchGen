@@ -23,7 +23,7 @@ def atomic_sim(sim_info):
     return ev.eval_2comp(sim_info[0][1], sim_info[0][2], sim_info[1], ev.PROFOUND)
 
 
-def sim2Comp(test_file, logs_file, fault_list, fault_model):
+def sim2Comp(test_file, logs_file, fault_list, fault_model, fp=None):
     logfile = open(logs_file, 'w')
     # logfile = sys.stdout
 
@@ -35,6 +35,9 @@ def sim2Comp(test_file, logs_file, fault_list, fault_model):
     if len(fobj_list) == 0:
         print("\nEmpty or illegal fault list!\n")
         return ev.ERROR
+
+    if fp:
+        fp.write(f"Total {fault_model} fault number: %d\n" % len(fobj_list))
 
     print("Fault list is successfully loaded.")
     print("Applying March test...")
@@ -106,9 +109,9 @@ if __name__ == '__main__':
 
         print("\n***Calculating fault coverage...\n")
         print("**Coverage result under 2cF_3 model:")
-        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF3, fault_list_file, '2cF_3')
+        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF3, fault_list_file, '2cF_3', report)
         print("**Coverage result under 2cF_2aa model:")
-        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file, '2cF_2aa')
+        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file, '2cF_2aa', report)
 
         table_t = '|{:^80s}|\n'
         table = '|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'
