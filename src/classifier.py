@@ -196,4 +196,4 @@ def classify(unclassified_fault_pool):
 
 if __name__ == '__main__':
 	os.chdir("../")
-	classify_result = classify(parse_fault_pool(fault_list_file, fault_model_name))
+	classify_result = classify(parse_fault_pool(fault_list_file, default_fault_model_name))
