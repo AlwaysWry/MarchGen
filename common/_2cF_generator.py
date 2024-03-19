@@ -51,6 +51,8 @@ def remove_unrealistic_tuples(full_combs, modelname):
             elif (fobj_tup_item[0][1].Sen[-seq_section:] != fobj_tup_item[1][1].Sen[-seq_section:]) \
                     or (fobj_tup_item[0][1].vInit != fobj_tup_item[1][1].vInit):
                 continue
+            # if the faulty value and the read-out value of the 2 FPs are identical, the simultaneous sensitization will not
+            # cause uncertain state on v-cell, which means that the 2cF is realistic
             elif (fobj_tup_item[0][1].vFault == fobj_tup_item[1][1].vFault) and \
                     (fobj_tup_item[0][1].rdFlag == fobj_tup_item[1][1].rdFlag):
                 continue
@@ -75,12 +77,12 @@ if __name__ == '__main__':
     realistic_faults_2cF3 = remove_unrealistic_tuples(fp_combs_obj_list, model_name_2cF3)
     realistic_faults_2cF2aa = remove_unrealistic_tuples(fp_combs_obj_list, model_name_2cF2aa)
 
-    with open("../resources/fault_lists/2cF3/4_complete", 'w') as file:
+    with open("../resources/fault_lists/2cF3/universal_#O_4", 'w') as file:
         for tup in realistic_faults_2cF3:
             lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
             file.write(lf)
 
-    with open("../resources/fault_lists/2cF2aa/4_complete", 'w') as file:
+    with open("../resources/fault_lists/2cF2aa/universal_#O_4", 'w') as file:
         for tup in realistic_faults_2cF2aa:
             lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
             file.write(lf)

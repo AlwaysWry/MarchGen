@@ -2,7 +2,7 @@
 import re
 
 # unparsed fault list definitions
-fault_list_file = 'resources/fault_lists/' + '2_complete'
+fault_list_file = 'resources/fault_lists/' + 'universal_#O_2'
 default_fault_model_name = '2cF_2aa'
 
 NEST = True
