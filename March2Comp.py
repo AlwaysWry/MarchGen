@@ -43,7 +43,6 @@ def March2Comp(fault_list, fault_model, fp):
 	print("***Generating sensitization units...\n")
 	sequence_pool = create_sequence_pool(flat_SFs, degeneration_result, classified_faults['2cF_CFds']['linked'], classified_faults['2cF_nonCFds_included']['nonCFds_nonCFds'])
 	# print("Sensitization units are generated.\n")
-	bundle_create_time = time.time()
 
 	# build MEs for linked CFds
 	print("***Building march elements...\n")
@@ -69,7 +68,8 @@ def March2Comp(fault_list, fault_model, fp):
 
 	degenerated_size = sum(
 		map(lambda k: len(sequence_pool['degenerated_seq'][k]), sequence_pool['degenerated_seq'].keys()))
-	sf_size = sum(map(lambda k: len(sequence_pool['sf_seq'][k]), sequence_pool['sf_seq'].keys()))
+	sf_size = len(sequence_pool['sf_seq']['Init_0']) + len(sequence_pool['sf_seq']['Init_1'])
+	scf_size = len(sequence_pool['sf_seq']['Init_-1'])
 	if degenerated_size + len(sequence_pool['undetermined_faults']) + sf_size > 0:
 		print("Building nonCFds 2cF ME...")
 		nonCFds_construct_result = nonCFds_constructor(sequence_pool['degenerated_seq'],
@@ -77,8 +77,12 @@ def March2Comp(fault_list, fault_model, fp):
 		me_dict['nonCFds_ME'] = nonCFds_construct_result[0]
 		scf_vertex_pool = nonCFds_construct_result[1]
 
-	if len(scf_vertex_pool) > 0:
+		if len(scf_vertex_pool) > 0:
+			print("Building SCF ME...")
+			me_dict['scf_ME'] = scf_constructor(scf_vertex_pool)
+	elif scf_size > 0:
 		print("Building SCF ME...")
+		scf_vertex_pool = define_vertices(sequence_pool['sf_seq']['Init_-1'])
 		me_dict['scf_ME'] = scf_constructor(scf_vertex_pool)
 
 	# print("All elements are built.\n")
