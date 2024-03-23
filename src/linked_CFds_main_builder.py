@@ -243,9 +243,10 @@ def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_verte
 	if vertex_winner.coverage[0].nest_tag == 'donor':
 		chain_check_range = len(chain) - (len(vertex_winner.get_march_segment()) - vertex_winner.diff) + 1
 
-		# if the operations before the current nest sequence is less than the longest sequence, it cannot be known
+		# "if the operations before the current nest sequence is less than the longest sequence, it cannot be known
 		# if mis-sensitization sequences exist, since the former ME is not decided yet, as a result, not allowed nest
-		# sequence in this case
+		# sequence in this case" The restriction can be removed because of the head-protection technique, but it is still
+		# preserved to prevent the long nest sequence from being added in the head-protection part.
 		if chain_check_range >= seq_check_range:
 			receiver = find_nest_match(vertex_winner, vertex_pool)
 			if isinstance(receiver, CoverageVertex):
