@@ -241,27 +241,28 @@ def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_verte
 	vertex_for_chain = copy.deepcopy(vertex_winner)
 
 	if vertex_winner.coverage[0].nest_tag == 'donor':
-		chain_check_range = len(chain) - (len(vertex_winner.get_march_segment()) - vertex_winner.diff) + 1
+		# chain_check_range = len(chain) - (len(vertex_winner.get_march_segment()) - vertex_winner.diff) + 1
 
 		# if the operations before the current nest sequence is less than the longest sequence, it cannot be known
 		# if mis-sensitization sequences exist, since the former ME is not decided yet, as a result, not allowed nest
 		# sequence in this case
-		if chain_check_range >= seq_check_range:
-			receiver = find_nest_match(vertex_winner, vertex_pool)
-			if isinstance(receiver, CoverageVertex):
-				# merge the donor and the receiver vertices
-				vertex_for_chain.coverage.extend(copy.deepcopy(receiver.coverage))
-				# check if there are other vertices covered by the current nest chain segment
-				check_result = check_vertices_covered_by_nest(vertex_for_chain, vertex_pool)
-				if isinstance(check_result, set):
-					# if the receiver also exists in the pool, it is covered too
-					covered_vertices.append(receiver)
-					# the corresponding march sequence of vertex gets longer after merging, calculate diff value again
-					vertex_for_chain.diff += (len(receiver.get_march_segment()) - 3)
-					covered_vertices.extend(list(check_result))
-				else:
-					# if there are sequences just sensitized but not detected, the nest sequence is not allowed
-					del vertex_for_chain.coverage[-1]
+
+		# the nest restriction has been removed because of the head-protection technique of the main MEs
+		receiver = find_nest_match(vertex_winner, vertex_pool)
+		if isinstance(receiver, CoverageVertex):
+			# merge the donor and the receiver vertices
+			vertex_for_chain.coverage.extend(copy.deepcopy(receiver.coverage))
+			# check if there are other vertices covered by the current nest chain segment
+			check_result = check_vertices_covered_by_nest(vertex_for_chain, vertex_pool)
+			if isinstance(check_result, set):
+				# if the receiver also exists in the pool, it is covered too
+				covered_vertices.append(receiver)
+				# the corresponding march sequence of vertex gets longer after merging, calculate diff value again
+				vertex_for_chain.diff += (len(receiver.get_march_segment()) - 3)
+				covered_vertices.extend(list(check_result))
+			else:
+				# if there are sequences just sensitized but not detected, the nest sequence is not allowed
+				del vertex_for_chain.coverage[-1]
 
 	chain_segment = vertex_for_chain.get_march_segment()
 	if vertex_for_chain.diff < len(chain_segment):
