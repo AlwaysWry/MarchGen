@@ -157,10 +157,8 @@ def check_odd_sensitization(main_elements, sequence_pool: set):
 				if (index > 0) and (search_range > 3):
 					search_scope = element_list[index - 1][-search_range + 2:-1] + search_scope
 
-				for location in range(0, len(search_scope[:-search_range + 1]), 2):
-					segment = search_scope[location:location + search_range]
-					if segment == seq_obj.seq_text:
-						count_dict[seq_obj.seq_text] += 1
+				search_pattern = re.compile(f'(?={re.escape(seq_obj.seq_text)})')
+				count_dict[seq_obj.seq_text] = len(re.findall(search_pattern, search_scope))
 
 			even_pool = set(filter(lambda k: count_dict[k] % 2 == 0, count_dict.keys()))
 
@@ -197,25 +195,25 @@ def build_single_sensitization_chain(chain: str, vertex_pool: set, covered_verte
 		else:
 			candidate_appendix = 'w' + candidate_segment
 
-		for covered_vertex in covered_vertex_pool:
-			segment_under_check = covered_vertex.get_march_segment()
-			search_range = min(len(segment_under_check) - 2, len(chain))
-			chain_under_check = chain[-search_range:] + candidate_appendix
-			if segment_under_check in chain_under_check:
-				break
+		check_result = check_vertices_covered_by_appendix(chain, candidate_appendix, covered_vertex_pool)
+		# if the check result is less than the covered vertices, it means that at least 1 vertex is sensitized more than once
+		# because of the appendix
+		if len(check_result) < len(covered_vertex_pool):
+			continue
 		else:
 			return {vertex_candidate}, candidate_appendix
-	else:
-		return {}, ''
+
+	return {}, ''
 
 
 def check_vertices_covered_by_appendix(chain: str, appendix: str, vertex_pool: set):
 	covered_vertices = set()
 	for vertex in vertex_pool:
 		segment_under_check = vertex.get_march_segment()
-		search_range = min(len(segment_under_check) - 2, len(chain))
-		chain_under_check = chain[-search_range:] + appendix
-		if segment_under_check in chain_under_check:
+		chain_under_check = chain + appendix
+		# check the single appearance in the whole chain, avoid corner cases
+		check_pattern = re.compile(f'(?={re.escape(segment_under_check)})')
+		if len(re.findall(check_pattern, chain_under_check)) == 1:
 			covered_vertices.add(vertex)
 
 	return covered_vertices
@@ -255,17 +253,20 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 			search_range = min(max_range, len(odd_case[1]))
 			coverage_chain = odd_case[1][-search_range:] + 'r' + odd_case[1][-1]
 
-			# the initial coverage chain may also cover a sequence
-			initial_vertex = set(filter(lambda v: v.coverage[0].seq_text in coverage_chain, vertex_candidate_pool))
-			vertex_candidate_pool -= initial_vertex
-			covered_vertex_pool.update(initial_vertex)
+			# the initial coverage chain may also cover a sequence. When the odd-sensitization ME is applied on a-cell,
+			# the operation history of the last ME is still available on a-cell, and the operation combination may cover
+			# a sequence.
+			initial_vertices = check_vertices_covered_by_appendix(coverage_chain, '', vertex_candidate_pool)
+			vertex_candidate_pool -= initial_vertices
+			covered_vertex_pool.update(initial_vertices)
 
 			while len(vertex_candidate_pool) > 0:
 
 				build_result = build_single_sensitization_chain(coverage_chain, vertex_candidate_pool,
 																covered_vertex_pool)
 				if len(build_result[0]) > 0:
-					# if there is sequence that satisfy the single-sensitization, append it normally
+					# if there is sequences (including the chosen vertex and other vertices that are covered by the appendix)
+					# that satisfy the single-sensitization, append it normally
 					covered_vertices = build_result[0].union(
 						check_vertices_covered_by_appendix(coverage_chain, build_result[1], vertex_candidate_pool))
 					covered_vertex_pool.update(covered_vertices)
@@ -280,10 +281,9 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 					search_range = min(max_range, len(odd_mes[-1]))
 					coverage_chain = odd_mes[-1][-search_range:] + 'r' + odd_mes[-1][-1]
 
-					initial_vertex = set(
-						filter(lambda v: v.coverage[0].seq_text in coverage_chain, vertex_candidate_pool))
-					vertex_candidate_pool -= initial_vertex
-					covered_vertex_pool.update(initial_vertex)
+					initial_vertices = check_vertices_covered_by_appendix(coverage_chain, '', vertex_candidate_pool)
+					vertex_candidate_pool -= initial_vertices
+					covered_vertex_pool.update(initial_vertices)
 
 			odd_mes.append(coverage_chain[search_range:])
 
