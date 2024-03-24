@@ -195,10 +195,13 @@ def build_single_sensitization_chain(chain: str, vertex_pool: set, covered_verte
 		else:
 			candidate_appendix = 'w' + candidate_segment
 
-		check_result = check_vertices_covered_by_appendix(chain, candidate_appendix, covered_vertex_pool)
+		# all covered vertices and the current candidate need to be checked, since other vertices may include the
+		# candidate more than once before the candidate is considered
+		check_target = covered_vertex_pool.union({vertex_candidate})
+		check_result = check_vertices_covered_by_appendix(chain, candidate_appendix, check_target)
 		# if the check result is less than the covered vertices, it means that at least 1 vertex is sensitized more than once
 		# because of the appendix
-		if len(check_result) < len(covered_vertex_pool):
+		if len(check_result) < len(check_target):
 			continue
 		else:
 			return {vertex_candidate}, candidate_appendix
