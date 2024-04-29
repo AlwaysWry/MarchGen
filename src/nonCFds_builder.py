@@ -5,6 +5,9 @@ NO_OVERLAP = False
 
 
 class UnlinkedElementsBuilder:
+	# since unlinked MEs are unnecessary to apply head protection, the range is set as -1
+	head_protection_range = -1
+
 	@staticmethod
 	def get_vertex_winner(vertex_candidates: set, aux_pool: set, last_winner: CoverageVertex, init: str):
 
@@ -40,41 +43,54 @@ class UnlinkedElementsBuilder:
 			priority_pool = set(filter(lambda v: check_states(v) == priority_feature, upper_pool))
 			aux_priority_pool = aux_pool_dict[priority_feature]
 
-			if len(priority_pool) == 0 and len(aux_priority_pool) == 0:
+			if (len(priority_pool) == 0) and (len(aux_priority_pool) == 0):
 				priority_pool = upper_pool - priority_pool
 				return priority_pool
 			elif len(priority_pool) == 0:
 				priority_pool.update(aux_priority_pool)
-				return next(iter(priority_pool))
+				# check the coverage of the nonCFds*nonCFds faults, choose the vertex that covers most faults
+				final_result = coverage_priority_filter(priority_pool)
+				if isinstance(final_result, CoverageVertex):
+					return final_result
+				else:
+					return next(iter(final_result), CoverageVertex({'coverage': [], 'diff': -1}))
 			else:
-				return next(iter(priority_pool))
+				final_result = coverage_priority_filter(priority_pool)
+				if isinstance(final_result, CoverageVertex):
+					return final_result
+				else:
+					return next(iter(final_result), CoverageVertex({'coverage': [], 'diff': -1}))
 
-		# check the coverage of the nonCFds*nonCFds faults first, choose the vertex that covers most faults first
-		primary_result = coverage_priority_filter(vertex_candidates)
-		if isinstance(primary_result, CoverageVertex):
-			return primary_result
-
-		# the initial state-based priority
+		# the initial state-based priority. use state-based priority first, for multiple vertices with the same states,
+		# use coverage priority for covering more nonCFds*nonCFds faults
 		feature_dict = {'Init_0': ['01', '11', '00', '10'], 'Init_1': ['10', '00', '11', '01']}
 		feature_list = feature_dict[init]
 
 		state_history = check_states(last_winner)
 		if (state_history == feature_list[0]) or (state_history == feature_list[1]):
-			secondary_result = state_priority_filter(primary_result, feature_list[1])
+			primary_result = state_priority_filter(vertex_candidates, feature_list[1])
+			if isinstance(primary_result, CoverageVertex):
+				return primary_result
+
+			secondary_result = state_priority_filter(primary_result, feature_list[3])
 			if isinstance(secondary_result, CoverageVertex):
 				return secondary_result
 
-			tertiary_result = state_priority_filter(secondary_result, feature_list[3])
+			tertiary_result = state_priority_filter(secondary_result, feature_list[2])
 			if isinstance(tertiary_result, CoverageVertex):
 				return tertiary_result
 
-			return next(iter(tertiary_result))
+			return next(iter(tertiary_result), CoverageVertex({'coverage': [], 'diff': -1}))
 		else:
-			secondary_result = state_priority_filter(primary_result, feature_list[2])
+			primary_result = state_priority_filter(vertex_candidates, feature_list[2])
+			if isinstance(primary_result, CoverageVertex):
+				return primary_result
+
+			secondary_result = state_priority_filter(primary_result, feature_list[0])
 			if isinstance(secondary_result, CoverageVertex):
 				return secondary_result
 
-			tertiary_result = state_priority_filter(secondary_result, feature_list[0])
+			tertiary_result = state_priority_filter(secondary_result, feature_list[1])
 			if isinstance(tertiary_result, CoverageVertex):
 				return tertiary_result
 
@@ -128,8 +144,10 @@ class UnlinkedElementsBuilder:
 # end of UnlinkedElementsBuilder definition
 
 
-def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool, degenerated_aux_vertex_pool, undetermined_fault_pool, determined_vertices, init):
-	initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(degenerated_vertex_pool, degenerated_aux_vertex_pool, CoverageVertex({'coverage': [], 'diff': -1}), init)
+def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool, degenerated_aux_vertex_pool,
+								  undetermined_fault_pool, determined_vertices, init):
+	initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(degenerated_vertex_pool, degenerated_aux_vertex_pool,
+															   CoverageVertex({'coverage': [], 'diff': -1}), init)
 	target_vertex = initial_vertex
 
 	def get_undetermined_adjacency(vertex_obj):
@@ -146,7 +164,8 @@ def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool,
 	undetermined_finish_flag = False
 
 	while len(degenerated_vertex_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, -1, degenerated_vertex_pool, UnlinkedElementsBuilder, degenerated_aux_vertex_pool, initial_vertex, init)
+		build_result = build_coverage_chain(coverage_chain, UnlinkedElementsBuilder.head_protection_range, degenerated_vertex_pool, UnlinkedElementsBuilder,
+											degenerated_aux_vertex_pool, target_vertex, init)
 		target_vertex = build_result[0][0]
 
 		# skip the vertex only comes from undetermined seq pool after all undetermined faults are covered
@@ -194,7 +213,9 @@ def sf_in_situ_filter(sf_init_pool, sf_aux_pool, determined_vertex_pool, init):
 
 	for v_obj in sf_init_pool:
 		for seq_obj in v_obj.coverage:
-			find_result = find_inclusive_seq(seq_obj, determined_seq_pool[init], {'ass_init', 'belongings', 'undetermined_tag', 'detect_tag', 'dr_tag', 'nest_tag'})
+			find_result = find_inclusive_seq(seq_obj, determined_seq_pool[init],
+											 {'ass_init', 'belongings', 'undetermined_tag', 'detect_tag', 'dr_tag',
+											  'nest_tag'})
 			if not isinstance(find_result, type(DIFFERENT)):
 				if (find_result.seq_text == seq_obj.seq_text) and seq_obj.detect_tag:
 					find_result.detect_tag |= seq_obj.detect_tag
@@ -207,7 +228,9 @@ def sf_in_situ_filter(sf_init_pool, sf_aux_pool, determined_vertex_pool, init):
 		for seq_obj in v_obj.coverage:
 			find_result = DIFFERENT
 			for determined_key in determined_seq_pool.keys():
-				find_result = find_inclusive_seq(seq_obj, determined_seq_pool[determined_key], {'ass_init', 'belongings', 'undetermined_tag', 'detect_tag', 'dr_tag', 'nest_tag'})
+				find_result = find_inclusive_seq(seq_obj, determined_seq_pool[determined_key],
+												 {'ass_init', 'belongings', 'undetermined_tag', 'detect_tag', 'dr_tag',
+												  'nest_tag'})
 				if not isinstance(find_result, type(DIFFERENT)):
 					break
 			if not isinstance(find_result, type(DIFFERENT)):
@@ -223,19 +246,22 @@ def sf_in_situ_filter(sf_init_pool, sf_aux_pool, determined_vertex_pool, init):
 	return
 
 
-def construct_nonCFds_element(vertex_pool, vertex_aux_pool, sf_init_vertex_pool, sf_aux_vertex_pool, undetermined_fault_pool, init):
+def construct_nonCFds_element(vertex_pool, vertex_aux_pool, sf_init_vertex_pool, sf_aux_vertex_pool,
+							  undetermined_fault_pool, init):
 	vertex_candidate_pool = vertex_pool
 	# check if the degenerated and undetermined pools are empty. If so, the initial vertex starts from sf pool.
 	if len(vertex_pool) > 0:
 		# build from degenerated & undetermined pool
 		determined_vertices = set()
-		construct_result = construct_degenerated_segment(vertex_pool, vertex_candidate_pool, vertex_aux_pool, undetermined_fault_pool, determined_vertices, init)
+		construct_result = construct_degenerated_segment(vertex_pool, vertex_candidate_pool, vertex_aux_pool,
+														 undetermined_fault_pool, determined_vertices, init)
 		coverage_chain = construct_result[0]
 		target_vertex = construct_result[1]
 		# SFs still need to be filtered by the used nonCFds*nonCFds faults, before the SF sequences are added into coverage chain.
 		sf_in_situ_filter(sf_init_vertex_pool, sf_aux_vertex_pool, determined_vertices, init)
 	else:
-		initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(sf_init_vertex_pool, sf_aux_vertex_pool, CoverageVertex({'coverage': [], 'diff': -1}), init)
+		initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(sf_init_vertex_pool, sf_aux_vertex_pool,
+																   CoverageVertex({'coverage': [], 'diff': -1}), init)
 		target_vertex = initial_vertex
 		coverage_chain = initial_vertex.get_march_segment()
 		if initial_vertex in sf_init_vertex_pool:
@@ -245,7 +271,8 @@ def construct_nonCFds_element(vertex_pool, vertex_aux_pool, sf_init_vertex_pool,
 
 	# build from sf pool. No pre-built needed for SFs
 	while len(sf_init_vertex_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, -1, sf_init_vertex_pool, UnlinkedElementsBuilder, sf_aux_vertex_pool, target_vertex, init)
+		build_result = build_coverage_chain(coverage_chain, UnlinkedElementsBuilder.head_protection_range, sf_init_vertex_pool, UnlinkedElementsBuilder,
+											sf_aux_vertex_pool, target_vertex, init)
 		for vertex in build_result[0]:
 			if vertex in sf_init_vertex_pool:
 				sf_init_vertex_pool.remove(vertex)
@@ -321,7 +348,8 @@ def inter_ME_filter(main_elements, main_middle_part, degenerated_seq_pool, sf_se
 		fp2 = undetermined_2cF.comps['comp2']
 		sen_text_FP1 = fp1.aInit if fp1.CFdsFlag == 1 else fp1.vInit + undetermined_2cF.comps['comp1'].Sen
 		sen_text_FP2 = fp2.aInit if fp2.CFdsFlag == 1 else fp2.vInit + undetermined_2cF.comps['comp2'].Sen
-		check_result = {'FP1+FP2': sen_text_FP2 + 'r' + sen_text_FP2[-1] not in main_middle_part, 'FP2+FP1': sen_text_FP1 + 'r' + sen_text_FP1[-1] not in main_middle_part}
+		check_result = {'FP1+FP2': sen_text_FP2 + 'r' + sen_text_FP2[-1] not in main_middle_part,
+						'FP2+FP1': sen_text_FP1 + 'r' + sen_text_FP1[-1] not in main_middle_part}
 
 		# check the FP1+FP2 type overlapping
 		if (not check_result['FP1+FP2']) and (sen_text_FP2[0] == sen_text_FP1[-1]):
@@ -375,7 +403,8 @@ def nonCFds_constructor(degenerated_seq_pool, undetermined_fault_pool, sf_seq_po
 
 	# Add both FPs of each nonCFds*nonCFds 2cF to the candidate vertex pool, merge with the degenerated sequences.
 	# Check the adjacent matrix after every time after sequence comes from nonCFds*nonCFds is chosen to build
-	candidate_seq_pool = {'Init_0': copy.deepcopy(degenerated_seq_pool['Init_0']), 'Init_1': copy.deepcopy(degenerated_seq_pool['Init_1']),
+	candidate_seq_pool = {'Init_0': copy.deepcopy(degenerated_seq_pool['Init_0']),
+						  'Init_1': copy.deepcopy(degenerated_seq_pool['Init_1']),
 						  'Init_-1': copy.deepcopy(degenerated_seq_pool['Init_-1'])}
 	undetermined_seq_pool = {'Init_0': set(), 'Init_1': set()}
 	create_undetermined_sequences(undetermined_fault_pool, undetermined_seq_pool)
@@ -384,7 +413,9 @@ def nonCFds_constructor(degenerated_seq_pool, undetermined_fault_pool, sf_seq_po
 	for undetermined_key in undetermined_seq_pool.keys():
 		for seq_obj in undetermined_seq_pool[undetermined_key]:
 			undetermined_fault_temp[undetermined_key].update(seq_obj.belongings)
-			merge_result = find_identical_objs(seq_obj, candidate_seq_pool[undetermined_key], {'ass_init', 'belongings', 'undetermined_tag', 'detect_tag', 'dr_tag', 'nest_tag'})
+			merge_result = find_identical_objs(seq_obj, candidate_seq_pool[undetermined_key],
+											   {'ass_init', 'belongings', 'undetermined_tag', 'detect_tag', 'dr_tag',
+												'nest_tag'})
 			if isinstance(merge_result, type(DIFFERENT)):
 				# set a flag to clarify it only comes from undetermined fault pool
 				setattr(seq_obj, 'undetermined_tag', True)
@@ -405,10 +436,12 @@ def nonCFds_constructor(degenerated_seq_pool, undetermined_fault_pool, sf_seq_po
 	sf_aux_vertex_pool = define_vertices(sf_seq_pool['Init_-1'])
 
 	# build "00" ME
-	unlinked_me_00_text = construct_nonCFds_element(vertex_pool_0, vertex_scf_pool, sf_vertex_pool_0, sf_aux_vertex_pool, undetermined_fault_temp, 'Init_0')
+	unlinked_me_00_text = construct_nonCFds_element(vertex_pool_0, vertex_scf_pool, sf_vertex_pool_0,
+													sf_aux_vertex_pool, undetermined_fault_temp, 'Init_0')
 	unlinked_me_00 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_00_text, 'Init_0')
 	# build "11" ME
-	unlinked_me_11_text = construct_nonCFds_element(vertex_pool_1, vertex_scf_pool, sf_vertex_pool_1, sf_aux_vertex_pool, undetermined_fault_temp, 'Init_1')
+	unlinked_me_11_text = construct_nonCFds_element(vertex_pool_1, vertex_scf_pool, sf_vertex_pool_1,
+													sf_aux_vertex_pool, undetermined_fault_temp, 'Init_1')
 	unlinked_me_11 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_11_text, 'Init_1')
 
 	# all 2cFs and SFs with certain initial states are covered in the nonCFds ME, only the remainders of sf_aux_pool
@@ -421,12 +454,16 @@ def scf_constructor(vertex_scf_pool):
 	scf_me_candidates = set()
 
 	def get_scf_me_candidates(init, vertex_candidate_pool):
-		initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(), CoverageVertex({'coverage': [], 'diff': -1}), init)
+		initial_vertex = UnlinkedElementsBuilder.get_vertex_winner(vertex_candidate_pool, set(),
+																   CoverageVertex({'coverage': [], 'diff': -1}), init)
+		target_vertex = initial_vertex
 		vertex_candidate_pool -= {initial_vertex}
 		coverage_chain = initial_vertex.get_march_segment()
 
 		while len(vertex_candidate_pool) > 0:
-			build_result = build_coverage_chain(coverage_chain, -1, vertex_candidate_pool, UnlinkedElementsBuilder, set(), initial_vertex, init)
+			build_result = build_coverage_chain(coverage_chain, UnlinkedElementsBuilder.head_protection_range, vertex_candidate_pool, UnlinkedElementsBuilder,
+												set(), target_vertex, init)
+			target_vertex = build_result[0][0]
 			vertex_candidate_pool -= set(build_result[0])
 			coverage_chain += build_result[1]
 		# make sure that the SF me also starts with read operation, since terminal decorator is not applied
@@ -453,8 +490,11 @@ if __name__ == '__main__':
 	seq_pool = create_sequence_pool(flat_SF_pool, degenerated_2cFs, classified_pool['2cF_CFds']['linked'],
 									classified_pool['2cF_nonCFds_included']['nonCFds_nonCFds'])
 
-	if len(seq_pool['undetermined_faults']) + sum(map(lambda p: len(seq_pool['sf_seq'][p]), seq_pool['sf_seq'].keys())) + sum(map(lambda p: len(seq_pool['degenerated_seq'][p]), seq_pool['degenerated_seq'].keys())) > 0:
-		nonCFds_result = nonCFds_constructor(seq_pool['degenerated_seq'], seq_pool['undetermined_faults'], seq_pool['sf_seq'])
+	if len(seq_pool['undetermined_faults']) + sum(
+			map(lambda p: len(seq_pool['sf_seq'][p]), seq_pool['sf_seq'].keys())) + sum(
+			map(lambda p: len(seq_pool['degenerated_seq'][p]), seq_pool['degenerated_seq'].keys())) > 0:
+		nonCFds_result = nonCFds_constructor(seq_pool['degenerated_seq'], seq_pool['undetermined_faults'],
+											 seq_pool['sf_seq'])
 	if len(nonCFds_result[1]) > 0:
 		scf_constructor(seq_pool['unlinked']['Init_-1'])
 	pass

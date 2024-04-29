@@ -47,13 +47,13 @@ def initial_based_assign(linked_me, scf_me, me_dict, precedent_list, element):
 				if not isinstance(precedent, MarchElement):
 					continue
 				else:
+					if (len(me_dict[key]) > 1) and (precedent in linked_me['main_me'].values()):
+						precedent = next(iter_key)
 					# if an ME for SFs are visited, the other scf_me candidate can be discarded
 					if precedent in scf_me:
 						useless_me = next(iter(scf_me - {precedent}))
 						me_dict[useless_me.initial_state + useless_me.final_state].remove(useless_me)
 
-					if (len(me_dict[key]) > 1) and (precedent in linked_me['main_me'].values()):
-						precedent = next(iter_key)
 					me_dict[key].remove(precedent)
 
 					if key == '00' or key == '10':

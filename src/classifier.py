@@ -50,10 +50,11 @@ class TwoComposite:
 		elif self.comps['comp1'].CFdsFlag & self.comps['comp2'].CFdsFlag:
 			self.link_flag = 1
 		else:
-			# for nonCFds, any of fault composites cannot be rd or ir fault, or it doesn't satisfy condition D
-			if (self.comps['comp1'].rdFlag == 1) or (self.comps['comp2'].rdFlag == 1):
+			# for nonCFds-included, any of fault composites cannot be RDF or IRF (but can be CFrd or CFir, since the operation inside
+			# may not detect the fault under certain ass_init states), or it doesn't satisfy condition D
+			if (self.comps['comp1'].rdFlag == 1 and self.comps['comp1'].aInit == '-') or (self.comps['comp2'].rdFlag == 1 and self.comps['comp2'].aInit == '-'):
 				self.link_flag = 0
-			elif (self.comps['comp1'].rdFlag == 2) or (self.comps['comp2'].rdFlag == 2):
+			elif (self.comps['comp1'].rdFlag == 2 and self.comps['comp1'].aInit == '-') or (self.comps['comp2'].rdFlag == 2 and self.comps['comp2'].aInit == '-'):
 				self.link_flag = 0
 			elif (self.comps['comp1'].vFault != self.comps['comp2'].vInit) and (self.comps['comp2'].vFault != self.comps['comp1'].vInit):
 				self.link_flag = 0

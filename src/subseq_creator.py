@@ -148,12 +148,13 @@ def merge_undetermined_2cFs(_2cF_pool, linked_seq_pool, degenerated_seq_pool):
 	return _2cF_pool - redundant_undetermined_2cFs
 
 
-def filter_redundant_other_sequences(composite, target_seq, candidate_seq_pool, ignored_properties):
+def filter_redundant_other_sequences(composite, target_seq, candidate_seq_pool, ignored_properties, merged_flag=False):
 	find_result = DIFFERENT
 	seq_init_key = 'Init_' + target_seq.ass_init
 	for pool_init_key in candidate_seq_pool.keys():
-		# only for nonCF, all pool_init_key need to be visited
-		if (seq_init_key != 'Init_-1') and (pool_init_key != seq_init_key):
+		# merged_flag represents the filter is carried out by linked_CFds_seq_pool.
+		# If merged_flag is False, then only for nonCF, all pool_init_keys need to be visited
+		if (not merged_flag) and (seq_init_key != 'Init_-1') and (pool_init_key != seq_init_key):
 			continue
 		# the seq_text is unnecessary to be identical, since the inclusion/read-as-root rules will be applied
 		find_result = find_inclusive_seq(target_seq, candidate_seq_pool[pool_init_key], ignored_properties.union({'seq_text'}))
@@ -251,9 +252,11 @@ def create_sequence_pool(sf_pool, degenerated_2cF_pool, linked_CFds_pool, undete
 
 			# compare with the linked CFds pool. if the same sequence or the sequence that includes the composite's sequence
 			# exists, merge into linked CFds pool by merging the detect_tag, dr_tag and the nest_tag of nonCFds into CFds-sequence objects.
-			# For nonCFs, besides the 3 tags, the ass_init also needs to be ignored, since the nonCFs are allowed to be
-			# merged into any of the init class.
-			if filter_redundant_other_sequences(fault_obj, target_seq, merged_seq_pool, ignored_properties):
+			# Note that for the filter by linked_CFds_seq_pool, the ass_init also needs to be ignored, since the sequences in linked_CFds_seq_pool
+			# will be added in both linked CFds*CFds MEs, which cover the non-CFds-included faults with both 2 possible ass_inits.
+			# So no matter the target_seq is CF or nonCF, it is allowed to be merged into any of the init class.
+			merged_flag = True
+			if filter_redundant_other_sequences(fault_obj, target_seq, merged_seq_pool, ignored_properties.union({'ass_init'}), merged_flag):
 				continue
 			# if the filter failed in linked CFds pool, compare with current unlinked sequence pool. Similarly,
 			# the detect_tag, dr_tag and the nest_tag should be merged, and for nonCFs, the ass_init also needs to be ignored
