@@ -137,20 +137,34 @@ def update_fault_state(fp, cell_state, cell_state_temp, cell_snapshot, visiting_
     else:
         if 'w' in op:
             if (fp.CFdsFlag == 0) and ((cell_state[fp.aCell] == fp.aInit) or (fp.aInit == '-')) and (
-                    op_seq == fp.Sen) and (
-                    cell_snapshot[fp.vCell][-fp.SenOpsNum] == fp.vInit):
+                    op_seq == fp.Sen) and (cell_snapshot[fp.vCell][-fp.SenOpsNum] == fp.vInit):
                 cell_state_temp[fp.vCell] = fp.vFault
                 return UPDATED
         elif 'r' in op:
-            if (fp.CFdsFlag == 0) and ((cell_state[fp.aCell] == fp.aInit) or (fp.aInit == '-')) and (
-                    op_seq == fp.Sen) and (
-                    cell_snapshot[fp.vCell][-fp.SenOpsNum] == fp.vInit):
-                # check rdflag, if it is read-destruction fault, it is detected immediately
-                if (fp.rdFlag == 1) or (fp.rdFlag == 2):
-                    return DETECTED
-                else:
-                    cell_state_temp[fp.vCell] = fp.vFault
-                    return UPDATED
+            if ((fp.CFdsFlag == 0) and ((cell_state[fp.aCell] == fp.aInit) or (fp.aInit == '-')) and ((
+                    op_seq == fp.Sen) or (fp.Sen == 'r' + cell_state[fp.vCell]))
+                    and (cell_snapshot[fp.vCell][-fp.SenOpsNum] == fp.vInit)):
+                # read operation applied on the v-cell may sensitize an RDF/IRF/DRDF. The RDF/IRF can be sensitized not only by
+                # the sensitization sequence, but also the sequence whose initial state is the faulty value of another fault.
+                # For example, assume a TF <0w1/0/-> is intended to be sensitized and detected by "...0,w1,r1",
+                # an IRF <0r0/0/1> CAN be sensitized by the successive read operation "r1". The r1 is meant to detect the TF,
+                # while the faulty value "0" of TF is masked by the read-out value "1" of the IRF. Although the operation sequence
+                # is "1r1", the actual operation on v-cell is a read operation on a cell that stores "0".
+
+                # As a result, the direct detection only happens when the initial state of v-cell is unfaulty
+                # (i.e. consistent with the expected value) before the RDF/IRF is sensitized.
+                if cell_state[fp.vCell] == op[1]:
+                    if (fp.rdFlag == 1) or (fp.rdFlag == 2):
+                        return DETECTED
+                # For the DRDF, the situation is opposite to the RDF/IRF. assume a DRDF <0r0/1/0>, it is sensitized by a
+                # sequence "0,r0", and should be detected by a successive r0. The r0 for detection CANNOT sensitize the DRDF
+                # again, since the initial state of v-cell is "1", even though the sequence "0,r0,r0" is consistent with the
+                # sensitization condition of DRDF.As a result, the DRDF can only be detected after it is sensitized,
+                # see the special case in apply_March_element().
+
+                # except the situations of detection, the RDF/IRF cannot be detected, and update the v-cell state normally.
+                cell_state_temp[fp.vCell] = fp.vFault
+                return UPDATED
             elif cell_state[fp.vCell] != op[1]:
                 return DETECTED
 
@@ -263,15 +277,14 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                         update_flag[0] = update_fault_state(FP1, cell_state, cell_state_temp, cell_snapshot,
                                                             visiting_cell, op_seq, op)
 
-                        if update_flag[0] == DETECTED:
-                            return DETECTED, op_index
-                        # special case for drd
-                        elif (FP1.rdFlag == -1) and (update_flag[0] == UPDATED) and (op_seq_history[0] == FP1.Sen) \
-                                and (cell_state_temp[visiting_cell] != op[1]):
+                        # special case for dynamic DRDF with multiple continuous read operations. The dDRDF should be detected
+                        # at the successive read operation after the sensitization sequence.
+                        if ((FP1.rdFlag == -1) and (update_flag[0] == UPDATED) and (op_seq_history[0] == FP1.Sen)
+                                and (cell_state_temp[visiting_cell] != op[1])):
                             return DETECTED, op_index
 
                     elif cell_state_temp[visiting_cell] != op[1]:
-                        return DETECTED, op_index
+                        update_flag[0] = DETECTED
 
                     if FP2 is not FP1:
                         if op_snapshot[visiting_cell]['op_counter'] >= FP2.SenOpsNum:
@@ -279,14 +292,39 @@ def apply_March_element(cell_state, cell_snapshot, op_snapshot, traverse_cell_or
                             update_flag[1] = update_fault_state(FP2, cell_state, cell_state_temp, cell_snapshot,
                                                                 visiting_cell, op_seq, op)
 
-                            if update_flag[1] == DETECTED:
-                                return DETECTED, op_index
-                            # special case for drd
-                            elif (FP2.rdFlag == -1) and (update_flag[1] == UPDATED) and (op_seq_history[1] == FP2.Sen) \
-                                    and (cell_state_temp[visiting_cell] != op[1]):
+                            # special case for dynamic DRDF with multiple continuous read operations. The dDRDF should be detected
+                            # at the successive read operation after the sensitization sequence.
+                            if ((FP2.rdFlag == -1) and (update_flag[1] == UPDATED) and (op_seq_history[1] == FP2.Sen)
+                                    and (cell_state_temp[visiting_cell] != op[1])):
                                 return DETECTED, op_index
 
                         elif cell_state_temp[visiting_cell] != op[1]:
+                            update_flag[1] = DETECTED
+
+                    # the detection cannot be determined by single FP in 2cF, since the other FP may be sensitized (UPDATED)
+                    # and disturb the cell state or the read-out value. Consequently, the detection is determined only when
+                    # one FP is detected (DETECTED) and the other one is not sensitized (UPDATE_ERROR), or the sensitized FP
+                    # not introduce disturbance.
+                    if DETECTED in update_flag:
+                        if update_flag[0] == UPDATED:
+                            if (FP1.rdFlag == 1) or (FP1.rdFlag == 2):
+                                read_out_value = '1' if FP1.Sen[-1] == '0' else '0'
+                            elif FP1.rdFlag == -1:
+                                read_out_value = FP1.Sen[-1]
+                            else:
+                                read_out_value = cell_state_temp[visiting_cell]
+                            if read_out_value != op[1]:
+                                return DETECTED, op_index
+                        elif update_flag[1] == UPDATED:
+                            if (FP2.rdFlag == 1) or (FP2.rdFlag == 2):
+                                read_out_value = '1' if FP2.Sen[-1] == '0' else '0'
+                            elif FP2.rdFlag == -1:
+                                read_out_value = FP2.Sen[-1]
+                            else:
+                                read_out_value = cell_state_temp[visiting_cell]
+                            if read_out_value != op[1]:
+                                return DETECTED, op_index
+                        else:
                             return DETECTED, op_index
 
                     cell_state.update(cell_state_temp)

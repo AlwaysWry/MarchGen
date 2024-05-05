@@ -20,7 +20,7 @@ case $1 in
 	fi
 ;;
 "gen")
-	if [ $# -gt 3 ] || [ $# -lt 2 ];then
+	if [ $# -gt 4 ] || [ $# -lt 2 ];then
 		echo "Compilation command: March2Comp compile"
 		echo "March generation command: March2Comp gen <fault list filename> [fault model name=2cF_3, 2cF_2aa]"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
@@ -30,7 +30,7 @@ case $1 in
 	fi
 ;;
 "sim")
-	if [ $# -ne 3 ];then
+	if [ $# -lt 3 ];then
 		echo "Compilation command: March2Comp compile"
 		echo "March generation command: March2Comp gen <fault list filename>"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
