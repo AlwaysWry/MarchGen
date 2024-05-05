@@ -23,18 +23,18 @@ def atomic_sim(sim_info):
     return ev.eval_2comp(sim_info[0][1], sim_info[0][2], sim_info[1], ev.PROFOUND)
 
 
-def sim2Comp(test_file, logs_file, fault_list, fault_model, fp=None):
+def sim2Comp(test_file, logs_file, fault_list, fault_model, fp=None, mp_flag=True):
     logfile = open(logs_file, 'w')
     # logfile = sys.stdout
 
     march = ps.get_March_algorithm(test_file)
     if not isinstance(march, list):
-        return ev.ERROR
+        return ev.ERROR, []
 
     fobj_list = ps.get_fault_primitive(fault_list, fault_model)
     if len(fobj_list) == 0:
-        print("\nEmpty or illegal fault list!\n")
-        return ev.ERROR
+        print("\nFault list is empty or illegal!\n")
+        return ev.ERROR, []
 
     if fp:
         fp.write(f"Total {fault_model} fault number: %d\n" % len(fobj_list))
@@ -45,11 +45,17 @@ def sim2Comp(test_file, logs_file, fault_list, fault_model, fp=None):
     undetected_fault = []
 
     # multi-processor program to accelerate simulation
-    sim_info_list = [(f, march) for f in fobj_list]
-    max_thread_num = mp.cpu_count()
+    if mp_flag:
+        sim_info_list = [(f, march) for f in fobj_list]
+        max_thread_num = mp.cpu_count()
 
-    with cf.ProcessPoolExecutor(max_workers=max_thread_num) as ppe:
-        eval_results = ppe.map(atomic_sim, sim_info_list)
+        with cf.ProcessPoolExecutor(max_workers=max_thread_num) as ppe:
+            eval_results = ppe.map(atomic_sim, sim_info_list)
+    # single-processor program
+    else:
+        eval_results = []
+        for f in fobj_list:
+            eval_results.append(atomic_sim((f, march)))
 
     for fault_obj, eval_result in zip(fobj_list, eval_results):
         logfile.write(f"\n********\nDetecting fault {fault_obj[0]}:\n")
@@ -66,7 +72,7 @@ def sim2Comp(test_file, logs_file, fault_list, fault_model, fp=None):
 
         match eval_flag:
             case ev.ERROR:
-                return ev.ERROR
+                return ev.ERROR, []
             case ev.UNDETECTED:
                 logfile.write(f"!!! {fault_obj[0]} is NOT detected !!!\n")
                 undetected_fault.append(fault_obj[0])
@@ -95,6 +101,7 @@ if __name__ == '__main__':
     fault_list_file = sys.argv[2]
     test_logs_file_2cF3 = 'results/testlog_2cF3'
     test_logs_file_2cF_2aa = 'results/testlog_2cF_2aa'
+    mp_flag = False if '--nomp' in sys.argv else True
 
     with open("results/simulation_report.txt", 'w') as report:
         report.write("***********************************************************************************\n")
@@ -109,9 +116,9 @@ if __name__ == '__main__':
 
         print("\n***Calculating fault coverage...\n")
         print("**Coverage result under 2cF_3 model:")
-        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF3, fault_list_file, '2cF_3', report)
+        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF3, fault_list_file, '2cF_3', report, mp_flag)
         print("**Coverage result under 2cF_2aa model:")
-        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file, '2cF_2aa', report)
+        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file, '2cF_2aa', report, mp_flag)
 
         table_t = '|{:^80s}|\n'
         table = '|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'

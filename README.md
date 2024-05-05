@@ -39,12 +39,13 @@ You can use your own compiler and python interpreter to compile and run March2Co
 <br>    ```mingw32-make```
 
 Using March test generator:
-<br>    ```python March2Comp.py <fault list file> [fault model name=2cF_3, 2cF_2aa]```
+<br>    ```python March2Comp.py <fault list file> [fault model name=2cF_3, 2cF_2aa] [--nomp]```
 <br>    Fault model name is optional, default value is '2cF_2aa'.
 <br>    Under 2cF_3 model, unrealistic faults (but realistic under 2cF_2aa model) will be removed from the list first.
+<br>    "--nomp" is an option to close the multi-process simulation, which is open in default.
 
 Using fault simulator independently:
-<br>    ```python ./sim/sim2comp.py <march test filename> <fault list filename>```
+<br>    ```python ./sim/sim2comp.py <march test filename> <fault list filename> [--nomp]```
 
 ### Instructions
 1. Standard format of fault lists: a fault list consist of faults in standard fault primitive (FP) format: <br> ```<Sa;Sv/F/R>```

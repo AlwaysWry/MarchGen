@@ -158,6 +158,20 @@ def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool,
 
 		return adjacency
 
+	# this function is for checking the overlapping situation depicted in Fig. 7(d). If the other member in the adjacency
+	# fault is not a IRF/RDF/DRDF, the overlap cannot happen; If the other member is one of these faults, the adjacency cannot
+	# be removed if the sensitization sequence + detect operation of target vertex sensitizes the other member, i.e. the last
+	# operations are the same as the other sensitization sequence.
+	def check_overlap_inclusion(adjacency_fault, vertex_obj):
+		candidate_member = next(iter(filter(lambda m: (m.Sen[-2] == 'r') and (m.vInit + m.Sen != vertex_obj.coverage[0].seq_text), adjacency_fault.comps.values())), None)
+		if candidate_member is None:
+			return NO_OVERLAP
+		check_sequence = candidate_member.vInit + candidate_member.Sen
+		if vertex_obj.get_march_segment()[-len(check_sequence):] != check_sequence:
+			return NO_OVERLAP
+		else:
+			return OVERLAP
+
 	# the protection is not long enough at the beginning, so the initial vertex cannot be removed here
 	max_check_range = max(map(lambda v: len(v.coverage[0].seq_text), original_vertex_pool))
 	coverage_chain = initial_vertex.get_march_segment()
@@ -182,7 +196,10 @@ def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool,
 		if chain_check_range >= max_check_range:
 			if not undetermined_finish_flag:
 				undetermined_adjacency = get_undetermined_adjacency(target_vertex)
-				undetermined_fault_pool[init] -= undetermined_adjacency
+				# check each adjacency. remove it if no overlap like Fig. 7(d) happens
+				for adjacency in undetermined_adjacency:
+					if not check_overlap_inclusion(adjacency, target_vertex):
+						undetermined_fault_pool[init] -= undetermined_adjacency
 				# if the adjacency is not empty, it means that the chosen vertex comes from undetermined sequence pool,
 				# need to be used in sf in-situ filter
 				if len(undetermined_adjacency) > 0:

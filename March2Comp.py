@@ -116,10 +116,8 @@ if __name__ == '__main__':
 	# fault_list_file = 'resources/fault_lists/' + '2_complete_with_novel'
 	fault_list_file = sys.argv[1]
 	model_name = ['2cF_3', '2cF_2aa']
-	fault_model_name = default_fault_model_name
-
-	if (len(sys.argv) > 2) and (sys.argv[2] in model_name):
-		fault_model_name = sys.argv[2]
+	fault_model_name = '2cF_3' if '2cF_3' in sys.argv else default_fault_model_name
+	mp_flag = False if '--nomp' in sys.argv else True
 
 	with open("results/generation_report.txt", 'w') as report:
 		report.write("***********************************************************************************\n")
@@ -141,14 +139,14 @@ if __name__ == '__main__':
 		if fault_model_name == '2cF_2aa':
 			print("**Coverage result under 2cF_2aa model:")
 			_2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file,
-														  '2cF_2aa')
+														  '2cF_2aa', None, mp_flag)
 		else:
 			_2cF_2aa_coverage = -1
 			_2cF_2aa_undetected = tuple()
 
 		print("**Coverage result under 2cF_3 model:")
 		_2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF3, fault_list_file,
-													  '2cF_3')
+													  '2cF_3', None, mp_flag)
 
 
 		table_t = '|{:^80s}|\n'

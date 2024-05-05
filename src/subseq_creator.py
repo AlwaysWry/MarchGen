@@ -213,6 +213,9 @@ def create_undetermined_sequences(undetermined_fault_pool, undetermined_seq_pool
 
 	for remainder in undetermined_fault_pool:
 		init_information = remainder.comps['comp1'].aInit + remainder.comps['comp2'].aInit
+		# If the undetermined_seqs belong to one fault are with the same ass_inits, they are both saved (otherwise overlap may happen)
+		# If they have different ass_inits, the fault will be discareded as long as one of the seqs is saved
+		# (the 2 seqs cannot sensitized in one 00/11 ME)
 		match init_information:
 			case '00' | '0-' | '-0':
 				save_seq_belongings(remainder, 'Init_0')
