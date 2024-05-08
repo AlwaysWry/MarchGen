@@ -235,6 +235,8 @@ def get_fault_primitive(filename, modelname):
     # The content of lf is like: <S/F/R>*<S/F/R>
     for llf in all_lines:
         lf = llf.strip()
+        if len(lf) == 0:
+            continue
         if '*' in lf:
             # if contains "*", it is a 2-composite fault. extract FP1 and FP2 as ['S/F/R', 'S/F/R']
             fault_comps = re.findall(r"(?<=<).*?(?=>)", lf)
