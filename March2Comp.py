@@ -232,8 +232,8 @@ if __name__ == '__main__':
 
 		print("\n***Check elaborate information in \"results/generation_report.txt\".\n")
 		if fault_model_name == '2cF_3':
-			report.write("\nSee elaborate test logs in file \"results/testlog_2cF3\".\n")
+			report.write("\nSee elaborate test logs in file \"results/testlog_2cF_3\".\n")
 		else:
-			report.write("\nSee elaborate test logs in file \"results/testlog_2cF3\" and \"results/testlog_2cF_2aa\".\n")
+			report.write("\nSee elaborate test logs in file \"results/testlog_2cF_3\" and \"results/testlog_2cF_2aa\".\n")
 
 		report.write("\n-----------------------------------------------------------------------------------\n")

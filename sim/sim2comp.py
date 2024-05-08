@@ -195,5 +195,5 @@ if __name__ == '__main__':
                 report.write(undetected + '\n')
 
         print("\n***Check elaborate information in \"results/simulation_report.txt\".\n")
-        report.write("\nSee elaborate test logs in file \"results/testlog_2cF3\" and \"results/testlog_2cF_2aa\".\n")
+        report.write("\nSee elaborate test logs in file \"results/testlog_2cF_3\" and \"results/testlog_2cF_2aa\".\n")
         report.write("\n-----------------------------------------------------------------------------------\n")
