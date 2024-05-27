@@ -28,5 +28,4 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(LIBRARY_OUTPUT_PATH mwvc_solver/DynWVC2)
 
     add_library(DynWVC2 SHARED mwvc_solver/DynWVC2/mwvc.cpp)
-
 endif ()
