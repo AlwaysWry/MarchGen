@@ -2,20 +2,19 @@
 # a shell script for starting the March2Comp automatic March generation tool
 set -e
 
-function gcc9_cmake() {
-	scl enable devtoolset-9 "cmake ."
-}
-
-function conda_toggle() {
-	source /eda/anaconda3/bin/activate March2Comp
-}
+if [ -d "results" ]; then
+	echo "output directory exists."
+else
+	mkdir results
+	echo "output directory created."
+fi
 
 case $1 in
 "compile")
 	if [ $# -ne 1 ];then
 		echo "Compilation command: March2Comp compile"
 	else
-		gcc9_cmake
+		cmake .
 		make
 	fi
 ;;
@@ -25,7 +24,7 @@ case $1 in
 		echo "March generation command: March2Comp gen <fault list filename> [fault model name=2cF_3, 2cF_2aa]"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
-		conda_toggle && python3 March2Comp.py $2 $3
+		python March2Comp.py $2 $3
 		cat ./results/generation_report.txt
 	fi
 ;;
@@ -36,7 +35,7 @@ case $1 in
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
 		cd ./sim
-		conda_toggle && python3 sim2comp.py $2 $3
+		python sim2comp.py $2 $3
 		cat ../results/simulation_report.txt
 	fi
 ;;
