@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# a shell script for starting the March2Comp automatic March generation tool
+set -e
+
+if [ -d "results" ]; then
+	echo "output directory exists."
+else
+	mkdir results
+	echo "output directory created."
+fi
+
+case $1 in
+"compile")
+	if [ $# -ne 1 ];then
+		echo "Compilation command: March2Comp compile"
+	else
+		cmake .
+		make
+	fi
+;;
+"gen")
+	if [ $# -gt 4 ] || [ $# -lt 2 ];then
+		echo "Compilation command: March2Comp compile"
+		echo "March generation command: March2Comp gen <fault list filename> [fault model name=2cF_3, 2cF_2aa]"
+		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+	else
+		python March2Comp.py $2 $3
+		cat ./results/generation_report.txt
+	fi
+;;
+"sim")
+	if [ $# -lt 3 ];then
+		echo "Compilation command: March2Comp compile"
+		echo "March generation command: March2Comp gen <fault list filename>"
+		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+	else
+		cd ./sim
+		python sim2comp.py $2 $3
+		cat ../results/simulation_report.txt
+	fi
+;;
+*)
+	echo "Compilation command: March2Comp compile"
+	echo "March generation command: March2Comp gen <fault list filename>"
+	echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+esac

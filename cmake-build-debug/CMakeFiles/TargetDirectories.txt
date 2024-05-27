@@ -1,3 +1,0 @@
-E:/CLproj/March2Comp/cmake-build-debug/CMakeFiles/March2Comp.dir
-E:/CLproj/March2Comp/cmake-build-debug/CMakeFiles/edit_cache.dir
-E:/CLproj/March2Comp/cmake-build-debug/CMakeFiles/rebuild_cache.dir

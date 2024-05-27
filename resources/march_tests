@@ -1,123 +1,305 @@
 # up,w0
-#          up,r0,r0,w1,w1,r1,w0,w0,r0,w1,r1
-#          up,r1,r1,w0,w0,r0,w1,w1,r1,w0,r0
-#          up,r0
+# up,r0,r0,w1,w1,r1,w0,w0,r0,w1,r1
+# up,r1,r1,w0,w0,r0,w1,w1,r1,w0,r0
+# up,r0
 
 # up,w0
-#         up,r0,w0,r0,w1,w1
-#         up,r1,w1,r1,w0,w0,r0
-#         up,r0,w1,r1,r1,w0
-#         up,r1,w0,r0,r0,w1,r1
-#        ]
+# up,r0,w0,r0,w1,w1
+# up,r1,w1,r1,w0,w0,r0
+# up,r0,w1,r1,r1,w0
+# up,r1,w0,r0,r0,w1,r1       
 
 # up,w0
-#         up,r0,w0,r0,w1,w1,r1
-#         up,r1,w0,r0,r0,w1
-#         up,r1,w1,r1,w0,w0,r0
-#         up,r0,w1,r1,r1,w0
-#        ]
+# up,r0,w0,r0,w1,w1,r1
+# up,r1,w0,r0,r0,w1
+# up,r1,w1,r1,w0,w0,r0
+# up,r0,w1,r1,r1,w0     
 
 # up,w0
-#         up,r0,w1,r1,r1,w0,r0
-#         up,r0,w0,r0,w1,w1
-#         up,r1,w0,r0,r0,w1,r1
-#         up,r1,w1,r1,w0,w0
-#        ]
+# up,r0,w1,r1,r1,w0,r0
+# up,r0,w0,r0,w1,w1
+# up,r1,w0,r0,r0,w1,r1
+# up,r1,w1,r1,w0,w0
 
 # up,w0
-#         up,r0,w0,r0,w1,w1
-#         up,r1,w1,r1,w0,w0
-#         up,r0,w1,w0,w1,r1
-#         up,r1,w0,w1,w0,r0
-#        ]
+# up,r0,w0,r0,w1,w1
+# up,r1,w1,r1,w0,w0
+# up,r0,w1,w0,w1,r1
+# up,r1,w0,w1,w0,r0   
 
 # March AB [TC'08]
 # up,w1
-#         down,r1,w0,r0,w0,r0
-#         down,r0,w1,r1,w1,r1
-#         up,r1,w0,r0,w0,r0
-#         up,r0,w1,r1,w1,r1
-#         up,r1
+# down,r1,w0,r0,w0,r0
+# down,r0,w1,r1,w1,r1
+# up,r1,w0,r0,w0,r0
+# up,r0,w1,r1,w1,r1
+# up,r1
 
 # up,w0
-#          up,r0,w0,r0,w1,w1,r1,r1,w0,r0
-#          up,r0,w1
-#          up,r1,w1,r1,w0,w0,r0,r0,w1,r1#non-CFds�Խṹ������Ӱ�죬ȥ��֮���ܼ��a-cellΪ1��CFwd
-#          up,r1
+# up,r0,w0,r0,w1,w1,r1,r1,w0,r0
+# up,r0,w1
+# #non-CFds¶Ô½á¹¹»¹ÊÇÓÐÓ°Ïì£¬È¥µôÖ®ºó²»ÄÜ¼ì²âa-cellÎª1µÄCFwd
+# up,r1,w1,r1,w0,w0,r0,r0,w1,r1
+# up,r1
 
 # March BDN
 # up,w0
-#          down,r0,w1,r1,w1,r1
-#          down,r1,w0,r0,w0,r0
-#          up,r0,w1,r1,w1,r1
-#          up,r1,w0,r0,w0,r0
-#          up,r0
+# down,r0,w1,r1,w1,r1
+# down,r1,w0,r0,w0,r0
+# up,r0,w1,r1,w1,r1
+# up,r1,w0,r0,w0,r0
+# up,r0
 
 # up,w0
-#          #up,r0,r0,w1,w1,r1,r1,w0,w0,r0
-#          up,r0,r0,w0,r0
-#          up,r0,w1,w1,r1,r1,w0
-#          #up,r0,w1
-#          up,r0,w1
-#          #up,r1,r1,w0,w0,r0,r0,w1,w1,r1
-#          up,r1,r1,w1,r1
-#          up,r1,w0,w0,r0,r0,w1
-#          #up,r1
-#          up,r1
-#          ]
+# up,r0,r0,w1,w1,r1,r1,w0,w0,r0
+# #up,r0,r0,w0,r0
+# #up,r0,w1,w1,r1,r1,w0
+# #up,r0,w1
+# up,r0,w1
+# up,r1,r1,w0,w0,r0,r0,w1,w1,r1
+# #up,r1,r1,w1,r1
+# #up,r1,w0,w0,r0,r0,w1
+# #up,r1
+# up,r1
 
 # up,w0
-#          up,r0,w1,w1,r1,r1,w0
-#          up,r0,w0
-#          # up,r0
-#          up,r0,w1
-#          up,r1,w0,w0,r0,r0,w1
-#          up,r1,w1
-#          # up,r1
-#          down,r1,w0
+# up,r0,w1,w1,r1,r1,w0
+# up,r0,w0
+# # up,r0
+# up,r0,w1
+# up,r1,w0,w0,r0,r0,w1
+# up,r1,w1
+# # up,r1
+# down,r1,w0
 
 # March MSL [Minimal..., 06]
 # any,w0
-#          up,r0,w1,w1,r1,r1,w0
-#          up,r0,w0
-#          up,r0
-#          up,r0,w1
-#          up,r1,w0,w0,r0,r0,w1
-#          up,r1,w1
-#          up,r1
-#          down,r1,w0
+# up,r0,w1,w1,r1,r1,w0
+# up,r0,w0
+# up,r0
+# up,r0,w1
+# up,r1,w0,w0,r0,r0,w1
+# up,r1,w1
+# up,r1
+# down,r1,w0
+
+# March SL [tcad'04]
+# any,w0
+# up,r0,r0,w1,w1,r1,r1,w0,w0,r0,w1
+# up,r1,r1,w0,w0,r0,r0,w1,w1,r1,w0
+# down,r0,r0,w1,w1,r1,r1,w0,w0,r0,w1
+# down,r1,r1,w0,w0,r0,r0,w1,w1,r1,w0
+
+# March ABL
+# any,w0
+# up,r0,r0,w0,r0,w1,w1,r1
+# up,r1,r1,w1,r1,w0,w0,r0
+# down,r0,w1
+# down,r1,w0
+# down,r0,r0,w0,r0,w1,w1,r1
+# down,r1,r1,w1,r1,w0,w0,r0
+# up,r0,w1
+# up,r1,w0
+
+# March RABL
+# any,w0
+# up,r0,r0,w0,r0
+# up,r0,w1,r1,r1,w1,r1,w0,r0
+# up,r0,w1
+# down,r1,r1,w1,r1,w0,r0,w0,r0
+# up,w1
+# up,r1,r1,w1,r1,w0,r0,r0,w0,r0,w1,r1
 
 # March LSD [tcad'12]
-#          any,w0
-#          up,r0,w1,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1
-#          up,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1,r1,w0
-#          up,r0
-#          down,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0,r0,w1
-#          down,r1,w0,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0
-#          down,r0
+# any,w0
+# up,r0,w1,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1
+# up,r1,w1,w1,r1,w1,w0,r0,w1,w1,r1,w0,w1,r1,w1,r1,r1,r1,w0
+# up,r0
+# down,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0,r0,w1
+# down,r1,w0,r0,w0,w0,r0,w0,w1,r1,w0,w0,r0,w1,w0,r0,w0,r0,r0
+# down,r0
 
-         any,w0
-         # up,r0,w1,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1
-         # (0r0w1),(0w1r1),1r1w1(d),1w1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w1(3),1w1w0(ld),0w1w0(d),1w0r0(ld),0r0w0,0w0r0(d),0r0r0,0r0w1(2),0w1w1(d),1w1r1(d3),(1r1r1(d))
-         up,r0,w1,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1
-         # (0r0w1),(0w1r1),1r1w1(d),1w1r1(d),1r1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w0,1w0w1,0w1w1(d),1w1r1(3),1r1w1(3),1w1w0(ld),1w0w1(2),0w1w0(d),1w0r0(d),0r0r0��0r0w1
-         # up,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0
-         up,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1,r1,w0
-         up,r0
-         # down,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1
-         down,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0,r0,w1
-         # down,r1,w0,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0
-         down,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0
-         down,r0
+#  any,w0
+#  # up,r0,w1,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1
+#  # (0r0w1),(0w1r1),1r1w1(d),1w1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w1(3),1w1w0(ld),0w1w0(d),1w0r0(ld),0r0w0,0w0r0(d),0r0r0,0r0w1(2),0w1w1(d),1w1r1(d3),(1r1r1(d))
+#  up,r0,w1,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1
+#  # (0r0w1),(0w1r1),1r1w1(d),1w1r1(d),1r1r1,1r1w1(2),1w1w1(d),1w1r1(2),1r1w0,1w0w1,0w1w1(d),1w1r1(3),1r1w1(3),1w1w0(ld),1w0w1(2),0w1w0(d),1w0r0(d),0r0r0£¬0r0w1
+#  # up,r1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0
+#  up,r1,w1,r1,r1,r1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,w0,r0,r0,w1,r1,w0
+#  up,r0
+#  # down,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1
+#  down,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0,r0,w1
+#  # down,r1,w0,r0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0
+#  down,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,w0,w0,r0,w0,w1,w0,w1,r1,r1,w0
+#  down,r0
 
-#          up,w0
-#          up,r0,r0,w0,r0,w1,w0,r0,w1,w1,r1
-#          up,r1,r1,w1,r1,w0,w1,r1,w0,w0,r0
-#          up,r0
+# any,w0
+# up,r0,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0
+# up,r0,w1
+# up,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1
+# up,r1
+# down,r1,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1
+# # up,r1,w0,r0,w1,r1
+# down,r1,w0
+# down,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0
+# # up,r0,w1,r1,w0,r0
+# down,r0
 
-#          any,w0
-#          any,r0,w0,r0,r0,r0,w1,r1,w1,r1,r1,w0,r0,r0,w0,w1,w0,w1,r1,w1,w0,w1,w0,r0,w1,w1,w1,w1,r1,r1,r1,w0,w0,w0,w0,r0
-#          any,r0
-#          any,w1
-#          any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1
-#          any,r1
+# any,w0
+# up,r0,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1,r1,w0
+# up,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0
+# up,r0,w1
+# up,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,w1,w1,r1,r1
+# up,r1,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,w0,w0,r0,r0,r0,w1
+# up,r1
+# down,r1,w0
+
+# any,w0
+# up,r0,w1,w0
+# up,r0
+
+# any,w1
+# up,r1,w1,r1,r1,w0,w1
+# up,r1,w0
+# up,r0,w1,w1,r1,r1,w0,w1,w0
+# up,r0
+# down,r0,w0,r0,r0,w1,w0
+# down,r0,w1
+# down,r1,w0,w0,r0,r0,w1,w0,w1
+# down,r1
+
+# any,w0
+# up,r0,w1,w1,r1,r1,w0
+# up,r0,w0,r0
+# # up,r0
+# up,r0,w1
+# up,r1,w0,w0,r0,r0,w1
+# up,r1,w1,r1
+# up,r1
+# down,r1,w0
+  
+# up,w0
+# up,r0,r0,w0,r0,w1,w0,r0,w1,w1,r1
+# up,r1,r1,w1,r1,w0,w1,r1,w0,w0,r0
+# up,r0
+
+# any,w0
+# any,r0,w0,r0,r0,r0,w1,r1,w1,r1,r1,w0,r0,r0,w0,w1,w0,w1,r1,w1,w0,w1,w0,r0,w1,w1,w1,w1,r1,r1,r1,w0,w0,w0,w0,r0
+# any,r0
+# any,w1
+# any,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,r1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0,w0,w0,w0,r0,r0,r0,w1,w1,w1,w1,r1
+# any,r1
+
+# any,w0
+# up,r0,w0,w0,r0,w1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,r0,w0,w1,w0,w1,r1,w0,r0,w1,r1,w1,r1,r1,r1,w0,w0,r0,w1
+# up,r1,w0,r0,w0,w0,r0,w1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,r0,r0,r0,w0,w1,w0,w1,r1,w0,r0,w1,r1,w1,r1,r1,r1,w0,w0,r0
+# up,r0
+# down,r0,w1
+# down,r1
+
+# any,w0
+# up,r0,w1,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,w1,r1,w0,r0,w1,r1,w1,w1,r1,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,r1,w1,w0,w1,w0,r0
+# up,r0,w1
+# up,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,w1,r1,w0,r0,w1,r1,w1,w1,r1,w0,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,r1,w1,w0,w1,w0,r0,w1
+# up,r1,w0
+# down,r0,w1
+# down,r1
+
+# any,w0
+# up,r0,w1,r1,w0,w0,r0,w1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,r1
+# up,r1,w0,w0,r0,w1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,r0,w0,w0,r0,w1,r1,w0
+# up,r0,w1
+# down,r1,w0
+# down,r0
+
+# any,w0
+# up,r0,w1,r1,w1,r1,r1,w0,w0,w1,w0,w1,r1,w0,w1,w1,r1,w0,w0,w0,r0,r0,w1
+# up,r1,w0,r0,w1,r1,w1,r1,r1,w0,w0,w1,w0,w1,r1,w0,w1,w1,r1,w0,w0,w0,r0,r0
+# up,r0,w1,r1,w0,r0,w0,r0,r0,w1,w1,w0,w1,w0,r0,w1,w0,w0,r0,w1,w1,w1,r1,r1
+# up,r1,w0,r0,w0,r0,r0,w1,w1,w0,w1,w0,r0,w1,w0,w0,r0,w1,w1,w1,r1,r1,w0
+# up,r0
+# down,r0,w1
+# down,r1,w0
+# down,r0
+
+# any,w1
+# up,r1,w0,r0,w1,w1,w0,w1,w0,r0,w0,r0,r0,w0,w0,r0,w1,w1,r1,r1,w0
+# up,r0,w1,r1,w0,r0,w1,w1,w0,w1,w0,r0,w0,r0,r0,w0,w0,r0,w1,w1,r1,r1
+# up,r1,w0,r0,w1,r1,w0,w0,w1,w0,w1,r1,w1,r1,r1,w1,w1,r1,w0,w0,r0,r0
+# up,r0,w1,r1,w0,w0,w1,w0,w1,r1,w1,r1,r1,w1,w1,r1,w0,w0,r0,r0,w1
+# up,r1
+# down,r1,w0
+# down,r0,w1
+# down,r1
+
+### r0,w1,r1,w0,w1,w0,r0,w0,r0,w1,w1,r1,w0,w0,w1,r1,r1,w0,w0,w0,r0,r0
+### r1,w1,r1,w0,w1,r1,w0,r0,r0,w1,w1,w0,r0,w1,w0,w0,r0,w1,w1,w1,r1,r1
+# any,w0
+# up,r0,w1,r1,w0,w1,w0,r0,w0,r0,w1,w1,r1,w0,w0,w1,r1,r1,w0,w0,w0,r0,r0,r0,w1
+# up,r1,w0,r0,w1,r1,w0,w1,w0,r0,w0,r0,w1,w1,r1,w0,w0,w1,r1,r1,w0,w0,w0,r0,r0
+# up,r0,w1,r1,w1,r1,w0,w1,r1,w0,r0,r0,w1,w1,w0,r0,w1,w0,w0,r0,w1,w1,w1,r1,r1
+# up,r1,w1,r1,w0,w1,r1,w0,r0,r0,w1,w1,w0,r0,w1,w0,w0,r0,w1,w1,w1,r1,r1,r1,w0
+# up,r0
+# down,r0,w1
+# down,r1,w0
+# down,r0
+
+### r0,w1,w0,r0,w0,r0,w1,r1,r1,w0,w0,w1,r1,w0,w1,w1,r1,w0,w0,w0,r0,r0
+### r1,w0,r0,r0,w1,w0,w0,r0,w1,w0,w1,r1,w1,w0,r0,w1,w1,w1,r1,w1,r1,r1
+# any,w0
+# up,r0,w1,w0,r0,w0,r0,w1,r1,r1,w0,w0,w1,r1,w0,w1,w1,r1,w0,w0,w0,r0,r0,r0,w1
+# up,r1,w0,r0,w1,w0,r0,w0,r0,w1,r1,r1,w0,w0,w1,r1,w0,w1,w1,r1,w0,w0,w0,r0,r0
+# up,r0,w1,r1,w0,r0,r0,w1,w0,w0,r0,w1,w0,w1,r1,w1,w0,r0,w1,w1,w1,r1,w1,r1,r1
+# up,r1,w0,r0,r0,w1,w0,w0,r0,w1,w0,w1,r1,w1,w0,r0,w1,w1,w1,r1,w1,r1,r1,r1,w0
+# up,r0
+# down,r0,w1
+# down,r1,w0
+# down,r0
+
+# any,w0
+# up,r0,w1,r1,w0,w0,r0,r0,r0,w0,r0,w1,r1,w1,r1,r1,r1,w0,r0,r0,w0,w0,r0,w1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1
+# up,r1,w0,w0,r0,r0,r0,w0,r0,w1,r1,w1,r1,r1,r1,w0,r0,r0,w0,w0,r0,w1,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0
+# up,r0,w1,w0,w1
+# down,r1,w0
+# down,r0
+
+# any,w1
+# up,r1,w0,r0,r0,r0,w1,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,w1,r1,w0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0
+# up,r0,r0,r0,w1,r1,w1,r1,r1,r1,w0,r0,w0,r0,r0,w1,w1,r1,w0,w0,r0,w0,w0,r0,w0,w1,w0,w1,r1,w1,w1,r1,w1,w0,w1,w0,r0,w1
+# up,r1,r1,w0,w1,w0
+# down,r0,w1
+# down,r1
+
+# any,w0
+# up,r0,w1,r1,r1,r1,w1,r1,r1,w0,r0,w0,r0,r0,r0,w1,r1,r1,w1,w1,r1,w0,w0,r0,w0,w0,r0,w1,w1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1
+# up,r1,r1,r1,w1,r1,r1,w0,r0,w0,r0,r0,r0,w1,r1,r1,w1,w1,r1,w0,w0,r0,w0,w0,r0,w1,w1,r1,w1,w0,w1,w0,r0,w0,w1,w0,w1,r1,w0
+# up,r0,r0,w1,w0,w1
+# down,r1,w0
+# down,r0
+
+# any,w1
+# up,r1,w0,r0,w0,r0,r0,r0,w1,r1,w1,r1,r1,r1,w0,r0,r0,w0,w0,r0,w1,w1,r1,w1,w1,r1,w0,w0,r0,w0,w1,w0,w1,r1,w1,w0,w1,w0,r0
+# up,r0,w0,r0,r0,r0,w1,r1,w1,r1,r1,r1,w0,r0,r0,w0,w0,r0,w1,w1,r1,w1,w1,r1,w0,w0,r0,w0,w1,w0,w1,r1,w1,w0,w1,w0,r0,w1
+# up,r1,r1,w0,w1,w0
+# down,r0,w1
+# down,r1
+
+# any,w1
+# up,r1,r1,r1,r1,r1,w0,r0,r0,r0,r0,r0,r0,r0,r0
+# up,r0,w1,r1,r1,r1,r1,w1,r1,r1,w0,r0,w0,r0,r0,r0,w1,r1,r1,w1,w0,r0,w0,w1,r1,w0,w1,r1,w1,w1,r1,w0,w0,r0,w0,w0,r0,w1,w0,r0,w1,w1,r1
+# up,r1,w0,w1,r1,r1,r1,r1,w1,r1,r1,w0,r0,w0,r0,r0,r0,w1,r1,r1,w1,w0,r0,w0,w1,r1,w0,w1,r1,w1,w1,r1,w0,w0,r0,w0,w0,r0,w1,w0,r0,w1,w1,r1,w0
+# up,r0,w1,r1
+# up,r1
+# down,r1,w0
+# down,r0
+
+any,w1
+up,r1,w0,w1,w0,w1,r1,r1,r1,r1,w1,r1,r1,r1,w0,r0,r0,w0,r0,r0,r0,r0,w1,r1,r1,r1,w0,w1,r1,r1,w1,w1,r1,r1,w1,w0,r0,r0,w1,w0,r0,r0,w0,w0,r0,r0,w0,w1,r1,r1,w0,w0,r0,r0,w1,w1,r1,r1,w0,w1,w0,r0,w0,w0,r0,w0,r0,w1,w0,r0,w1,r1,w1,w1,r1,w1,r1,w0,w1,r1,w0,r0,w0,w1,w1,r1,w1,w0,w0,r0,w1,w0,w1,r1,w1,w1,w0,r0,w0,w0,w1,r1,w1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,r1,w0,w0,w1,r1,w0,w0,w0,r0,w1,w0,w0,r0,w1,w1,w0,r0,w0,w1,w0,r0,w0,w0,w0,r0,w1,w1,w1,r1,w0
+up,r0,w1,w0,w1,r1,r1,r1,r1,w1,r1,r1,r1,w0,r0,r0,w0,r0,r0,r0,r0,w1,r1,r1,r1,w0,w1,r1,r1,w1,w1,r1,r1,w1,w0,r0,r0,w1,w0,r0,r0,w0,w0,r0,r0,w0,w1,r1,r1,w0,w0,r0,r0,w1,w1,r1,r1,w0,w1,w0,r0,w0,w0,r0,w0,r0,w1,w0,r0,w1,r1,w1,w1,r1,w1,r1,w0,w1,r1,w0,r0,w0,w1,w1,r1,w1,w0,w0,r0,w1,w0,w1,r1,w1,w1,w0,r0,w0,w0,w1,r1,w1,w1,w1,r1,w0,w1,w1,r1,w1,w0,w1,r1,w0,w0,w1,r1,w0,w0,w0,r0,w1,w0,w0,r0,w1,w1,w0,r0,w0,w1,w0,r0,w0,w0,w0,r0,w1,w1,w1,r1
+up,r1,w0,w1,r1,r1,r1
+up,r1,w0,w0,r0,r0,w1,r1,w1,w1,r1,w1,r1,w0,w1,w0,w1,w0,r0
+up,r0,r0,w0,w0,r0,w0,r0
+up,r0,w1
+down,r1,w1,r1,w0
+down,r0
+
