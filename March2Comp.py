@@ -114,12 +114,6 @@ if __name__ == '__main__':
 	test_logs_file_2cF_3 = 'results/testlog_2cF_3'
 	test_logs_file_2cF_2aa = 'results/testlog_2cF_2aa'
 	# fault_list_file = 'resources/fault_lists/' + '2_complete_with_novel'
-	# If no /results folder in current directory, create it
-	try:
-		os.mkdir('./results')
-	except FileExistsError:
-		pass
-
 	fault_list_file = sys.argv[1]
 	model_name = ['2cF_3', '2cF_2aa']
 	fault_model_name = '2cF_3' if '2cF_3' in sys.argv else default_fault_model_name
