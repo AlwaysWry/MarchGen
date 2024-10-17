@@ -34,9 +34,8 @@ case $1 in
 		echo "March generation command: March2Comp gen <fault list filename>"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
-		cd ./sim
 		python sim2comp.py $2 $3
-		cat ../results/simulation_report.txt
+		cat ./results/simulation_report.txt
 	fi
 ;;
 *)
