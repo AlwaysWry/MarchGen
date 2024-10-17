@@ -3,7 +3,7 @@ from ctypes import *
 
 
 def dynWVC2_solver(graph_file):
-	dyn_WVC2 = WinDLL("mwvc_solver/DynWVC2/libDynWVC2.dll", winmode=0)
+	dyn_WVC2 = CDLL("mwvc_solver/DynWVC2/libDynWVC2.dll", winmode=0)
 
 	graph = c_char_p(graph_file.encode())
 	result = c_char_p(b'results/mwvclog')
