@@ -3,15 +3,13 @@
 # ---------------------------- #
 import copy
 import datetime
-import os
+# import os
 import sys
 import multiprocessing as mp
 import concurrent.futures as cf
 
-sys.path.append("../")
-
 from common import fault_parser as ps
-import evaluator as ev
+import sim.evaluator as ev
 
 # re-define if necessary
 
@@ -96,7 +94,6 @@ def sim2Comp(test_file, logs_file, fault_list, fault_model, fp=None, mp_flag=Tru
 
 
 if __name__ == '__main__':
-    os.chdir("../")
     march_test_file = sys.argv[1]
     fault_list_file = sys.argv[2]
     test_logs_file_2cF_3 = 'results/testlog_2cF_3'

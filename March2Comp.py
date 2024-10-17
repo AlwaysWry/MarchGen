@@ -6,7 +6,7 @@ sys.path.append("src/")
 sys.path.append("sim/")
 
 from src.output import *
-from sim.sim2comp import *
+from sim2comp import *
 
 
 def March2Comp(fault_list, fault_model, fp):
