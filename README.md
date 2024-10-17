@@ -44,7 +44,7 @@ Using March test generator:
 <br>    ```python March2Comp.py <fault list file> [fault model name=2cF_3, 2cF_2aa] [--nomp]```
 
 Using fault simulator independently:
-<br>    ```python ./sim/sim2comp.py <march test filename> <fault list filename> [--nomp]```
+<br>    ```python ./sim2comp.py <march test filename> <fault list filename> [--nomp]```
 
 ### Instructions
 1. Standard format of fault lists: a fault list consist of faults in standard fault primitive (FP) format: <br> ```<Sa;Sv/F/R>```
