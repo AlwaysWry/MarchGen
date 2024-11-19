@@ -81,20 +81,16 @@ class LinkedMainElementsBuilder:
 			return seq[0] == seq[-1]
 
 		# priority level 1: donor nest sequences get higher priority
-		if len(donor_pool) == 1:
+		if len(donor_pool) > 0:
 			return next(iter(donor_pool))
-		elif len(donor_pool) > 1:
-			# priority level 2: no-transition sequences get higher priority
-			secondary_pool = set(filter(check_transition, donor_pool))
-			if len(secondary_pool) > 0:
-				return next(iter(secondary_pool))
-			else:
-				return next(iter(donor_pool - secondary_pool))
 		else:
-			secondary_pool = set(filter(check_transition, vertex_candidates))
-			if len(secondary_pool) > 0:
-				return next(iter(secondary_pool))
+			# priority level 2: receiver nest sequences get higher priority
+			receiver_pool = set(filter(lambda v: v.coverage[0].nest_tag == 'receiver', vertex_candidates))
+			if len(receiver_pool) > 0:
+				return next(iter(receiver_pool))
 			else:
+				# priority level 3: no-transition sequences get higher priority
+				secondary_pool = set(filter(check_transition, receiver_pool))
 				return next(iter(vertex_candidates - secondary_pool))
 
 	@staticmethod
