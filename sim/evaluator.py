@@ -69,11 +69,10 @@ def init_cell_snapshot(cell_snapshot, cell_state, FP1, FP2):
 
 
 def update_cell_snapshot(cell_snapshot, cell_state, visiting_cell, update_flag, FP1, FP2):
-    # cell_snapshot is updated when the state of the visiting cell is updated
-    if (visiting_cell != 'v') and (UPDATED in update_flag):
-        relevant_cells = [visiting_cell, 'v']
-    else:
-        relevant_cells = [visiting_cell]
+    # cell_snapshot is used to record the applied operations on each cell. As a result, the state transition because of
+    # fault sensitization (such as the state of v-cell is changed because of coupling fault) should not be recorded. Otherwise,
+    # the initial state of sensitization condition cannot be obtained correctly.
+    relevant_cells = [visiting_cell]
     for cell in relevant_cells:
         cell_snapshot[cell].append(cell_state[cell])
         if len(cell_snapshot[cell]) > max(FP1.SenOpsNum, FP2.SenOpsNum):
