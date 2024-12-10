@@ -232,6 +232,11 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 		for odd_case in odd_violation:
 			# list for multiple odd-sensitization MEs
 			odd_mes = []
+
+			# if an odd violation has been in tail-cover ME, it will be sensitized individually, so no need to add it in this ME
+			if isinstance(tail_cover, set):
+				odd_case[0] -= tail_cover
+
 			# in a specific order of main MEs, the odd-sensitization ME is empty
 			if len(odd_case[0]) < 1:
 				odd_mes.append('')
@@ -239,9 +244,6 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 				continue
 
 			violation_pool.clear()
-			# if an odd violation has been in tail-cover ME, it will be sensitized individually, so no need to add it in this ME
-			if isinstance(tail_cover, set):
-				odd_case[0] -= tail_cover
 
 			for seq_obj in odd_case[0]:
 				violation_seq = Sequence(seq_obj.__dict__.copy())

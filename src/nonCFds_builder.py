@@ -53,13 +53,13 @@ class UnlinkedElementsBuilder:
 				if isinstance(final_result, CoverageVertex):
 					return final_result
 				else:
-					return next(iter(final_result), CoverageVertex({'coverage': [], 'diff': -1}))
+					return next(iter(final_result), None)
 			else:
 				final_result = coverage_priority_filter(priority_pool)
 				if isinstance(final_result, CoverageVertex):
 					return final_result
 				else:
-					return next(iter(final_result), CoverageVertex({'coverage': [], 'diff': -1}))
+					return next(iter(final_result), None)
 
 		# the initial state-based priority. use state-based priority first, for multiple vertices with the same states,
 		# use coverage priority for covering more nonCFds*nonCFds faults
@@ -80,7 +80,7 @@ class UnlinkedElementsBuilder:
 			if isinstance(tertiary_result, CoverageVertex):
 				return tertiary_result
 
-			return next(iter(tertiary_result), CoverageVertex({'coverage': [], 'diff': -1}))
+			return next(iter(tertiary_result), next(iter(vertex_candidates)))
 		else:
 			primary_result = state_priority_filter(vertex_candidates, feature_list[2])
 			if isinstance(primary_result, CoverageVertex):
@@ -94,7 +94,7 @@ class UnlinkedElementsBuilder:
 			if isinstance(tertiary_result, CoverageVertex):
 				return tertiary_result
 
-			return next(iter(tertiary_result), CoverageVertex({'coverage': [], 'diff': -1}))
+			return next(iter(tertiary_result), next(iter(vertex_candidates)))
 
 	@staticmethod
 	def terminal_decorator(chain: str, init: str):
@@ -186,7 +186,7 @@ def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool,
 	undetermined_finish_flag = False
 
 	while len(degenerated_vertex_pool) > 0:
-		build_result = build_coverage_chain(coverage_chain, UnlinkedElementsBuilder.head_protection_range, degenerated_vertex_pool, UnlinkedElementsBuilder,
+		build_result = build_coverage_chain(coverage_chain, max_check_range, degenerated_vertex_pool, UnlinkedElementsBuilder,
 											degenerated_aux_vertex_pool, target_vertex, init)
 		target_vertex = build_result[0][0]
 

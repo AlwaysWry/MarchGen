@@ -224,6 +224,10 @@ def build_coverage_chain(chain, seq_check_range, vertex_pool, builder, aux_verte
 	covered_vertices = []
 	for v_obj in vertex_pool:
 		v_obj.diff = calculate_diff_value(chain, v_obj)
+	# for nonCFds builder, the diff-values of aux SFs also needs to be assigned
+	if isinstance(aux_vertex_pool, set):
+		for v_obj in aux_vertex_pool:
+			v_obj.diff = calculate_diff_value(chain, v_obj)
 
 	min_diff = min(map(lambda v: v.diff, vertex_pool))
 	vertex_candidates = set(filter(lambda v: v.diff == min_diff, vertex_pool))
@@ -277,7 +281,7 @@ def construct_main_elements(vertex_pool: set):
 
 	# the diff-based search method with head protection. The chosen vertices are not allowed to be removed until the length
 	# of MP exceeds the length of the longest Sequence in the pool.
-	initial_vertex = LinkedMainElementsBuilder.get_vertex_winner(vertex_candidate_pool)
+	initial_vertex = max(vertex_candidate_pool, key=lambda v: len(v.coverage[0].seq_text))
 	# vertex_candidate_pool -= {initial_vertex}
 	coverage_chain = initial_vertex.get_march_segment()
 
