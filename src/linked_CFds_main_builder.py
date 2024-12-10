@@ -28,7 +28,7 @@ class CoverageVertex:
 			init_seq = ''
 			return init_seq
 
-		if self.__dict__['coverage'][-1].detect_tag:
+		if self.__dict__['coverage'][-1].detect_tag and self.__dict__['coverage'][-1].dr_tag:
 			init_seq += 'r' + init_seq[-1]
 
 		return init_seq
@@ -104,6 +104,8 @@ class LinkedMainElementsBuilder:
 			case '00':
 				main_elements['10_me'] = MarchElement(head_text_10 + chain)
 				main_elements['10_me'].head_tag = True
+				# the read operation at the beginning of the ME can be omitted if the OS starts with read,
+				# since the head-protection segment has provided the "Oi" operation for Condition II.a (linked non-CFds*CFds faults)
 				main_elements['01_me'] = MarchElement(chain[1:] + 'w1')
 				main_elements['01_me'].tail_tag = True
 				if chain[1] != 'r':
@@ -154,7 +156,7 @@ def get_linked_CFds_union(init_0_pool, init_1_pool):
 			find_result.detect_tag |= seq.detect_tag
 			find_result.dr_tag |= seq.dr_tag
 			find_result.nest_tag = seq.nest_tag
-		else:
+		elif (getattr(find_result, 'odd_sensitization_tag', None) is not None) and (getattr(seq, 'odd_sensitization_tag', None) is not None):
 			find_result.odd_sensitization_tag |= seq.odd_sensitization_tag
 
 	for seq in seq_union:

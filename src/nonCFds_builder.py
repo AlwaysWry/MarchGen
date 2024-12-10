@@ -105,6 +105,14 @@ class UnlinkedElementsBuilder:
 			match terminal_feature:
 				case '00':
 					if init == 'Init_0':
+						# figure out if the read operation should be added as head terminal even the operation sequence starts with "r",
+						# because the linked non-CFds*CFds faults require an individual operation Oi before the sensitization sequence. It may
+						# be ok when head-protection segment exists, but when no head-protection segment exists, what will happen?
+
+						# The answer is that the function construct_degenerated_segment is for building the sequence for all nonCFds*nonCFds
+						# and linked non-CFds*CFds faults. When these faults exist, the head-protection segment will be built anyway, so the
+						# Oi is naturally given. When no aforementioned faults exist, the Oi is not needed, so the read operation is unnecessary
+						# in both two situations.
 						main_element = MarchElement(chain[1:])
 					else:
 						main_element = MarchElement('r1w0' + chain[1:] + 'w1')
