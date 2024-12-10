@@ -38,7 +38,7 @@ def get_sequence_properties(fault_obj):
 		else:
 			props_dict['ass_init'] = '-1'
 
-	props_dict['dr_tag'] = (fault_obj.rdFlag == -1 or fault_obj.rdFlag == 0)
+	props_dict['dr_tag'] = (fault_obj.rdFlag == -1)
 	props_dict['detect_tag'] = not bool(fault_obj.CFdsFlag)
 	props_dict['nest_tag'] = fault_obj.nestSenFlag
 

@@ -28,7 +28,7 @@ class CoverageVertex:
 			init_seq = ''
 			return init_seq
 
-		if self.__dict__['coverage'][-1].detect_tag and self.__dict__['coverage'][-1].dr_tag:
+		if self.__dict__['coverage'][-1].detect_tag:
 			init_seq += 'r' + init_seq[-1]
 
 		return init_seq
