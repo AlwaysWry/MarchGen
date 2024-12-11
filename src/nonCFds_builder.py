@@ -195,12 +195,13 @@ def construct_degenerated_segment(original_vertex_pool, degenerated_vertex_pool,
 			degenerated_vertex_pool.remove(target_vertex)
 			continue
 
-		# the protection of the element. To avoid the nonCFds*nonCFds 2cF being disturbed by the mis-sensitization of the 2cF
-		# at the tail of last ME and the beginning of current ME, a protection segment needs to be set before the real build
-		# process begins. In the protection segment, chosen vertices will not be removed from the pool after operations are appended.
+		# the protection of the element. To avoid the nonCFds*nonCFds 2cF being disturbed by the mis-sensitization of
+		# the 2cF at the tail of last ME and the beginning of current ME, a protection segment needs to be set before
+		# the real build process begins. In the protection segment, chosen vertices will not be removed from the pool
+		# after operations are appended.
 		chain_check_range = len(coverage_chain) - (len(target_vertex.get_march_segment()) - target_vertex.diff) + 1
-		# if the protection segment is longer than the longest sequence in the undetermined seq pool, the subsequent operations
-		# can be normally built without the disturbance.
+		# if the protection segment is longer than the longest sequence in the undetermined seq pool, the subsequent
+		# operations can be normally built without the disturbance.
 		if chain_check_range >= max_check_range:
 			if not undetermined_finish_flag:
 				undetermined_adjacency = get_undetermined_adjacency(target_vertex)

@@ -361,10 +361,16 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 	print("***Filtering redundant 2-composite faults...\n")
 
 	# all nonCFds*nonCFds faults cannot be degenerated or self-filtered, since the discarded nonCFds FP can be
-	# mis-sensitized if it is out of the diff-based search range. For the nonCFds*nonCFds with different a-cell requirements
-	# (such as <1;...>*<0;...>), both of the FPs can be sensitized under [a1, v, a2] or [a2, v, a1]. and for the faults
-	# with identical a-cell requirements, both the FPs can be sensitized under [a1, a2, v], [a2, a1, v], etc.
-	degenerate_2cF_pool = _2cF_nonCFds_pool['nonCFds_CFds'] | unlinked_2cF_CFds_pool
+	# mis-sensitized if it is out of the diff-based search range. For the nonCFds*nonCFds with different a-cell
+	# requirements (such as <1;...>*<0;...>), both of the FPs can be sensitized under [a1, v, a2] or [a2, v,
+	# a1]. and for the faults with identical a-cell requirements, both the FPs can be sensitized under [a1, a2, v],
+	# [a2, a1, v], etc.
+
+	# on the other hand, the nonCFds*CFds faults cannot be applied to graph-based filter, because only nonCFds member
+	# is allowed to be detected, according to the test condition. However, the nonCFds*CFds faults can be
+	# self-filtered, because only 1 nonCFds member in the 2cF, so it can be merged into other fault sets directly,
+	# and without determining if both members are included by the fault set, like the nonCFds*nonCFds faults.
+	degenerate_2cF_pool = unlinked_2cF_CFds_pool
 	degenerate_2cF_cover = set()
 
 	if len(degenerate_2cF_pool) > 1:
@@ -384,6 +390,10 @@ def filter_redundant_2cF(_2cF_nonCFds_pool, unlinked_2cF_CFds_pool):
 		# if there is only 1 2cF, use its 2 vertices as the final cover directly
 		for degenerated_2cF in degenerate_2cF_pool:
 			degenerate_2cF_cover.update(set(degenerated_2cF.comps.values()))
+
+	# choose nonCFds member from nonCFds*CFds faults directly
+	nonCFds_CFds_comps = set(map(lambda t: t.comps['comp1'], _2cF_nonCFds_pool['nonCFds_CFds'])) | set(map(lambda t: t.comps['comp2'], _2cF_nonCFds_pool['nonCFds_CFds']))
+	degenerate_2cF_cover.update(set(filter(lambda f: f.CFdsFlag == 0, nonCFds_CFds_comps)))
 
 	# filter the 2cF cover after MWVC, according to inclusive rule
 	if len(degenerate_2cF_cover) > 1:
