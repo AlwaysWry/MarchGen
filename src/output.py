@@ -142,8 +142,8 @@ def element_assigner(linked_CFds_me, nonCFds_me, scf_me):
 			me.address_order = 'up'
 			me_dict[state].append(me)
 
-	# since the tail ME has to be added separately (it has opposite AO), use this ME as the start_me. The build order is from
-	# the bottom to the top
+	# since the tail ME has to be added separately (it has opposite AO), use this ME as the start_me. The build order
+	# is from the bottom to the top
 	if len(linked_CFds_me['ass_me']['tail_cover_me'].content) > 0:
 		assign_start_me = linked_CFds_me['ass_me']['tail_cover_me']
 		assign_start_me.address_order = 'down'

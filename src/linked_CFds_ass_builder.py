@@ -57,9 +57,9 @@ def get_tail_cover_priority(tail_cover: set, tail_decorated_element: MarchElemen
 
 		couple_priority.append((next(iter(filter(lambda s: s != priority_winner, text_couple))), priority_winner))
 
-	# Remember adding the longest segment to the list. The longest is also the original, to avoid the sensitization order between the
-	# longest tail cover (and its inclusions) and the other sequences. While check to the inclusions is for solving the problem
-	# inside the tail cover set.
+	# Remember adding the longest segment to the list. The longest is also the original, to avoid the sensitization
+	# order between the longest tail cover (and its inclusions) and the other sequences. While check to the inclusions
+	# is for solving the problem inside the tail cover set.
 	tails = set(map(lambda p: p[-1], couple_priority))
 	tails.add(max(tail_cover_texts, key=lambda t: len(t)))
 
@@ -88,11 +88,11 @@ def construct_tail_cover_elements(target_tails: list, tail_requirements: set, se
 		coverage_chain = tail_cover_vertex.get_march_segment()
 
 		# the terminal of tail-cover ME need to be decorated to match the original terminal states of the ME where
-		# tail-cover seq in. The initial state of the v-cell needs to be consistent with the original ME, since the AO is reversed.
-		# for instance, assume a main ME has a tail-cover "1w0r0w1", a tail-cover ME "down,r1,w0,r0,w1" cannot cover
-		# the fault <1w0r0w1;0/1/->*<1r1w1w0;1/0/->, since the tail-cover ME is "11" type, the initial state of v-cell is
-		# different from the original "01" type ME. The consistency is natural in 2-operation fault list, while not in 3 and more
-		# operation fault list.
+		# tail-cover seq in. The initial state of the v-cell needs to be consistent with the original ME, since the AO
+		# is reversed. for instance, assume a main ME has a tail-cover "1w0r0w1", a tail-cover ME "down,r1,w0,r0,
+		# w1" cannot cover the fault <1w0r0w1;0/1/->*<1r1w1w0;1/0/->, since the tail-cover ME is "11" type,
+		# the initial state of v-cell is different from the original "01" type ME. The consistency is natural in
+		# 2-operation fault list, while not in 3 and more operation fault list.
 		match coverage_chain[0] + coverage_chain[-1]:
 			case '00':
 				me_text = 'r1w' + coverage_chain
@@ -104,9 +104,10 @@ def construct_tail_cover_elements(target_tails: list, tail_requirements: set, se
 				else:
 					me_text = coverage_chain[1:]
 
-		# Case 1: Consider the 2cF <1r1w0;0/1/->*<0w1r1w0;1/0/-> under tail-cover ME "down,r1,w0,w1,r1,w0". Assume that the target
-		# sequence of this ME is 1r1w0, it should be sensitized at the end of the ME. However, the state decoration operations
-		# "r1,w0" at the beginning of the ME sensitizes the <1r1w0;0/1/-> at first, and causes <0w1r1w0;1/0/-> sensitize afterward.
+		# Case 1: Consider the 2cF <1r1w0;0/1/->*<0w1r1w0;1/0/-> under tail-cover ME "down,r1,w0,w1,r1,w0". Assume
+		# that the target sequence of this ME is 1r1w0, it should be sensitized at the end of the ME. However,
+		# the state decoration operations "r1,w0" at the beginning of the ME sensitizes the <1r1w0;0/1/-> at first,
+		# and causes <0w1r1w0;1/0/-> sensitize afterward.
 
 		# Case 2: <1r1w0;0/1/->*<1w1r1w0;1/0/->, the tail-cover ME "down,r1,w1,r1,w0" is able to sensitize
 		# the target sequence 1r1w0 independently, even though it is included in the sequence 1w1r1w0 (the initial state of
@@ -115,8 +116,8 @@ def construct_tail_cover_elements(target_tails: list, tail_requirements: set, se
 		# and is included in a longer sequence (which cannot be sensitized first, because the initial state of v-cell only
 		# matches the target sequence at the beginning)
 
-		# all priority couples that end with current tail text can be covered, including the case 1: shorter tail is sensitized earlier
-		# than current tail.
+		# all priority couples that end with current tail text can be covered, including the case 1: shorter tail is
+		# sensitized earlier than current tail.
 		tail_requirements -= set(filter(lambda r: r[-1] == tail_text, tail_requirements))
 
 		# check the shorter tails, since longer tails cannot appear later than the current one. The shorter tails are
@@ -124,9 +125,9 @@ def construct_tail_cover_elements(target_tails: list, tail_requirements: set, se
 		texts_under_check = sorted(filter(lambda t: len(t) < len(tail_text), target_tails), key=lambda tt: len(tt),
 								   reverse=True)
 		me_under_check = me_text[1] + me_text
-		# check if the shorter tails appear later than current tail in the current ME (can be covered as case 2). If a tail is found appears earlier than current
-		# tail, it means that the successive even shorter tails also cannot be covered by the ME (cannot be sensitized at the end of the ME),
-		# while need a new ME.
+		# check if the shorter tails appear later than current tail in the current ME (can be covered as case 2). If a
+		# tail is found appears earlier than current tail, it means that the successive even shorter tails also cannot
+		# be covered by the ME (cannot be sensitized at the end of the ME), while need a new ME.
 		for text in texts_under_check:
 			if me_under_check.find(tail_text) < me_under_check.find(text):
 				requirement_coverage = set(filter(lambda r: r[-1] == text, tail_requirements))
@@ -292,7 +293,8 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 
 			odd_mes.append(coverage_chain[search_range:])
 
-			# each odd_sensitization candidate has to follow the tied precedent element, or the odd sensitization may be destroyed
+			# each odd_sensitization candidate has to follow the tied precedent element, or the odd sensitization may
+			# be destroyed
 			violation_me_candidates.append((odd_mes, odd_case[1], odd_case[2]))
 
 		odd_sensitization = min(violation_me_candidates, key=lambda c: sum(map(lambda m: len(m), c[0])))
@@ -302,9 +304,9 @@ def construct_odd_sensitization_elements(odd_violation, tail_cover):
 
 
 def check_head_cover(main_elements: dict, chain: str, sequence_pool: set):
-	# check whether the head of the ME destroys the sensitization of the first nonCF of middle part. The head operations
-	# "r1,w0" or "r0,w1" may introduce new mis-sensitization sequences (sequences that are just sensitized but not detected),
-	# which can result in the damage to the initial state of the following normal sequence in MP.
+	# check whether the head of the ME destroys the sensitization of the first nonCF of middle part. The head
+	# operations "r1,w0" or "r0,w1" may introduce new mis-sensitization sequences (sequences that are just sensitized
+	# but not detected), which can result in the damage to the initial state of the following normal sequence in MP.
 	head_cover = []
 	head_cover_candidates = []
 	head_information = []
@@ -496,7 +498,8 @@ def construct_ass_elements(main_elements, main_middle_part, filtered_sequence_po
 			tail_cover_mes[0].tied_element.extend(tail_cover_mes[1:])
 		ass_elements['tail_cover_me'] = tail_cover_mes[0]
 
-	# check and build the ME for odd sensitization violation. Filter those linked CFds*CFds faults whose odd_sensitization_tag is True
+	# check and build the ME for odd sensitization violation. Filter those linked CFds*CFds faults whose
+	# odd_sensitization_tag is True
 	odd_violation_candidate_pool = set(filter(lambda ss: ss.odd_sensitization_tag, original_sequence_pool))
 	odd_violation = check_odd_sensitization(main_elements, odd_violation_candidate_pool)
 	construct_result = construct_odd_sensitization_elements(odd_violation, tail_cover)
@@ -553,7 +556,8 @@ def linked_CFds_constructor(filtered_linked_seq_pool, original_linked_fault_pool
 	# cannot make sure that a shorter sequence is only included once in longer sequence, so even the longer sequence is
 	# included odd times, it does not mean that included shorter sequences are also included odd times.
 	for linked_CFds in linked_CFds_pool:
-		# check the faults whose form is <S;x/F/R1>*<S;~x/~F/R2>. Only these faults are necessary to be checked for odd-sensitization
+		# check the faults whose form is <S;x/F/R1>*<S;~x/~F/R2>. Only these faults are necessary to be checked for
+		# odd-sensitization
 		if ((linked_CFds.comps['comp1'].CFdsFlag == 1) and (linked_CFds.comps['comp2'].CFdsFlag == 1) and
 				(linked_CFds.comps['comp1'].aInit == linked_CFds.comps['comp2'].aInit) and (linked_CFds.comps['comp1'].Sen == linked_CFds.comps['comp2'].Sen)):
 			odd_sensitization_flag = True

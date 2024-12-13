@@ -105,14 +105,16 @@ class UnlinkedElementsBuilder:
 			match terminal_feature:
 				case '00':
 					if init == 'Init_0':
-						# figure out if the read operation should be added as head terminal even the operation sequence starts with "r",
-						# because the linked non-CFds*CFds faults require an individual operation Oi before the sensitization sequence. It may
-						# be ok when head-protection segment exists, but when no head-protection segment exists, what will happen?
+						# figure out if the read operation should be added as head terminal even the operation
+						# sequence starts with "r", because the linked non-CFds*CFds faults require an individual
+						# operation Oi before the sensitization sequence. It may be ok when head-protection segment
+						# exists, but when no head-protection segment exists, what will happen?
 
-						# The answer is that the function construct_degenerated_segment is for building the sequence for all nonCFds*nonCFds
-						# and linked non-CFds*CFds faults. When these faults exist, the head-protection segment will be built anyway, so the
-						# Oi is naturally given. When no aforementioned faults exist, the Oi is not needed, so the read operation is unnecessary
-						# in both two situations.
+						# The answer is that the function construct_degenerated_segment is for building the sequence
+						# for all nonCFds*nonCFds and linked non-CFds*CFds faults. When these faults exist,
+						# the head-protection segment will be built anyway, so the Oi is naturally given. When no
+						# aforementioned faults exist, the Oi is not needed, so the read operation is unnecessary in
+						# both two situations.
 						main_element = MarchElement(chain[1:])
 					else:
 						main_element = MarchElement('r1w0' + chain[1:] + 'w1')
@@ -461,18 +463,22 @@ def nonCFds_constructor(degenerated_seq_pool, undetermined_fault_pool, sf_seq_po
 	sf_vertex_pool_1 = define_vertices(sf_seq_pool['Init_1'])
 	sf_aux_vertex_pool = define_vertices(sf_seq_pool['Init_-1'])
 
+	unlinked_me_00 = MarchElement('')
+	unlinked_me_11 = MarchElement('')
 	# build "00" ME
-	unlinked_me_00_text = construct_nonCFds_element(vertex_pool_0, vertex_scf_pool, sf_vertex_pool_0,
+	if len(vertex_pool_0 | sf_vertex_pool_0) > 0:
+		unlinked_me_00_text = construct_nonCFds_element(vertex_pool_0, vertex_scf_pool, sf_vertex_pool_0,
 													sf_aux_vertex_pool, undetermined_fault_temp, 'Init_0')
-	unlinked_me_00 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_00_text, 'Init_0')
+		unlinked_me_00 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_00_text, 'Init_0')
 	# build "11" ME
-	unlinked_me_11_text = construct_nonCFds_element(vertex_pool_1, vertex_scf_pool, sf_vertex_pool_1,
+	if len(vertex_pool_1 | sf_vertex_pool_1) > 0:
+		unlinked_me_11_text = construct_nonCFds_element(vertex_pool_1, vertex_scf_pool, sf_vertex_pool_1,
 													sf_aux_vertex_pool, undetermined_fault_temp, 'Init_1')
-	unlinked_me_11 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_11_text, 'Init_1')
+		unlinked_me_11 = UnlinkedElementsBuilder.terminal_decorator(unlinked_me_11_text, 'Init_1')
 
 	# all 2cFs and SFs with certain initial states are covered in the nonCFds ME, only the remainders of sf_aux_pool
-	# and vertex_scf_pool need to be covered in SCF ME. Additionally, since the sequences have been checked without any inclusion,
-	# the two aux pools can be union directly
+	# and vertex_scf_pool need to be covered in SCF ME. Additionally, since the sequences have been checked without
+	# any inclusion, the two aux pools can be union directly
 	return {'00_me': unlinked_me_00, '11_me': unlinked_me_11}, sf_aux_vertex_pool.union(vertex_scf_pool)
 
 
