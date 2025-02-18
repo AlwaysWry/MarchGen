@@ -12,7 +12,7 @@ fi
 case $1 in
 "compile")
 	if [ $# -ne 1 ];then
-		echo "Compilation command: March2Comp compile"
+		echo "Compilation command: MarchGen compile"
 	else
 		cmake .
 		make
@@ -20,9 +20,9 @@ case $1 in
 ;;
 "gen")
 	if [ $# -gt 4 ] || [ $# -lt 2 ];then
-		echo "Compilation command: March2Comp compile"
-		echo "March generation command: March2Comp gen <fault list filename> [fault model name=2cF_3, 2cF_2aa]"
-		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+		echo "Compilation command: MarchGen compile"
+		echo "March generation command: MarchGen gen <fault list filename> [fault model name=2cF_3, 2cF_2aa]"
+		echo "Fault simulation command: MarchGen sim <march test filename> <fault list filename>"
 	else
 		python MarchGen.py $2 $3
 		cat ./results/generation_report.txt
@@ -30,16 +30,16 @@ case $1 in
 ;;
 "sim")
 	if [ $# -lt 3 ];then
-		echo "Compilation command: March2Comp compile"
-		echo "March generation command: March2Comp gen <fault list filename>"
-		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+		echo "Compilation command: MarchGen compile"
+		echo "March generation command: MarchGen gen <fault list filename>"
+		echo "Fault simulation command: MarchGen sim <march test filename> <fault list filename>"
 	else
-		python sim2comp.py $2 $3
+		python simulator.py $2 $3
 		cat ./results/simulation_report.txt
 	fi
 ;;
 *)
-	echo "Compilation command: March2Comp compile"
-	echo "March generation command: March2Comp gen <fault list filename>"
-	echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
+	echo "Compilation command: MarchGen compile"
+	echo "March generation command: MarchGen gen <fault list filename>"
+	echo "Fault simulation command: MarchGen sim <march test filename> <fault list filename>"
 esac
