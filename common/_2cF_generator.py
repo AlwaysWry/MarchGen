@@ -16,12 +16,10 @@ s_4dyn = ps.get_fault_primitive("../resources/fault_lists/simple_4dynamic", mode
 ss_3dyn = ps.get_fault_primitive("../resources/fault_lists/ss_3dynamic", model_name_2cF3)
 s_max2 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max2", model_name_2cF3)
 s_max3 = ps.get_fault_primitive("../resources/fault_lists/single_fault_max3", model_name_2cF3)
-asym_stat = ps.get_fault_primitive("../resources/fault_lists/asym_1", model_name_2cF3)
-asym_dyn = ps.get_fault_primitive("../resources/fault_lists/asym_2", model_name_2cF3)
-asym_3dyn = ps.get_fault_primitive("../resources/fault_lists/asym_3", model_name_2cF3)
-asym_4dyn = ps.get_fault_primitive("../resources/fault_lists/asym_4", model_name_2cF3)
-asym_max2 = ps.get_fault_primitive("../resources/fault_lists/asym_max2", model_name_2cF3)
-asym_max3 = ps.get_fault_primitive("../resources/fault_lists/asym_max3", model_name_2cF3)
+asym_a_stat = ps.get_fault_primitive("../resources/fault_lists/asymmetry/asym_a1", model_name_2cF3)
+asym_a_dyn = ps.get_fault_primitive("../resources/fault_lists/asymmetry/asym_a2", model_name_2cF3)
+asym_b_stat = ps.get_fault_primitive("../resources/fault_lists/asymmetry/asym_b1", model_name_2cF3)
+asym_b_dyn = ps.get_fault_primitive("../resources/fault_lists/asymmetry/asym_b2", model_name_2cF3)
 
 # test = ps.get_fault_primitive("test_fault_list")
 
@@ -34,8 +32,8 @@ def generate_combinations(fp_obj_list1, fp_obj_list2):
     self1_fc = it.combinations(fp_obj_list1, 2)
     full_combs = list(self1_fc)
     if fp_obj_list1 != fp_obj_list2:
-        # self2_fc = it.combinations(fp_obj_list2, 2)
-        self2_fc = []
+        self2_fc = it.combinations(fp_obj_list2, 2)
+        # self2_fc = []
         product = it.product(fp_obj_list1, fp_obj_list2)
         full_combs = full_combs + list(self2_fc) + list(product)
     return full_combs
@@ -81,16 +79,16 @@ def remove_unrealistic_tuples(full_combs, modelname):
 
 
 if __name__ == '__main__':
-    fp_combs_obj_list = generate_combinations(asym_stat, asym_stat)
+    fp_combs_obj_list = generate_combinations(asym_a_dyn, asym_a_stat)
     realistic_faults_2cF3 = remove_unrealistic_tuples(fp_combs_obj_list, model_name_2cF3)
     realistic_faults_2cF2aa = remove_unrealistic_tuples(fp_combs_obj_list, model_name_2cF2aa)
 
-    with open("../resources/fault_lists/2cF_3/asym_1_2cF3", 'w') as file:
+    with open("../resources/fault_lists/asymmetry/uFS2_a_2cF3", 'w') as file:
         for tup in realistic_faults_2cF3:
             lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
             file.write(lf)
 
-    with open("../resources/fault_lists/2cF_2aa/asym_1_2cF2aa", 'w') as file:
+    with open("../resources/fault_lists/asymmetry/uFS2_a_2cF2aa", 'w') as file:
         for tup in realistic_faults_2cF2aa:
             lf = get_fp_string(tup[0]) + '*' + get_fp_string(tup[1]) + '\n'
             file.write(lf)
