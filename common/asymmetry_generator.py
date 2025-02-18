@@ -50,17 +50,33 @@ def get_FR(seq):
 		return [(opp_dict[seq[-1]], '-')]
 
 
-def get_asymmetry_set(seq_set, original_set, wf):
+def get_asymmetry_set_a(original_set, asym_seq_set, wf):
 	asym_fp = []
-	for seq in seq_set:
+	for seq in original_set:
 		fr_lst = get_FR(seq)
 		for fr in fr_lst:
+			asym_fp.append('<' + '0;' + seq + '/' + fr[0] + '/' + fr[1] + '>')
+			# asym_fp.append('<' + '1;' + seq + '/' + fr[0] + '/' + fr[1] + '>')
+		asym_fp.append('<' + seq + ';0' + '/1/->')
+		# asym_fp.append('<' + seq + ';1' + '/0/->')
+	for seq in asym_seq_set:
+		fr_lst = get_FR(seq)
+		for fr in fr_lst:
+			asym_fp.append('<' + seq + '/' + fr[0] + '/' + fr[1] + '>')
+	for fp in asym_fp:
+		wf.write(fp + '\n')
 
+
+def get_asymmetry_set_b(aym_seq_set, wf):
+	asym_fp = []
+	for seq in aym_seq_set:
+		fr_lst = get_FR(seq)
+		for fr in fr_lst:
 			asym_fp.append('<' + '0;' + seq + '/' + fr[0] + '/' + fr[1] + '>')
 			asym_fp.append('<' + '1;' + seq + '/' + fr[0] + '/' + fr[1] + '>')
 		asym_fp.append('<' + seq + ';0' + '/1/->')
 		asym_fp.append('<' + seq + ';1' + '/0/->')
-	for seq in seq_set:
+	for seq in aym_seq_set:
 		fr_lst = get_FR(seq)
 		for fr in fr_lst:
 			asym_fp.append('<' + seq + '/' + fr[0] + '/' + fr[1] + '>')
@@ -92,13 +108,16 @@ def get_symmetric_fault(fp):
 
 
 if __name__ == '__main__':
-	wfilename = '..\\resources\\fault_lists\\asym_1'
-	wf = open(wfilename, 'w')
-	print(len(get_sensitization_sequence(int(wfilename[-1]))))
-	print(s := get_sensitization_sequence(int(wfilename[-1])))
+	wfilename_a = '..\\resources\\fault_lists\\asymmetry\\asym_a1'
+	wfilename_b = '..\\resources\\fault_lists\\asymmetry\\asym_b1'
+	wf_a = open(wfilename_a, 'w')
+	wf_b = open(wfilename_b, 'w')
+	print(len(get_sensitization_sequence(int(wfilename_a[-1]))))
+	print(s := get_sensitization_sequence(int(wfilename_a[-1])))
 	print(len(get_asymmetry_sequences(s)))
 	print(ss := get_asymmetry_sequences(s))
-	get_asymmetry_set(ss, s, wf)
+	get_asymmetry_set_a(s, ss, wf_a)
+	get_asymmetry_set_b(ss, wf_b)
 
 	# rfilename = '..\\resources\\fault_lists\\simple_dynamic'
 	# rf = open(rfilename, 'r')
@@ -115,5 +134,6 @@ if __name__ == '__main__':
 	# 	wf.write(asym_fp + '\n')
 	# rf.close()
 
-	wf.close()
+	wf_a.close()
+	wf_b.close()
 
