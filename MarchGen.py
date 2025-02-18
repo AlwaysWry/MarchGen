@@ -6,7 +6,7 @@ sys.path.append("src/")
 sys.path.append("sim/")
 
 from src.output import *
-from sim2comp import *
+from simulator import *
 
 
 def MarchGen(fault_list, fault_model, fp):
@@ -138,14 +138,14 @@ if __name__ == '__main__':
 		print("\n***Calculating fault coverage...\n")
 		if fault_model_name == '2cF_2aa':
 			print("**Coverage result under 2cF_2aa model:")
-			_2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file,
+			_2cF_2aa_coverage, _2cF_2aa_undetected = simulator(march_test_file, test_logs_file_2cF_2aa, fault_list_file,
 														  '2cF_2aa', None, mp_flag)
 		else:
 			_2cF_2aa_coverage = -1
 			_2cF_2aa_undetected = tuple()
 
 		print("**Coverage result under 2cF_3 model:")
-		_2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF_3, fault_list_file,
+		_2cF_3_coverage, _2cF_3_undetected = simulator(march_test_file, test_logs_file_2cF_3, fault_list_file,
 													  '2cF_3', None, mp_flag)
 
 

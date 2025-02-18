@@ -21,7 +21,7 @@ def atomic_sim(sim_info):
     return ev.eval_2comp(sim_info[0][1], sim_info[0][2], sim_info[1], ev.PROFOUND)
 
 
-def sim2Comp(test_file, logs_file, fault_list, fault_model, fp=None, mp_flag=True):
+def simulator(test_file, logs_file, fault_list, fault_model, fp=None, mp_flag=True):
     logfile = open(logs_file, 'w')
     # logfile = sys.stdout
 
@@ -113,9 +113,9 @@ if __name__ == '__main__':
 
         print("\n***Calculating fault coverage...\n")
         print("**Coverage result under 2cF_3 model:")
-        _2cF_3_coverage, _2cF_3_undetected = sim2Comp(march_test_file, test_logs_file_2cF_3, fault_list_file, '2cF_3', report, mp_flag)
+        _2cF_3_coverage, _2cF_3_undetected = simulator(march_test_file, test_logs_file_2cF_3, fault_list_file, '2cF_3', report, mp_flag)
         print("**Coverage result under 2cF_2aa model:")
-        _2cF_2aa_coverage, _2cF_2aa_undetected = sim2Comp(march_test_file, test_logs_file_2cF_2aa, fault_list_file, '2cF_2aa', report, mp_flag)
+        _2cF_2aa_coverage, _2cF_2aa_undetected = simulator(march_test_file, test_logs_file_2cF_2aa, fault_list_file, '2cF_2aa', report, mp_flag)
 
         table_t = '|{:^80s}|\n'
         table = '|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|{:^4s}{:^18s}{:^4s}|\n'

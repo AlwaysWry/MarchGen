@@ -1,18 +1,18 @@
-# March2Comp: A Structure-oriented March Sequence Generator for Multi-operation Dynamic 2-composite Faults in Memory
+# MarchGen: A  March Sequence Generator for Faults with Arbitrary Number of Operations in Memory
 
-  March2Comp is an automatic March test generator, aiming to generate March tests for 2-composite faults with arbitrary number of sensitization operations. It also integrates Sim2Comp, a fault simulator to check the fault coverage of a given March test under different 2-composite fault models.
+  MarchGen is an automatic March test generator, aiming to generate March tests for 2-composite faults with arbitrary number of sensitization operations. It also integrates a fault simulator to check the fault coverage of a given March test under different fault models.
     
   File directory structure:
 
-  March2Comp
+  MarchGen
 <br>    ├── common // basic modules, includes fault list parser, fault list generator, etc.
 <br>    ├── mwvc_solver // solver of minimum weight vertex coverage (MWVC) problem
 <br>    ├── resources // example fault lists and march tests
 <br>    ├── sim // fault simulator
 <br>    ├── src // source files of March test generator
 <br>    ├── CMakeLists.txt
-<br>    ├── March2Comp // start shell script
-<br>    ├── March2Comp.py // entrance program of March2Comp
+<br>    ├── MarchGen // start shell script
+<br>    ├── MarchGen.py // entrance program of MarchGen
 
 ## Requirements
 gcc/g++ 9.3.1 or higher
@@ -22,29 +22,29 @@ gcc/g++ 9.3.1 or higher
 ## Users' Guide
 Please change ```pybind11_DIR``` and ```PYTHON_EXECUTABLE``` in ```CMakeLists.txt``` to your path of pybind11 library and Python3 before compilation.
 ### Compile and run on Linux
-A shell script is used to implement compilation and running of March2Comp. 
+A shell script is used to implement compilation and running of MarchGen. 
 
 Commands for compilation:
-<br>    ```March2Comp compile```
+<br>    ```MarchGen compile```
 
 Commands for using March test generator:
-<br>    ```March2Comp gen <fault list name> [fault model name=2cF_3, 2cF_2aa] [--nomp]```
+<br>    ```MarchGen gen <fault list name> [fault model name=2cF_3, 2cF_2aa] [--nomp]```
 *    Fault model name is optional, default value is '2cF_2aa'. Under 2cF_3 model, unrealistic faults (but realistic under 2cF_2aa model) will be removed from the list first.
 *    "--nomp" is an option to close the multi-process simulation, which is open in default.
 
 Commands for using fault simulator independently:
-<br>    ```March2Comp sim <march test filename> <fault list filename> [--nomp]```
+<br>    ```MarchGen sim <march test filename> <fault list filename> [--nomp]```
 
 ### Compile and run on Windows
-You can use your own compiler and python interpreter to compile and run March2Comp. What follows is an example using CMake and MinGW in PowerShell or cmd (recommend running with administrator privileges):
+You can use your own compiler and python interpreter to compile and run MarchGen. What follows is an example using CMake and MinGW in PowerShell or cmd (recommend running with administrator privileges):
 <br>    ```cmake -G "MinGW Makefiles"```
 <br>    ```mingw32-make```
 
 Using March test generator:
-<br>    ```python March2Comp.py <fault list file> [fault model name=2cF_3, 2cF_2aa] [--nomp]```
+<br>    ```python MarchGen.py <fault list file> [fault model name=2cF_3, 2cF_2aa] [--nomp]```
 
 Using fault simulator independently:
-<br>    ```python sim2comp.py <march test filename> <fault list filename> [--nomp]```
+<br>    ```python simulator.py <march test filename> <fault list filename> [--nomp]```
 
 ### Instructions
 1. Standard format of fault lists: a fault list consist of faults in standard fault primitive (FP) format: <br> ```<Sa;Sv/F/R>```
