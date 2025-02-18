@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# a shell script for starting the March2Comp automatic March generation tool
+# a shell script for starting the MarchGen automatic March generation tool
 set -e
 
 if [ -d "results" ]; then
@@ -24,7 +24,7 @@ case $1 in
 		echo "March generation command: March2Comp gen <fault list filename> [fault model name=2cF_3, 2cF_2aa]"
 		echo "Fault simulation command: March2Comp sim <march test filename> <fault list filename>"
 	else
-		python March2Comp.py $2 $3
+		python MarchGen.py $2 $3
 		cat ./results/generation_report.txt
 	fi
 ;;

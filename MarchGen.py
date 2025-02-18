@@ -1,4 +1,4 @@
-# main script of the March2Comp program
+# main script of the MarchGen program
 import sys
 import time
 
@@ -9,9 +9,9 @@ from src.output import *
 from sim2comp import *
 
 
-def March2Comp(fault_list, fault_model, fp):
+def MarchGen(fault_list, fault_model, fp):
 	print("*********************************************************************")
-	print("* March2Comp: A March test generator for dynamic 2-composite faults *")
+	print("* MarchGen: A March test generator for dynamic 2-composite faults *")
 	print("*                             v1.0                                  *")
 	print("*********************************************************************")
 	start_time = time.time()
@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
 	with open("results/generation_report.txt", 'w') as report:
 		report.write("***********************************************************************************\n")
-		report.write("*            March2Comp: A March test generator for 2-composite faults            *\n")
+		report.write("*            MarchGen: A March test generator for 2-composite faults            *\n")
 		report.write("*                                    v1.0                                         *\n")
 		report.write("*                            Author: Sunrui Zhang                                 *\n")
 		report.write("***********************************************************************************\n")
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 		report.write("\nGeneration starts at %s\n" % datetime.datetime.now())
 		report.write("Fault list file: " + fault_list_file + "\n")
 
-		generation_result = March2Comp(fault_list_file, fault_model_name, report)
+		generation_result = MarchGen(fault_list_file, fault_model_name, report)
 		if generation_result is None:
 			sys.exit()
 

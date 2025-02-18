@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     with open("results/simulation_report.txt", 'w') as report:
         report.write("***********************************************************************************\n")
-        report.write("*            March2Comp: A March test generator for 2-composite faults            *\n")
+        report.write("*            MarchGen: A March test generator for 2-composite faults            *\n")
         report.write("*                                    v1.0                                         *\n")
         report.write("*                            Author: Sunrui Zhang                                 *\n")
         report.write("***********************************************************************************\n")

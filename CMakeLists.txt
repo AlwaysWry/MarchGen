@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.24)
-project(March2Comp)
+project(MarchGen)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
