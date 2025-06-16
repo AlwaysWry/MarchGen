@@ -258,6 +258,19 @@ def create_sequence_pool(sf_pool, degenerated_2cF_pool, linked_CFds_pool, undete
 			# Note that for the filter by linked_CFds_seq_pool, the ass_init also needs to be ignored, since the sequences in linked_CFds_seq_pool
 			# will be added in both linked CFds*CFds MEs, which cover the non-CFds-included faults with both 2 possible ass_inits.
 			# So no matter the target_seq is CF or nonCF, it is allowed to be merged into any of the init class.
+
+
+			# Why the linked_CFds_seq_pool (merged_seq_pool) should be checked first? Assume the target_seq is from a nonCFds (but is a CF),
+			# Here are two situations:
+			# Situation 1: there is only one CF with this sequence (e.g. only <0;1w0w1/0/->, no <1;1w0w1/0/-> in fault list). In this case,
+			# letting the target sequence merge into target_seq_pool (where the sequence belongs) would be better, because only one read operation will be
+			# added in nonCFds ME (if merging into linked_CFds_seq_pool, there will be two read operation in each two linked CFds ME)
+
+			# Situation 2: there are both CFs with this sequence (e.g. <0;1w0w1/0/-> and <1;1w0w1/0/-> in fault list). In this case, letting the target
+			# sequence merge into the linked_CFds_seq_pool is better, because only 2 read operations need to be added, while two sequences will be added
+			# to “00” and “11” nonCFds MEs if only one of it is merged into target_seq_pool. The linked CFds MEs can offer coverage for both faults at the same
+			# time. So considering both the faults will advent in most of the circumstances (barely can only includes one of them), it would be a better choice
+			# to let linked_CFds_seq_pool (merged_seq_pool) be checked first.
 			merged_flag = True
 			if filter_redundant_other_sequences(fault_obj, target_seq, merged_seq_pool, ignored_properties.union({'ass_init'}), merged_flag):
 				continue
