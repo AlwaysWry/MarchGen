@@ -6,7 +6,7 @@
   
   S. Zhang, X. Cui, H. Huang, F. Wei, Y. Chen and X. Zhang, "[MarchGen: A March Sequence Generation Method for Faults with Arbitrary Number of Operations in RAMs](https://ieeexplore.ieee.org/document/11159503)," in IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, doi: 10.1109/TCAD.2025.3609248.
     
-## File directory structure:
+## File directory structure
 
   MarchGen
 <br>    ├── common // basic modules, includes fault list parser, fault list generator, etc.
