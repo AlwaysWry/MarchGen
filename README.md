@@ -1,4 +1,4 @@
-# MarchGen: A  March Sequence Generator for Faults with Arbitrary Number of Operations in Memory
+# MarchGen: A  March Sequence Generator for Faults with Arbitrary Number of Operations in RAMs
 
   MarchGen is an automatic March test generator, aiming to generate March tests for memory faults with arbitrary number of sensitization operations. It also integrates a fault simulator to check the fault coverage of a given March test under different fault models.
 
